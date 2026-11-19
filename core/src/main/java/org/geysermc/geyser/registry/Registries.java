@@ -281,6 +281,8 @@ public final class Registries {
         // The NbtMap -> definition indexes were only needed while the item registries were built
         BlockRegistries.BLOCKS.get().forEach((protocolVersion, mappings) -> mappings.releaseStateDefinitionMap());
         TagRegistryPopulator.populate();
+        // Run the lambda-heavy static initializer now, not on the first player's thread (was ~36% of that thread's allocation)
+        org.geysermc.geyser.item.hashing.DataComponentHashers.NOT_HASHED.size();
         trimJavaBlockStateIds();
 
         // Remove unneeded client generation data from NbtMapBuilder
