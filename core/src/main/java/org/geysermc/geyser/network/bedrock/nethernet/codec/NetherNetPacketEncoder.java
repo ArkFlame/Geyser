@@ -26,7 +26,6 @@
 package org.geysermc.geyser.network.bedrock.nethernet.codec;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
@@ -53,13 +52,14 @@ public class NetherNetPacketEncoder extends MessageToMessageEncoder<BedrockPacke
             throw new IllegalArgumentException("BedrockPacket is not encoded");
         }
 
-        CompositeByteBuf buf = ctx.alloc().compositeDirectBuffer(2);
+        // One contiguous buffer: a composite made the compressor walk nioBuffers(), allocating a slice/duplicate
+        // per component for every packet. A memcpy of the payload is far cheaper than that.
+        int length = message.readableBytes();
+        ByteBuf buf = ctx.alloc().ioBuffer(5 + length);
         BedrockBatchWrapper batch = BedrockBatchWrapper.newInstance();
         try {
-            ByteBuf header = ctx.alloc().ioBuffer(5);
-            VarInts.writeUnsignedInt(header, message.readableBytes());
-            buf.addComponent(true, header);
-            buf.addComponent(true, message.retain());
+            VarInts.writeUnsignedInt(buf, length);
+            buf.writeBytes(message, message.readerIndex(), length);
             // MessageToMessageEncoder releases the packet once we return
             batch.addPacket(packet.retain());
 
