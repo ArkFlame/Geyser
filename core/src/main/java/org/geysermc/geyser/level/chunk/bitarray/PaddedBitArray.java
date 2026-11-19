@@ -25,10 +25,10 @@
 
 package org.geysermc.geyser.level.chunk.bitarray;
 
-import org.cloudburstmc.protocol.common.util.Preconditions;
 import org.geysermc.geyser.util.MathUtils;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class PaddedBitArray implements BitArray {
 
@@ -60,8 +60,10 @@ public class PaddedBitArray implements BitArray {
 
     @Override
     public void set(int index, int value) {
-        Preconditions.checkElementIndex(index, this.size);
-        Preconditions.checkArgument(value >= 0 && value <= this.version.maxEntryValue, "Invalid value");
+        Objects.checkIndex(index, this.size);
+        if (value < 0 || value > this.version.maxEntryValue) {
+            throw new IllegalArgumentException("Invalid value " + value);
+        }
         int arrayIndex = index / this.version.entriesPerWord;
         int offset = (index % this.version.entriesPerWord) * this.version.bits;
 
@@ -70,7 +72,7 @@ public class PaddedBitArray implements BitArray {
 
     @Override
     public int get(int index) {
-        Preconditions.checkElementIndex(index, this.size);
+        Objects.checkIndex(index, this.size);
         int arrayIndex = index / this.version.entriesPerWord;
         int offset = (index % this.version.entriesPerWord) * this.version.bits;
 

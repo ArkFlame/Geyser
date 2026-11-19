@@ -25,10 +25,10 @@
 
 package org.geysermc.geyser.level.chunk.bitarray;
 
-import org.cloudburstmc.protocol.common.util.Preconditions;
 import org.geysermc.geyser.util.MathUtils;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class Pow2BitArray implements BitArray {
 
@@ -62,8 +62,11 @@ public class Pow2BitArray implements BitArray {
      * Sets the entry at the given location to the given value
      */
     public void set(int index, int value) {
-        Preconditions.checkElementIndex(index, this.size);
-        Preconditions.checkArgument(value >= 0 && value <= this.version.maxEntryValue, "Invalid value %s", value);
+        Objects.checkIndex(index, this.size);
+        if (value < 0 || value > this.version.maxEntryValue) {
+            // Plain check: Preconditions' varargs overload would box value on every single set
+            throw new IllegalArgumentException("Invalid value " + value);
+        }
         int bitIndex = index * this.version.bits;
         int arrayIndex = bitIndex >> 5;
         int offset = bitIndex & 31;
@@ -74,7 +77,7 @@ public class Pow2BitArray implements BitArray {
      * Gets the entry at the given index
      */
     public int get(int index) {
-        Preconditions.checkElementIndex(index, this.size);
+        Objects.checkIndex(index, this.size);
         int bitIndex = index * this.version.bits;
         int arrayIndex = bitIndex >> 5;
         int wordOffset = bitIndex & 31;
