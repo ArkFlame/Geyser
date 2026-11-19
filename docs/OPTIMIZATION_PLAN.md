@@ -27,3 +27,20 @@ Evidence (spark CPU AqBla6hFO4, spark alloc KPQq8QMKE2, docs/GEYSER_HEAP_PRESSUR
 - AREA-G utils/session caches (util/**, session/**): hot helpers called per packet.
 
 Verification (orchestrator): ./gradlew :core:compileJava, shadowJar, class-level review of each diff before commit.
+
+## Exact technical stacks (spark allocation KPQq8QMKE2, CPU AqBla6hFO4)
+Shares are of that thread's allocation samples.
+
+**Player thread (`Geyser NetherNet player thread`)** — chunk path, orchestrator-owned (not in worker units):
+1. ~34%: `UnpooledHeapByteBuf.allocateArray <- capacity <- AbstractByteBuf.ensureWritable0 <- writeIntLE <- BlockStorage.writeToNetwork <- JavaLevelChunkWithLightTranslator.translate`. The output buffer starts small and is regrown repeatedly. Fix: size/pool the buffer once per chunk.
+2. ~26%: `BitStorage.<init> <- MinecraftTypes.readDataPalette <- readChunkSection <- JavaLevelChunkWithLightTranslator.translate` (mcprotocollib long[] per Java section; allocation happens in the library decode).
+3. ~15%: `UnpooledByteBufAllocator.newHeapBuffer <- heapBuffer` in the same translate (per-chunk heap buffers).
+4. ~10%: `BitArrayVersion.createArray <- translate` and `<- BiomeTranslator.toNewBedrockBiome` (Bedrock int[] per section/biome).
+5. small: `LivingEntity.tick <- GeyserSession.tick`, `Entity.moveRelativeRaw <- updateHeadLookRotation <- JavaRotateHeadTranslator.translate` (Vector3f per rotate packet).
+CPU: `GeyserSession.tick` ~10.6k samples on that thread; wakeups `SingleThreadEventExecutor.execute -> eventfd_write` (cross-thread task submission per packet) and `LinkedBlockingQueue.offer -> unpark` (queue handoff).
+
+**localSession (Java decode)**: `Unpooled.wrappedBuffer <- PacketSizerCodec.decode` (a wrapper per frame); `PooledByteBuf.nioBuffers -> DirectByteBuffer.slice <- AbstractByteBuf.readBytes <- PacketCompressionCodec.decode / PacketSizerCodec.decode` (copying reads from pooled direct buffers create slice objects); `MinecraftTypes.readByteArray <- readLightUpdateData <- ClientboundLevelChunkWithLightPacket.<init>` (light data copied per chunk).
+
+**NetherNet signaling**: `DirectByteBuffer.duplicate/slice <- PooledByteBuf.nioBuffer <- PooledDirectByteBuf.setBytes <- AbstractByteBuf.writeBytes <- NetherNetPacketEncoder.encode`. The encoder's `writeBytes` from a pooled (possibly sliced) source triggers `nioBuffers` per call, so the earlier composite removal moved but did not remove this cost. Fix direction: copy via `ByteBuf.getBytes` into a heap/array or use a single `readSlice` + `ByteBuffer` write path.
+
+Unit workers own the long tail (entity ticks, caches, inventory, translators). Chunk-path items above are done by the orchestrator, not by workers.
