@@ -49,6 +49,7 @@ import org.geysermc.geyser.level.chunk.bitarray.BitArray;
 import org.geysermc.geyser.level.chunk.bitarray.BitArrayVersion;
 import org.geysermc.geyser.level.chunk.bitarray.SingletonBitArray;
 import org.geysermc.geyser.registry.BlockRegistries;
+import org.geysermc.geyser.registry.type.BlockMappings;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.registry.java.JavaRegistries;
 import org.geysermc.geyser.translator.level.BiomeTranslator;
@@ -77,7 +78,7 @@ import java.util.Map;
 
 import static org.geysermc.geyser.util.ChunkUtils.EMPTY_BLOCK_STORAGE;
 import static org.geysermc.geyser.util.ChunkUtils.EMPTY_CHUNK_SECTION_SIZE;
-import static org.geysermc.geyser.util.ChunkUtils.indexYZXtoXZY;
+import static org.geysermc.geyser.util.ChunkUtils.INDEX_YZX_TO_XZY;
 
 @Translator(packet = ClientboundLevelChunkWithLightPacket.class)
 public class JavaLevelChunkWithLightTranslator extends PacketTranslator<ClientboundLevelChunkWithLightPacket> {
@@ -112,6 +113,12 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
         int sectionCountDiff = yOffset - (bedrockDimension.minY() >> 4);
         GeyserChunkSection[] sections = new GeyserChunkSection[chunkSize + sectionCountDiff];
 
+        // Hoisted out of the per-section loops: these are constant for the whole chunk
+        BlockMappings blockMappings = session.getBlockMappings();
+        BitSet waterlogged = BlockRegistries.WATERLOGGED.get();
+        int bedrockAirRuntimeId = blockMappings.getBedrockAir().getRuntimeId();
+        int bedrockWaterRuntimeId = blockMappings.getBedrockWater().getRuntimeId();
+
         try {
             ByteBuf in = Unpooled.wrappedBuffer(packet.getChunkData());
             for (int sectionY = 0; sectionY < chunkSize; sectionY++) {
@@ -137,16 +144,16 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
 
                 if (javaPalette instanceof GlobalPalette) {
                     // As this is the global palette, simply iterate through the whole chunk section once
-                    GeyserChunkSection section = new GeyserChunkSection(session.getBlockMappings().getBedrockAir().getRuntimeId(), subChunkIndex);
+                    GeyserChunkSection section = new GeyserChunkSection(bedrockAirRuntimeId, subChunkIndex);
                     for (int yzx = 0; yzx < BlockStorage.SIZE; yzx++) {
                         int javaId = javaData.get(yzx);
                         BlockState state = BlockState.of(javaId);
-                        int bedrockId = session.getBlockMappings().getBedrockBlockId(javaId);
-                        int xzy = indexYZXtoXZY(yzx);
+                        int bedrockId = blockMappings.getBedrockBlockId(javaId);
+                        int xzy = INDEX_YZX_TO_XZY[yzx];
                         section.getBlockStorageArray()[0].setFullBlock(xzy, bedrockId);
 
-                        if (BlockRegistries.WATERLOGGED.get().get(javaId)) {
-                            section.getBlockStorageArray()[1].setFullBlock(xzy, session.getBlockMappings().getBedrockWater().getRuntimeId());
+                        if (waterlogged.get(javaId)) {
+                            section.getBlockStorageArray()[1].setFullBlock(xzy, bedrockWaterRuntimeId);
                         }
 
                         // Check if block is piston or flower to see if we'll need to create additional block entities, as they're only block entities in Bedrock
@@ -164,12 +171,12 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                 if (javaPalette instanceof SingletonPalette) {
                     // There's only one block here. Very easy!
                     int javaId = javaPalette.idToState(0);
-                    int bedrockId = session.getBlockMappings().getBedrockBlockId(javaId);
+                    int bedrockId = blockMappings.getBedrockBlockId(javaId);
                     BlockStorage blockStorage = new BlockStorage(SingletonBitArray.INSTANCE, IntLists.singleton(bedrockId));
 
-                    if (BlockRegistries.WATERLOGGED.get().get(javaId)) {
-                        BlockStorage waterlogged = new BlockStorage(SingletonBitArray.INSTANCE, IntLists.singleton(session.getBlockMappings().getBedrockWater().getRuntimeId()));
-                        sections[bedrockSectionY] = new GeyserChunkSection(new BlockStorage[] {blockStorage, waterlogged}, subChunkIndex);
+                    if (waterlogged.get(javaId)) {
+                        BlockStorage waterloggedStorage = new BlockStorage(SingletonBitArray.INSTANCE, IntLists.singleton(bedrockWaterRuntimeId));
+                        sections[bedrockSectionY] = new GeyserChunkSection(new BlockStorage[] {blockStorage, waterloggedStorage}, subChunkIndex);
                     } else {
                         sections[bedrockSectionY] = new GeyserChunkSection(new BlockStorage[] {blockStorage}, subChunkIndex);
                     }
@@ -185,9 +192,9 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                 // Iterate through palette and convert state IDs to Bedrock, doing some additional checks as we go
                 for (int i = 0; i < javaPalette.size(); i++) {
                     int javaId = javaPalette.idToState(i);
-                    bedrockPalette.add(session.getBlockMappings().getBedrockBlockId(javaId));
+                    bedrockPalette.add(blockMappings.getBedrockBlockId(javaId));
 
-                    if (BlockRegistries.WATERLOGGED.get().get(javaId)) {
+                    if (waterlogged.get(javaId)) {
                         waterloggedPaletteIds.set(i);
                     }
 
@@ -203,35 +210,29 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                     }
                 }
 
-                // Add Bedrock-exclusive block entities
-                // We only if the palette contained any blocks that are Bedrock-exclusive block entities to avoid iterating through the whole block data
-                // for no reason, as most sections will not contain any pistons or flower pots
-                if (!bedrockOnlyBlockEntityIds.isEmpty()) {
+                int bedrockDataBits = Integer.SIZE - Integer.numberOfLeadingZeros(javaPalette.size());
+                BitArray bedrockData = BitArrayVersion.forBitsCeil(bedrockDataBits).createArray(BlockStorage.SIZE);
+                BlockStorage layer0 = new BlockStorage(bedrockData, bedrockPalette);
+                BlockStorage[] layers;
+
+                // Add Bedrock-exclusive block entities while converting the data, so javaData is only read once per block
+                boolean hasBedrockOnlyBlockEntities = !bedrockOnlyBlockEntityIds.isEmpty();
+
+                // Convert data array from YZX to XZY coordinate order
+                if (waterloggedPaletteIds.isEmpty()) {
+                    // No blocks are waterlogged, simply convert coordinate order
                     for (int yzx = 0; yzx < BlockStorage.SIZE; yzx++) {
                         int paletteId = javaData.get(yzx);
-                        if (bedrockOnlyBlockEntityIds.get(paletteId)) {
+                        int xzy = INDEX_YZX_TO_XZY[yzx];
+                        bedrockData.set(xzy, paletteId);
+
+                        if (hasBedrockOnlyBlockEntities && bedrockOnlyBlockEntityIds.get(paletteId)) {
                             BlockState state = BlockState.of(javaPalette.idToState(paletteId));
                             bedrockBlockEntities.add(((BedrockChunkWantsBlockEntityTag) state.block()).createTag(session,
                                     Vector3i.from((packet.getX() << 4) + (yzx & 0xF), ((sectionY + yOffset) << 4) + ((yzx >> 8) & 0xF), (packet.getZ() << 4) + ((yzx >> 4) & 0xF)),
                                     state
                             ));
                         }
-                    }
-                }
-
-                int bedrockDataBits = Integer.SIZE - Integer.numberOfLeadingZeros(javaPalette.size());
-                BitArray bedrockData = BitArrayVersion.forBitsCeil(bedrockDataBits).createArray(BlockStorage.SIZE);
-                BlockStorage layer0 = new BlockStorage(bedrockData, bedrockPalette);
-                BlockStorage[] layers;
-
-                // Convert data array from YZX to XZY coordinate order
-                if (waterloggedPaletteIds.isEmpty()) {
-                    // No blocks are waterlogged, simply convert coordinate order
-                    // This could probably be optimized further...
-                    for (int yzx = 0; yzx < BlockStorage.SIZE; yzx++) {
-                        int paletteId = javaData.get(yzx);
-                        int xzy = indexYZXtoXZY(yzx);
-                        bedrockData.set(xzy, paletteId);
                     }
 
                     layers = new BlockStorage[]{ layer0 };
@@ -241,18 +242,26 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                     int[] layer1Data = new int[BlockStorage.SIZE >> 5];
                     for (int yzx = 0; yzx < BlockStorage.SIZE; yzx++) {
                         int paletteId = javaData.get(yzx);
-                        int xzy = indexYZXtoXZY(yzx);
+                        int xzy = INDEX_YZX_TO_XZY[yzx];
                         bedrockData.set(xzy, paletteId);
 
                         if (waterloggedPaletteIds.get(paletteId)) {
                             layer1Data[xzy >> 5] |= 1 << (xzy & 0x1F);
                         }
+
+                        if (hasBedrockOnlyBlockEntities && bedrockOnlyBlockEntityIds.get(paletteId)) {
+                            BlockState state = BlockState.of(javaPalette.idToState(paletteId));
+                            bedrockBlockEntities.add(((BedrockChunkWantsBlockEntityTag) state.block()).createTag(session,
+                                    Vector3i.from((packet.getX() << 4) + (yzx & 0xF), ((sectionY + yOffset) << 4) + ((yzx >> 8) & 0xF), (packet.getZ() << 4) + ((yzx >> 4) & 0xF)),
+                                    state
+                            ));
+                        }
                     }
-                    
+
                     // V1 palette
                     IntList layer1Palette = IntList.of(
-                            session.getBlockMappings().getBedrockAir().getRuntimeId(), // Air - see BlockStorage's constructor for more information
-                            session.getBlockMappings().getBedrockWater().getRuntimeId());
+                            bedrockAirRuntimeId, // Air - see BlockStorage's constructor for more information
+                            bedrockWaterRuntimeId);
 
                     layers = new BlockStorage[]{ layer0, new BlockStorage(BitArrayVersion.V1.createArray(BlockStorage.SIZE, layer1Data), layer1Palette) };
                 }

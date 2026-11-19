@@ -57,9 +57,19 @@ public class ChunkUtils {
     public static final byte[] EMPTY_BIOME_DATA;
     public static final BlockStorage[] EMPTY_BLOCK_STORAGE;
     public static final int EMPTY_CHUNK_SECTION_SIZE;
+    /**
+     * Precomputed YZX -> XZY index mapping for the 4096 blocks of a chunk section.
+     * Values fit in a short (0-4095), so this avoids recomputing the mapping per block.
+     */
+    public static final short[] INDEX_YZX_TO_XZY;
     private static final ConcurrentHashMap<Integer, byte[]> EMPTY_CHUNK_PAYLOAD_CACHE = new ConcurrentHashMap<>(3);
 
     static {
+        INDEX_YZX_TO_XZY = new short[BlockStorage.SIZE];
+        for (int i = 0; i < BlockStorage.SIZE; i++) {
+            INDEX_YZX_TO_XZY[i] = (short) indexYZXtoXZY(i);
+        }
+
         EMPTY_BLOCK_STORAGE = new BlockStorage[0];
 
         ByteBuf byteBuf = Unpooled.buffer();
