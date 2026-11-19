@@ -332,6 +332,26 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
             // As of 1.18.30, the amount of biomes read is dependent on how high Bedrock thinks the dimension is
             int biomeCount = bedrockDimension.height() >> 4;
 
+            // Translate biomes first so the output buffer can be sized exactly; the old estimate assumed empty
+            // biome data and the buffer was regrown (and copied) repeatedly while writing
+            int dimensionOffset = bedrockDimension.minY() >> 4;
+            BlockStorage[] biomeStorages = new BlockStorage[biomeCount];
+            int biomeSize = 0;
+            for (int i = 0; i < biomeCount; i++) {
+                int biomeYOffset = dimensionOffset + i;
+                if (biomeYOffset < yOffset) {
+                    // Below the height of the Java world: empty biome data
+                    biomeSize += ChunkUtils.EMPTY_BIOME_DATA.length;
+                } else if (biomeYOffset >= (chunkSize + yOffset)) {
+                    // Above the Java world: single byte that carries the previous biome section on
+                    biomeSize += 1;
+                } else {
+                    BlockStorage biome = BiomeTranslator.toNewBedrockBiome(session, javaBiomes[i + (dimensionOffset - yOffset)]);
+                    biomeStorages[i] = biome;
+                    biomeSize += biome.estimateNetworkSize();
+                }
+            }
+
             // Estimate chunk size
             int size = 0;
             for (int i = 0; i < sectionCount; i++) {
@@ -342,7 +362,7 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                     size += EMPTY_CHUNK_SECTION_SIZE;
                 }
             }
-            size += ChunkUtils.EMPTY_BIOME_DATA.length * biomeCount;
+            size += biomeSize;
             size += 1; // Border blocks
             size += bedrockBlockEntities.size() * 64; // Conservative estimate of 64 bytes per tile entity
 
@@ -358,22 +378,15 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                 }
             }
 
-            int dimensionOffset = bedrockDimension.minY() >> 4;
             for (int i = 0; i < biomeCount; i++) {
                 int biomeYOffset = dimensionOffset + i;
                 if (biomeYOffset < yOffset) {
-                    // Ignore this biome section since it goes below the height of the Java world
                     byteBuf.writeBytes(ChunkUtils.EMPTY_BIOME_DATA);
-                    continue;
-                }
-                if (biomeYOffset >= (chunkSize + yOffset)) {
-                    // This biome section goes above the height of the Java world
-                    // The byte written here is a header that says to carry on the biome data from the previous chunk
+                } else if (biomeYOffset >= (chunkSize + yOffset)) {
                     byteBuf.writeByte((127 << 1) | 1);
-                    continue;
+                } else {
+                    biomeStorages[i].writeToNetwork(byteBuf);
                 }
-
-                BiomeTranslator.toNewBedrockBiome(session, javaBiomes[i + (dimensionOffset - yOffset)]).writeToNetwork(byteBuf);
             }
 
             byteBuf.writeByte(0); // Border blocks - Edu edition only
