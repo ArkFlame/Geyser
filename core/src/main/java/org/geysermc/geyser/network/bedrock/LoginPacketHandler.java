@@ -75,7 +75,10 @@ public class LoginPacketHandler extends LoggingPacketHandler {
 
         ZlibCompression compression = new ZlibCompression(Zlib.RAW);
         compression.setLevel(this.geyser.config().advanced().bedrock().compressionLevel());
-        this.compressionStrategy = new SimpleCompressionStrategy(compression);
+        // BedrockPeer.setCompression replaces the codec with a prefixed one (protocol >= 649, true for every
+        // supported version), including on NetherNet. A header is therefore written for the Noop algorithm we
+        // return for small batches, so the codec never rejects it as a non-default algorithm without a prefix.
+        this.compressionStrategy = new ThresholdCompressionStrategy(new SimpleCompressionStrategy(compression), true);
     }
 
     @Override
