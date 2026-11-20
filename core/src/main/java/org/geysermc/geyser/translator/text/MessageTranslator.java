@@ -424,11 +424,12 @@ public class MessageTranslator {
     public static String convertIncomingToPlainText(String message) {
         GeyserImpl instance = GeyserImpl.getInstance();
         if (instance == null || instance.config().gameplay().blockLegacyCodes()) {
-            char[] input = message.toCharArray();
-            char[] output = new char[input.length];
+            // Read chars directly instead of copying the whole string into a temporary array first.
+            int inputLength = message.length();
+            char[] output = new char[inputLength];
             int outputSize = 0;
-            for (int i = 0, inputLength = input.length; i < inputLength; i++) {
-                char c = input[i];
+            for (int i = 0; i < inputLength; i++) {
+                char c = message.charAt(i);
                 if (c == ChatColor.ESCAPE) {
                     i++;
                 } else {
@@ -489,9 +490,11 @@ public class MessageTranslator {
         List<Object> components = HeterogeneousNbtList.tryUnwrap(list);
 
         try {
+            // locale() is invariant for the session across this loop; resolve it once.
+            String locale = session.locale();
             List<String> messages = new ArrayList<>(components.size());
             for (Object component : components) {
-                messages.add(convertMessageRaw(componentFromNbtTag(component), session.locale()));
+                messages.add(convertMessageRaw(componentFromNbtTag(component), locale));
             }
             return Collections.unmodifiableList(messages);
         } catch (RuntimeException exception) {
@@ -666,10 +669,20 @@ public class MessageTranslator {
     }
 
     private static boolean endsWith(StringBuilder builder, String suffix) {
-        if (builder.length() < suffix.length()) {
+        int suffixLength = suffix.length();
+        int builderLength = builder.length();
+        if (builderLength < suffixLength) {
             return false;
         }
-        return builder.indexOf(suffix, builder.length() - suffix.length()) != -1;
+        // The suffix can only possibly match at this exact offset; compare chars directly
+        // rather than running a general indexOf search over the tail.
+        int offset = builderLength - suffixLength;
+        for (int i = 0; i < suffixLength; i++) {
+            if (builder.charAt(offset + i) != suffix.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static void init() {

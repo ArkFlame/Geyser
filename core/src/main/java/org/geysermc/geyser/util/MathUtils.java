@@ -37,12 +37,14 @@ public class MathUtils {
         float yawCos = TrigMath.cos(yaw);
         float yawSin = TrigMath.sin(yaw);
 
+        float x = velocity.getX();
         float e = velocity.getY() * pitchCos + velocity.getZ() * pitchSin;
         float i = velocity.getZ() * pitchCos - velocity.getY() * pitchSin;
-        velocity = Vector3f.from(velocity.getX(), e, i);
 
-        float d1 = velocity.getX() * yawCos + velocity.getZ() * yawSin;
-        float i1 = velocity.getZ() * yawCos - velocity.getX() * yawSin;
+        // The intermediate rotation used to allocate a throwaway Vector3f(x, e, i).
+        // After it, getX() is still x and getZ() is exactly i, so use the locals directly.
+        float d1 = x * yawCos + i * yawSin;
+        float i1 = i * yawCos - x * yawSin;
 
         return Vector3f.from(d1, e, i1);
     }

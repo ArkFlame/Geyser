@@ -144,11 +144,15 @@ public class PacketTranslatorRegistry<T> extends AbstractMappedRegistry<Class<? 
 
         PacketTranslator<P> translator = (PacketTranslator<P>) this.mappings.get(clazz);
         if (translator != null) {
-            EventLoop eventLoop = session.getTickEventLoop();
-            if (canRunImmediately || !translator.shouldExecuteInEventLoop() || eventLoop.inEventLoop()) {
+            if (canRunImmediately || !translator.shouldExecuteInEventLoop()) {
                 translate0(session, translator, packet);
             } else {
-                eventLoop.execute(() -> translate0(session, translator, packet));
+                EventLoop eventLoop = session.getTickEventLoop();
+                if (eventLoop.inEventLoop()) {
+                    translate0(session, translator, packet);
+                } else {
+                    eventLoop.execute(() -> translate0(session, translator, packet));
+                }
             }
             return true;
         } else {

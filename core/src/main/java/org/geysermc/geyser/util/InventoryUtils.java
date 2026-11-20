@@ -71,7 +71,6 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.C
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundContainerClosePacket;
 import org.jetbrains.annotations.Contract;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -369,7 +368,12 @@ public class InventoryUtils {
             if (contents.size() == 1) {
                 return acceptsAsInput(session, contents.getFirst(), itemStack);
             }
-            return contents.stream().anyMatch(aSlotDisplay -> acceptsAsInput(session, aSlotDisplay, itemStack));
+            for (SlotDisplay aSlotDisplay : contents) {
+                if (acceptsAsInput(session, aSlotDisplay, itemStack)) {
+                    return true;
+                }
+            }
+            return false;
         }
         if (slotDisplay instanceof WithRemainderSlotDisplay remainderSlotDisplay) {
             return acceptsAsInput(session, remainderSlotDisplay.input(), itemStack);
@@ -393,7 +397,8 @@ public class InventoryUtils {
         }
         if (slotDisplay instanceof WithAnyPotionSlotDisplay(SlotDisplay display)) {
             if (display instanceof ItemStackSlotDisplay(ItemStack stack)) {
-                DataComponents clonedComponents = stack.getDataComponentsPatch() == null ? null : stack.getDataComponentsPatch().clone();
+                DataComponents components = stack.getDataComponentsPatch();
+                DataComponents clonedComponents = components == null ? null : components.clone();
                 if (clonedComponents != null) {
                     clonedComponents.remove(DataComponentTypes.POTION_CONTENTS);
                 }
@@ -427,11 +432,15 @@ public class InventoryUtils {
             }
         }
 
+        // Build once; acceptsAsInput only reads this stack (the potion branch mutates a copy), so it can be reused
+        // for every recipe instead of allocating a new GeyserItemStack per recipe.
+        GeyserItemStack outputStack = output == null ? null : GeyserItemStack.from(session, output);
+
         recipes:
         for (GeyserRecipe recipe : session.getCraftingRecipes().values()) {
             if (recipe.isShaped()) {
                 GeyserShapedRecipe shapedRecipe = (GeyserShapedRecipe) recipe;
-                if (output != null && !acceptsAsInput(session, shapedRecipe.result(), GeyserItemStack.from(session, output))) {
+                if (output != null && !acceptsAsInput(session, shapedRecipe.result(), outputStack)) {
                     continue;
                 }
                 List<SlotDisplay> ingredients = shapedRecipe.ingredients();
@@ -439,26 +448,16 @@ public class InventoryUtils {
                     continue;
                 }
 
-                if (!testShapedRecipe(session, ingredients, inventoryGetter, gridDimensions, firstRow, height, firstCol, width)) {
-                    List<SlotDisplay> mirroredIngredients = new ArrayList<>(ingredients.size());
-                    for (int row = 0; row < height; row++) {
-                        for (int col = 0; col < width; col++) {
-                            int index = col + (row * width);
-                            while (mirroredIngredients.size() <= index) {
-                                mirroredIngredients.add(null);
-                            }
-                            mirroredIngredients.set(index, ingredients.get((width - 1 - col) + (row * width)));
-                        }
-                    }
-
-                    if (ingredients.equals(mirroredIngredients) ||
-                            !testShapedRecipe(session, mirroredIngredients, inventoryGetter, gridDimensions, firstRow, height, firstCol, width)) {
+                if (!testShapedRecipe(session, ingredients, inventoryGetter, gridDimensions, firstRow, height, firstCol, width, false)) {
+                    // Check the mirrored layout without allocating a temporary list; the mirror only reverses columns
+                    if (isMirrored(ingredients, height, width) ||
+                            !testShapedRecipe(session, ingredients, inventoryGetter, gridDimensions, firstRow, height, firstCol, width, true)) {
                         continue;
                     }
                 }
             } else {
                 GeyserShapelessRecipe data = (GeyserShapelessRecipe) recipe;
-                if (output != null && !acceptsAsInput(session, data.result(), GeyserItemStack.from(session, output))) {
+                if (output != null && !acceptsAsInput(session, data.result(), outputStack)) {
                     continue;
                 }
                 if (nonAirCount != data.ingredients().size()) {
@@ -488,17 +487,34 @@ public class InventoryUtils {
         return null;
     }
 
+    /**
+     * Returns whether horizontally mirroring the recipe grid produces the same ingredient layout.
+     */
+    private static boolean isMirrored(List<SlotDisplay> ingredients, int height, int width) {
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                int index = col + (row * width);
+                if (!Objects.equals(ingredients.get(index), ingredients.get((width - 1 - col) + (row * width)))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private static boolean testShapedRecipe(final GeyserSession session, final List<SlotDisplay> ingredients, final IntFunction<GeyserItemStack> inventoryGetter,
-                                            final int gridDimensions, final int firstRow, final int height, final int firstCol, final int width) {
+                                            final int gridDimensions, final int firstRow, final int height, final int firstCol, final int width, boolean mirrored) {
         int ingredientIndex = 0;
         for (int row = firstRow; row < height + firstRow; row++) {
             for (int col = firstCol; col < width + firstCol; col++) {
                 GeyserItemStack geyserItemStack = inventoryGetter.apply(col + (row * gridDimensions) + 1);
-                SlotDisplay slotDisplay = ingredients.get(ingredientIndex++);
+                int index = mirrored ? ((row - firstRow) * width) + (width - 1 - (col - firstCol)) : ingredientIndex;
+                SlotDisplay slotDisplay = ingredients.get(index);
                 if (!acceptsAsInput(session, slotDisplay, geyserItemStack)) {
                     return false;
                 }
+                ingredientIndex++;
             }
         }
         return true;

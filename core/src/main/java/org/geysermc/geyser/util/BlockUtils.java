@@ -107,9 +107,10 @@ public final class BlockUtils {
 
     private static float getPlayerDestroySpeed(GeyserSession session, Block block, GeyserItemStack itemInHand) {
         float destroySpeed = getItemDestroySpeed(session, block, itemInHand);
+        var playerEntity = session.getPlayerEntity();
 
         if (destroySpeed > 1.0F) {
-            destroySpeed += (float) session.getPlayerEntity().getMiningEfficiency();
+            destroySpeed += (float) playerEntity.getMiningEfficiency();
         }
 
         EntityEffectCache effectCache = session.getEffectCache();
@@ -118,8 +119,9 @@ public final class BlockUtils {
             destroySpeed *= 1.0F + miningSpeedMultiplier * 0.2F;
         }
 
-        if (effectCache.getMiningFatigue() != 0) {
-            float slowdown = switch (effectCache.getMiningFatigue()) {
+        int miningFatigue = effectCache.getMiningFatigue();
+        if (miningFatigue != 0) {
+            float slowdown = switch (miningFatigue) {
                 case 1 -> 0.3F;
                 case 2 -> 0.09F;
                 case 3 -> 0.0027F;
@@ -128,12 +130,12 @@ public final class BlockUtils {
             destroySpeed *= slowdown;
         }
 
-        destroySpeed *= (float) session.getPlayerEntity().getBlockBreakSpeed();
+        destroySpeed *= (float) playerEntity.getBlockBreakSpeed();
         if (session.getCollisionManager().isWaterInEyes()) {
-            destroySpeed *= (float) session.getPlayerEntity().getSubmergedMiningSpeed();
+            destroySpeed *= (float) playerEntity.getSubmergedMiningSpeed();
         }
 
-        if (!session.getPlayerEntity().isOnGround()) {
+        if (!playerEntity.isOnGround()) {
             destroySpeed /= 5.0F;
         }
 
@@ -262,13 +264,14 @@ public final class BlockUtils {
     }
 
     public static boolean blockMatchesPredicate(GeyserSession session, BlockState state, AdventureModePredicate.BlockPredicate predicate) {
-        if (predicate.getBlocks() != null && !state.block().is(session, predicate.getBlocks())) {
+        Block block = state.block();
+        if (predicate.getBlocks() != null && !block.is(session, predicate.getBlocks())) {
             return false;
         } else if (predicate.getProperties() != null) {
             List<AdventureModePredicate.PropertyMatcher> matchers = predicate.getProperties();
             if (!matchers.isEmpty()) {
                 for (AdventureModePredicate.PropertyMatcher matcher : matchers) {
-                    for (Property<?> property : state.block().propertyKeys()) {
+                    for (Property<?> property : block.propertyKeys()) {
                         if (matcher.getName().equals(property.name())) {
                             if (!propertyMatchesPredicate(state, property, matcher)) {
                                 return false;

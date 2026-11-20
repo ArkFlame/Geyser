@@ -72,6 +72,7 @@ public class SkinManager {
         .expireAfterAccess(1, TimeUnit.HOURS)
         .build();
     private static final UUID EMPTY_UUID = new UUID(0L, 0L);
+    private static final Color SKIN_COLOR = new Color(0, true);
     static final String GEOMETRY = new String(FileUtils.readAllBytes("bedrock/geometries/geo.json"), StandardCharsets.UTF_8);
 
     /**
@@ -147,7 +148,7 @@ public class SkinManager {
             .fullSkinId(skinId)
             .geometryDataEngineVersion(session.getClientData().getGameVersion())
             .overridingPlayerAppearance(true)
-            .color(new Color(0, true))
+            .color(SKIN_COLOR)
             .trusted(true)
             .profileHash("") // TODO Look into this, the session sends it, so it's probably important for skins to work correctly
             .build();
@@ -163,8 +164,9 @@ public class SkinManager {
             // If properties have been provided to us, or no ID and no name have been provided, create a static profile from
             // what we do know
             // This replicates vanilla Java client behaviour
-            String name = partial.getName() == null ? "" : partial.getName();
-            UUID uuid = partial.getName() == null ? EMPTY_UUID : createOfflinePlayerUUID(partial.getName());
+            String profileName = partial.getName();
+            String name = profileName == null ? "" : profileName;
+            UUID uuid = profileName == null ? EMPTY_UUID : createOfflinePlayerUUID(profileName);
             GameProfile completed = new GameProfile(uuid, name);
             completed.setProperties(partial.getProperties());
             return CompletableFuture.completedFuture(completed);

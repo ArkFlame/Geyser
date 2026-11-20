@@ -118,6 +118,11 @@ public class StructureBlockUtils {
             }
         }
 
+        // The default (no rotation, no mirror) case leaves the offset at zero; reuse the
+        // shared immutable constant instead of allocating an identical vector each call.
+        if (newOffsetX == 0 && newOffsetZ == 0) {
+            return Vector3i.ZERO;
+        }
         return Vector3i.from(newOffsetX, 0, newOffsetZ);
     }
 

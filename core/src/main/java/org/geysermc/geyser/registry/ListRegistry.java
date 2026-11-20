@@ -58,11 +58,12 @@ public class ListRegistry<M> extends Registry<List<M>> implements Iterable<M> {
      */
     @Nullable
     public M get(int index) {
-        if (index < 0 || index >= this.mappings.size()) {
+        List<M> mappings = this.mappings;
+        if (index < 0 || index >= mappings.size()) {
             return null;
         }
 
-        return this.mappings.get(index);
+        return mappings.get(index);
     }
 
     /**

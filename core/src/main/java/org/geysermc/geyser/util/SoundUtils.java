@@ -54,7 +54,7 @@ public final class SoundUtils {
      */
     public static @Nullable SoundEvent toSoundEvent(String sound) {
         try {
-            return SoundEvent.valueOf(sound.toUpperCase(Locale.ROOT).replace(".", "_"));
+            return SoundEvent.valueOf(sound.toUpperCase(Locale.ROOT).replace('.', '_'));
         } catch (Exception ex) {
             return null;
         }

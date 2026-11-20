@@ -174,7 +174,12 @@ public class FakeHeadProvider {
 
         @Override
         public int hashCode() {
-            return Objects.hash(originalSkinId, fakeHeadSkinUrl);
+            // Inline Objects.hash(a, b) (i.e. Arrays.hashCode of a two-element array) to avoid
+            // allocating the varargs Object[] on every cache lookup. Same resulting hash value.
+            int result = 1;
+            result = 31 * result + (originalSkinId != null ? originalSkinId.hashCode() : 0);
+            result = 31 * result + (fakeHeadSkinUrl != null ? fakeHeadSkinUrl.hashCode() : 0);
+            return result;
         }
     }
 
