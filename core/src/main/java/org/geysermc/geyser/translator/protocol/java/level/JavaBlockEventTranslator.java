@@ -32,7 +32,9 @@ import org.cloudburstmc.nbt.NbtMapBuilder;
 import org.cloudburstmc.nbt.NbtType;
 import org.cloudburstmc.protocol.bedrock.packet.BlockEntityDataPacket;
 import org.cloudburstmc.protocol.bedrock.packet.BlockEventPacket;
+import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.util.PlatformType;
+import org.geysermc.geyser.level.WorldManager;
 import org.geysermc.geyser.level.block.Blocks;
 import org.geysermc.geyser.level.block.property.Properties;
 import org.geysermc.geyser.level.block.type.Block;
@@ -74,6 +76,9 @@ public class JavaBlockEventTranslator extends PacketTranslator<ClientboundBlockE
             return;
         }
 
+        GeyserImpl geyser = session.getGeyser();
+        WorldManager worldManager = geyser.getWorldManager();
+
         BlockEventPacket blockEventPacket = new BlockEventPacket();
         blockEventPacket.setBlockPosition(position);
 
@@ -85,7 +90,7 @@ public class JavaBlockEventTranslator extends PacketTranslator<ClientboundBlockE
             blockEventPacket.setEventType(1);
             session.sendUpstreamPacket(blockEventPacket);
         } else if (value instanceof NoteBlockValue) {
-            session.getGeyser().getWorldManager().getBlockAtAsync(session, position).thenAccept(blockState -> {
+            worldManager.getBlockAtAsync(session, position).thenAccept(blockState -> {
                 blockEventPacket.setEventData(BlockState.of(blockState).getValue(Properties.NOTE));
                 session.sendUpstreamPacket(blockEventPacket);
             });
@@ -94,24 +99,24 @@ public class JavaBlockEventTranslator extends PacketTranslator<ClientboundBlockE
             Direction direction = Direction.fromMCPL(pistonValue.getDirection());
             PistonCache pistonCache = session.getPistonCache();
 
-            if (session.getGeyser().getWorldManager().hasOwnChunkCache() || session.getErosionHandler().isActive()) {
+            if (worldManager.hasOwnChunkCache() || session.getErosionHandler().isActive()) {
                 // Mostly handled in the GeyserPistonEvents class (Spigot) / the PistonBlockBaseMixin (Mod platforms)
                 // However, the retracting event is not fully covered. (Spigot)
                 // Mod platforms only handle pistons moving blocks; not the retracting of pistons.
                 if (action == PistonValueType.PULLING || action == PistonValueType.CANCELLED_MID_PUSH) {
-                    BlockState pistonBlock = session.getGeyser().getWorldManager().blockAt(session, position);
+                    BlockState pistonBlock = worldManager.blockAt(session, position);
 
                     // Retracting sticky pistons is an exception, since the event is not called on Spigot from 1.13.2 - 1.17.1
                     // See https://github.com/PaperMC/Paper/blob/6fa1983e9ce177a4a412d5b950fd978620174777/patches/server/0304-Fire-BlockPistonRetractEvent-for-all-empty-pistons.patch
                     boolean isSticky = isSticky(pistonBlock);
-                    if (session.getGeyser().platformType() == PlatformType.SPIGOT && !isSticky) {
+                    if (geyser.platformType() == PlatformType.SPIGOT && !isSticky) {
                         return;
                     }
 
                     // Only sticky pistons that don't pull any blocks are affected
                     if (action != PistonValueType.CANCELLED_MID_PUSH && isSticky) {
                         Vector3i blockInFrontPos = position.add(direction.getUnitVector());
-                        int blockInFront = session.getGeyser().getWorldManager().getBlockAt(session, blockInFrontPos);
+                        int blockInFront = worldManager.getBlockAt(session, blockInFrontPos);
                         if (blockInFront != Block.JAVA_AIR_ID) {
                             // Piston pulled something
                             return;
@@ -124,7 +129,7 @@ public class JavaBlockEventTranslator extends PacketTranslator<ClientboundBlockE
                 }
             } else {
                 PistonBlockEntity blockEntity = pistonCache.getPistons().computeIfAbsent(position, pos -> {
-                    BlockState state = session.getGeyser().getWorldManager().blockAt(session, position);
+                    BlockState state = worldManager.blockAt(session, position);
                     boolean sticky = isSticky(state);
                     boolean extended = action != PistonValueType.PUSHING;
                     return new PistonBlockEntity(session, pos, direction, sticky, extended);
@@ -157,7 +162,7 @@ public class JavaBlockEventTranslator extends PacketTranslator<ClientboundBlockE
             // Decorated pots - wobble wobble
             // We need to send the sherd data with the client, but we don't really care about latency here so we
             // can safely get this from the server
-            session.getGeyser().getWorldManager().getDecoratedPotData(session, position, sherds -> {
+            worldManager.getDecoratedPotData(session, position, sherds -> {
                 BlockEntityDataPacket blockEntityPacket = new BlockEntityDataPacket();
                 blockEntityPacket.setBlockPosition(position);
 
@@ -171,8 +176,8 @@ public class JavaBlockEventTranslator extends PacketTranslator<ClientboundBlockE
                 blockEntityPacket.setData(builder.build());
                 session.sendUpstreamPacket(blockEntityPacket);
             });
-        } else if (session.getGeyser().getLogger().isDebug()) {
-            session.getGeyser().getLogger().debug("Unhandled block event packet: " + packet);
+        } else if (geyser.getLogger().isDebug()) {
+            geyser.getLogger().debug("Unhandled block event packet: " + packet);
         }
     }
 

@@ -56,7 +56,6 @@ import org.geysermc.geyser.translator.protocol.Translator;
 import org.geysermc.geyser.util.MinecraftKey;
 import org.geysermc.mcprotocollib.protocol.data.game.Holder;
 import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
-import org.geysermc.mcprotocollib.protocol.data.game.item.component.HolderSet;
 import org.geysermc.mcprotocollib.protocol.data.game.recipe.display.slot.ItemStackSlotDisplay;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundUpdateRecipesPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundUpdateRecipesPacket.SelectableRecipe;
@@ -177,15 +176,15 @@ public class JavaUpdateRecipesTranslator extends PacketTranslator<ClientboundUpd
             // (Recipes are ordered differently between Paper and vanilla)
             // See #5150.
             int buttonId = 0;
+            // These are invariants for the whole entry (javaInput is the map key), so resolve once.
+            int javaInput = data.getIntKey();
+            ItemMapping mapping = session.getItemMappings().getMapping(javaInput);
+            if (mapping.getJavaItem() == Items.AIR) {
+                // Modded ?
+                continue;
+            }
             for (SelectableRecipe recipe : data.getValue()) {
                 // As of 1.16.4, all stonecutter recipes have one ingredient option
-                HolderSet ingredient = recipe.input().getValues();
-                int javaInput = data.getIntKey();
-                ItemMapping mapping = session.getItemMappings().getMapping(javaInput);
-                if (mapping.getJavaItem() == Items.AIR) {
-                    // Modded ?
-                    continue;
-                }
                 ItemDescriptorWithCount descriptor = new ItemDescriptorWithCount(new DefaultDescriptor(mapping.getBedrockDefinition(), mapping.getBedrockData()), 1);
                 ItemStack javaOutput = ((ItemStackSlotDisplay) recipe.recipe()).itemStack();
                 ItemData output = ItemTranslator.translateToBedrock(session, javaOutput);

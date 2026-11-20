@@ -52,13 +52,14 @@ public class JavaSetPassengersTranslator extends PacketTranslator<ClientboundSet
         if (entity == null) return;
 
         // Handle new/existing passengers
-        List<Entity> newPassengers = new ArrayList<>();
         int @NonNull [] passengerIds = packet.getPassengerIds();
+        List<Entity> newPassengers = new ArrayList<>(passengerIds.length);
+        var playerEntity = session.getPlayerEntity();
         for (int i = 0; i < passengerIds.length; i++) {
             int passengerId = passengerIds[i];
             Entity passenger = session.getEntityCache().getEntityByJavaId(passengerId);
-            if (passenger == session.getPlayerEntity()) {
-                session.getPlayerEntity().setVehicle(entity);
+            if (passenger == playerEntity) {
+                playerEntity.setVehicle(entity);
                 // We need to confirm teleports before entering a vehicle, or else we will likely exit right out
                 session.confirmTeleport(passenger.position());
 
@@ -72,7 +73,7 @@ public class JavaSetPassengersTranslator extends PacketTranslator<ClientboundSet
                 continue;
             }
 
-            boolean rider = packet.getPassengerIds()[0] == passengerId;
+            boolean rider = passengerIds[0] == passengerId;
             EntityLinkData.Type type = rider ? EntityLinkData.Type.RIDER : EntityLinkData.Type.PASSENGER;
             SetEntityLinkPacket linkPacket = new SetEntityLinkPacket();
             linkPacket.setEntityLink(new EntityLinkData(entity.geyserId(), passenger.geyserId(), type, false, false, 0f));
@@ -81,7 +82,7 @@ public class JavaSetPassengersTranslator extends PacketTranslator<ClientboundSet
 
             passenger.setVehicle(entity);
             EntityUtils.updateRiderRotationLock(passenger, entity, true);
-            EntityUtils.updateMountOffset(passenger, entity, rider, true, i, packet.getPassengerIds().length);
+            EntityUtils.updateMountOffset(passenger, entity, rider, true, i, passengerIds.length);
             // Force an update to the passenger metadata
             passenger.updateBedrockMetadata();
             passenger.setMotion(Vector3f.ZERO);
@@ -113,12 +114,12 @@ public class JavaSetPassengersTranslator extends PacketTranslator<ClientboundSet
 
                 passenger.stopRiding(entity);
                 EntityUtils.updateRiderRotationLock(passenger, entity, false);
-                EntityUtils.updateMountOffset(passenger, entity, false, false, i, packet.getPassengerIds().length);
+                EntityUtils.updateMountOffset(passenger, entity, false, false, i, passengerIds.length);
                 // Force an update to the passenger metadata
                 passenger.updateBedrockMetadata();
 
-                if (passenger == session.getPlayerEntity()) {
-                    session.getPlayerEntity().setRemovedPlayerVehicleId(null);
+                if (passenger == playerEntity) {
+                    playerEntity.setRemovedPlayerVehicleId(null);
 
                     //TODO test
                     if (session.getMountVehicleScheduledFuture() != null) {

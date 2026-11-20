@@ -85,7 +85,7 @@ public class JavaGameEventTranslator extends PacketTranslator<ClientboundGameEve
 
                 session.sendAdventureSettings();
 
-                if (session.getPlayerEntity().isOnGround() && gameMode == GameMode.SPECTATOR) {
+                if (entity.isOnGround() && gameMode == GameMode.SPECTATOR) {
                     // Fix a bug where the player has glitched movement and thinks they are still on the ground
                     MovePlayerPacket movePlayerPacket = new MovePlayerPacket();
                     movePlayerPacket.setRuntimeEntityId(entity.geyserId());

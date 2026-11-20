@@ -90,6 +90,12 @@ public class JavaMountScreenOpenTranslator extends PacketTranslator<ClientboundM
         SADDLE_SLOT = saddleBuilder.build();
     }
 
+    // The slot lists are fixed and immutable; share them instead of allocating a new list per packet.
+    private static final List<NbtMap> CARPET_SLOTS = Collections.singletonList(CARPET_SLOT);
+    private static final List<NbtMap> SADDLE_SLOTS = Collections.singletonList(SADDLE_SLOT);
+    private static final List<NbtMap> NAUTILUS_ARMOR_SLOTS = List.of(SADDLE_SLOT, NAUTILUS_ARMOR_SLOT);
+    private static final List<NbtMap> HORSE_ARMOR_SLOTS = List.of(SADDLE_SLOT, HORSE_ARMOR_SLOT);
+
     private static NbtMap buildAcceptedArmorSlot(String[] accepted, String name) {
         NbtMapBuilder armorBuilder = NbtMap.builder();
         List<NbtMap> acceptedArmors = new ArrayList<>(4);
@@ -123,7 +129,7 @@ public class JavaMountScreenOpenTranslator extends PacketTranslator<ClientboundM
         updateEquipPacket.setUniqueEntityId(entity.geyserId());
 
         NbtMapBuilder builder = NbtMap.builder();
-        List<NbtMap> slots = new ArrayList<>();
+        List<NbtMap> slots;
 
         // Since 1.20.5, the armor slot is not included in the container size,
         // but everything is still indexed the same.
@@ -136,14 +142,14 @@ public class JavaMountScreenOpenTranslator extends PacketTranslator<ClientboundM
                     slotCount += llamaEntity.getStrength() * 3;
                 }
                 inventoryTranslator = new LlamaInventoryTranslator(slotCount);
-                slots.add(CARPET_SLOT);
+                slots = CARPET_SLOTS;
             }
             case ChestedHorseEntity ignored -> {
                 if (entity.getFlag(EntityFlag.CHESTED)) {
                     slotCount += 15;
                 }
                 inventoryTranslator = new DonkeyInventoryTranslator(slotCount);
-                slots.add(SADDLE_SLOT);
+                slots = SADDLE_SLOTS;
             }
             case CamelEntity ignored -> {
                 if (entity.getFlag(EntityFlag.CHESTED)) {
@@ -151,15 +157,16 @@ public class JavaMountScreenOpenTranslator extends PacketTranslator<ClientboundM
                 }
                 // The camel has an invisible armor slot and needs special handling, same as the donkey
                 inventoryTranslator = new DonkeyInventoryTranslator(slotCount);
-                slots.add(SADDLE_SLOT);
+                slots = SADDLE_SLOTS;
             }
             default -> {
                 inventoryTranslator = new MountInventoryTranslator(slotCount);
-                slots.add(SADDLE_SLOT);
                 if (entity instanceof NautilusEntity) {
-                    slots.add(NAUTILUS_ARMOR_SLOT);
+                    slots = NAUTILUS_ARMOR_SLOTS;
                 } else if (!(entity instanceof SkeletonHorseEntity)) {
-                    slots.add(HORSE_ARMOR_SLOT);
+                    slots = HORSE_ARMOR_SLOTS;
+                } else {
+                    slots = SADDLE_SLOTS;
                 }
             }
         }

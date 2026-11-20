@@ -70,8 +70,7 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
         if (entity == null)
             return;
 
-        EntityEventPacket entityEventPacket = new EntityEventPacket();
-        entityEventPacket.setRuntimeEntityId(entity.geyserId());
+        EntityEventType eventType = null;
         switch (packet.getEvent()) {
             case PLAYER_ENABLE_REDUCED_DEBUG:
                 session.setReducedDebugInfo(true);
@@ -101,7 +100,7 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                 return;
 
             case LIVING_DEATH:
-                entityEventPacket.setType(EntityEventType.DEATH);
+                eventType = EntityEventType.DEATH;
                 if (entity instanceof ThrowableEggEntity egg) {
                     LevelEventPacket particlePacket = new LevelEventPacket();
                     particlePacket.setType(ParticleType.ICON_CRACK);
@@ -120,17 +119,17 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                 }
                 break;
             case WOLF_SHAKE_WATER:
-                entityEventPacket.setType(EntityEventType.SHAKE_WETNESS);
+                eventType = EntityEventType.SHAKE_WETNESS;
                 break;
             case WOLF_SHAKE_WATER_STOP:
-                entityEventPacket.setType(EntityEventType.SHAKE_WETNESS_STOP);
+                eventType = EntityEventType.SHAKE_WETNESS_STOP;
                 break;
             case PLAYER_FINISH_USING_ITEM:
                 if (entity instanceof SessionPlayerEntity) {
                     entity.setFlag(EntityFlag.USING_ITEM, false);
                 }
 
-                entityEventPacket.setType(EntityEventType.USE_ITEM);
+                eventType = EntityEventType.USE_ITEM;
                 break;
             case FISHING_HOOK_PULL_PLAYER:
                 // Player is pulled from a fishing rod
@@ -148,10 +147,10 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                 }
                 return;
             case TAMEABLE_TAMING_FAILED:
-                entityEventPacket.setType(EntityEventType.TAME_FAILED);
+                eventType = EntityEventType.TAME_FAILED;
                 break;
             case TAMEABLE_TAMING_SUCCEEDED:
-                entityEventPacket.setType(EntityEventType.TAME_SUCCEEDED);
+                eventType = EntityEventType.TAME_SUCCEEDED;
                 break;
             case ZOMBIE_VILLAGER_CURE: // Played when a zombie bites the golden apple
                 LevelSoundEventPacket soundPacket = new LevelSoundEventPacket();
@@ -164,13 +163,13 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                 return;
             case VILLAGER_MATE:
             case ANIMAL_EMIT_HEARTS:
-                entityEventPacket.setType(EntityEventType.LOVE_PARTICLES);
+                eventType = EntityEventType.LOVE_PARTICLES;
                 break;
             case FIREWORK_EXPLODE:
-                entityEventPacket.setType(EntityEventType.FIREWORK_EXPLODE);
+                eventType = EntityEventType.FIREWORK_EXPLODE;
                 break;
             case WITCH_EMIT_PARTICLES:
-                entityEventPacket.setType(EntityEventType.WITCH_HAT_MAGIC); //TODO: CHECK
+                eventType = EntityEventType.WITCH_HAT_MAGIC; //TODO: CHECK
                 break;
             case TOTEM_OF_UNDYING_MAKE_SOUND:
                 // Bedrock will not play the spinning animation without the item in the hand o.o
@@ -183,7 +182,7 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                     session.sendUpstreamPacket(offhandPacket);
                 }
 
-                entityEventPacket.setType(EntityEventType.CONSUME_TOTEM);
+                eventType = EntityEventType.CONSUME_TOTEM;
 
                 PlaySoundPacket playSoundPacket = new PlaySoundPacket();
                 playSoundPacket.setSound("random.totem");
@@ -193,7 +192,10 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                 session.sendUpstreamPacket(playSoundPacket);
 
                 // Sent here early to ensure we have the totem in our hand
-                session.sendUpstreamPacket(entityEventPacket);
+                EntityEventPacket totemPacket = new EntityEventPacket();
+                totemPacket.setRuntimeEntityId(entity.geyserId());
+                totemPacket.setType(EntityEventType.CONSUME_TOTEM);
+                session.sendUpstreamPacket(totemPacket);
 
                 if (totemItemWorkaround) {
                     // Reset the item again
@@ -203,19 +205,19 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                 return;
             case SHEEP_GRAZE_OR_TNT_CART_EXPLODE:
                 if (entity.getJavaDefinition() == VanillaEntities.SHEEP) {
-                    entityEventPacket.setType(EntityEventType.EAT_GRASS);
+                    eventType = EntityEventType.EAT_GRASS;
                 } else {
-                    entityEventPacket.setType(EntityEventType.PRIME_TNT_MINECART);
+                    eventType = EntityEventType.PRIME_TNT_MINECART;
                 }
                 break;
             case IRON_GOLEM_HOLD_POPPY:
-                entityEventPacket.setType(EntityEventType.GOLEM_FLOWER_OFFER);
+                eventType = EntityEventType.GOLEM_FLOWER_OFFER;
                 break;
             case VILLAGER_ANGRY:
-                entityEventPacket.setType(EntityEventType.VILLAGER_ANGRY);
+                eventType = EntityEventType.VILLAGER_ANGRY;
                 break;
             case VILLAGER_HAPPY:
-                entityEventPacket.setType(EntityEventType.VILLAGER_HAPPY);
+                eventType = EntityEventType.VILLAGER_HAPPY;
                 break;
             case VILLAGER_SWEAT:
                 LevelEventPacket levelEventPacket = new LevelEventPacket();
@@ -224,12 +226,12 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                 session.sendUpstreamPacket(levelEventPacket);
                 return;
             case IRON_GOLEM_EMPTY_HAND:
-                entityEventPacket.setType(EntityEventType.GOLEM_FLOWER_WITHDRAW);
+                eventType = EntityEventType.GOLEM_FLOWER_WITHDRAW;
                 break;
             case ATTACK:
                 if (entity.getJavaDefinition().is(EntityType.IRON_GOLEM) || entity.getJavaDefinition().is(EntityType.EVOKER_FANGS)
                         || entity.getJavaDefinition().is(EntityType.WARDEN)) {
-                    entityEventPacket.setType(EntityEventType.ATTACK_START);
+                    eventType = EntityEventType.ATTACK_START;
                     if (entity.getJavaDefinition().is(EntityType.EVOKER_FANGS)) {
                         ((EvokerFangsEntity) entity).setAttackStarted();
                     }
@@ -273,24 +275,24 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                 return;
             case GOAT_LOWERING_HEAD:
                 if (entity.getJavaDefinition() == VanillaEntities.GOAT) {
-                    entityEventPacket.setType(EntityEventType.ATTACK_START);
+                    eventType = EntityEventType.ATTACK_START;
                 }
                 break;
             case GOAT_STOP_LOWERING_HEAD:
                 if (entity.getJavaDefinition() == VanillaEntities.GOAT) {
-                    entityEventPacket.setType(EntityEventType.ATTACK_STOP);
+                    eventType = EntityEventType.ATTACK_STOP;
                 }
                 break;
             case MAKE_POOF_PARTICLES:
                 if (entity instanceof LivingEntity) {
                     // Note that this event usually makes noise, but because we set all entities as silent on the
                     // client end this isn't an issue.
-                    entityEventPacket.setType(EntityEventType.DEATH_SMOKE_CLOUD);
+                    eventType = EntityEventType.DEATH_SMOKE_CLOUD;
                 }
                 break;
             case WARDEN_RECEIVE_SIGNAL:
                 if (entity.getJavaDefinition() == VanillaEntities.WARDEN) {
-                    entityEventPacket.setType(EntityEventType.VIBRATION_DETECTED);
+                    eventType = EntityEventType.VIBRATION_DETECTED;
                 }
                 break;
             case WARDEN_SONIC_BOOM:
@@ -315,7 +317,10 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                 GeyserImpl.getInstance().getLogger().debug("unhandled entity event: " + packet);
         }
 
-        if (entityEventPacket.getType() != null) {
+        if (eventType != null) {
+            EntityEventPacket entityEventPacket = new EntityEventPacket();
+            entityEventPacket.setRuntimeEntityId(entity.geyserId());
+            entityEventPacket.setType(eventType);
             session.sendUpstreamPacket(entityEventPacket);
         }
     }

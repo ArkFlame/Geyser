@@ -55,6 +55,14 @@ import java.util.List;
 @Translator(packet = ClientboundMerchantOffersPacket.class)
 public class JavaMerchantOffersTranslator extends PacketTranslator<ClientboundMerchantOffersPacket> {
 
+    private static final List<NbtMap> TIER_EXP_REQUIREMENTS = List.of(
+            NbtMap.builder().putInt("0", 0).build(),
+            NbtMap.builder().putInt("1", 10).build(),
+            NbtMap.builder().putInt("2", 70).build(),
+            NbtMap.builder().putInt("3", 150).build(),
+            NbtMap.builder().putInt("4", 250).build()
+    );
+
     @Override
     public void translate(GeyserSession session, ClientboundMerchantOffersPacket packet) {
         InventoryHolder<?> holder = session.getInventoryHolder();
@@ -108,10 +116,11 @@ public class JavaMerchantOffersTranslator extends PacketTranslator<ClientboundMe
         updateTradePacket.setTraderUniqueEntityId(villager.geyserId());
 
         NbtMapBuilder builder = NbtMap.builder();
+        List<VillagerTrade> offers = packet.getOffers();
         boolean addExtraTrade = packet.isShowProgress() && packet.getVillagerLevel() < 5;
-        List<NbtMap> tags = new ArrayList<>(addExtraTrade ? packet.getOffers().size() + 1 : packet.getOffers().size());
-        for (int i = 0; i < packet.getOffers().size(); i++) {
-            VillagerTrade trade = packet.getOffers().get(i);
+        List<NbtMap> tags = new ArrayList<>(addExtraTrade ? offers.size() + 1 : offers.size());
+        for (int i = 0; i < offers.size(); i++) {
+            VillagerTrade trade = offers.get(i);
             NbtMapBuilder recipe = NbtMap.builder();
             recipe.putInt("netId", i + 1);
             recipe.putInt("maxUses", trade.isOutOfStock() ? 0 : trade.getMaxUses());
@@ -153,13 +162,7 @@ public class JavaMerchantOffersTranslator extends PacketTranslator<ClientboundMe
 
         builder.putList("Recipes", NbtType.COMPOUND, tags);
 
-        List<NbtMap> expTags = new ArrayList<>(5);
-        expTags.add(NbtMap.builder().putInt("0", 0).build());
-        expTags.add(NbtMap.builder().putInt("1", 10).build());
-        expTags.add(NbtMap.builder().putInt("2", 70).build());
-        expTags.add(NbtMap.builder().putInt("3", 150).build());
-        expTags.add(NbtMap.builder().putInt("4", 250).build());
-        builder.putList("TierExpRequirements", NbtType.COMPOUND, expTags);
+        builder.putList("TierExpRequirements", NbtType.COMPOUND, TIER_EXP_REQUIREMENTS);
 
         updateTradePacket.setOffers(builder.build());
         session.sendUpstreamPacket(updateTradePacket);

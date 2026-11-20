@@ -28,6 +28,7 @@ package org.geysermc.geyser.translator.protocol.java;
 import com.google.common.base.Charsets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import net.kyori.adventure.key.Key;
 import org.cloudburstmc.protocol.bedrock.packet.TransferPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UnknownPacket;
 import org.geysermc.cumulus.Forms;
@@ -51,6 +52,8 @@ import java.nio.charset.StandardCharsets;
 
 @Translator(packet = ClientboundCustomPayloadPacket.class)
 public class JavaCustomPayloadTranslator extends PacketTranslator<ClientboundCustomPayloadPacket> {
+    private static final Key EROSION_CHANNEL = Key.key(Constants.PLUGIN_MESSAGE);
+
     private final GeyserLogger logger = GeyserImpl.getInstance().getLogger();
 
     @Override
@@ -59,17 +62,21 @@ public class JavaCustomPayloadTranslator extends PacketTranslator<ClientboundCus
             return;
         }
 
-        String channel = packet.getChannel().asString();
+        Key channel = packet.getChannel();
 
-        if (channel.equals(Constants.PLUGIN_MESSAGE)) {
+        // Compare the Key directly: asString() allocates a new String on every plugin message,
+        // and the Erosion channel is the frequent path. Key.equals is equivalent to comparing
+        // asString() output (both derive from namespace + value).
+        if (channel.equals(EROSION_CHANNEL)) {
             ByteBuf buf = Unpooled.wrappedBuffer(packet.getData());
             ErosionPacket<?> erosionPacket = Packets.decode(buf);
             ((GeyserboundPacket) erosionPacket).handle(session.getErosionHandler());
             return;
         }
 
+        String channelName = channel.asString();
 
-        switch (channel) {
+        switch (channelName) {
             case PluginMessageChannels.FORM -> session.ensureInEventLoop(() -> {
                 byte[] data = packet.getData();
 

@@ -142,7 +142,9 @@ public class JavaAddEntityTranslator extends PacketTranslator<ClientboundAddEnti
 
         // Call pre-spawn consumer
         if (context.consumers() != null) {
-            context.consumers().forEach(consumer -> consumer.accept(entity));
+            for (var consumer : context.consumers()) {
+                consumer.accept(entity);
+            }
         }
 
         session.getEntityCache().spawnEntity(entity);
