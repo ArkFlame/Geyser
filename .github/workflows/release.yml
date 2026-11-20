@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        run: ./gradlew build -x test
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="build-${{ github.run_number }}"
+          SHORT="${GITHUB_SHA::7}"
+          mkdir -p dist
+          for f in \
+            bootstrap/mod/fabric/build/libs/Geyser-Fabric.jar \
+            bootstrap/mod/neoforge/build/libs/Geyser-NeoForge.jar \
+            bootstrap/standalone/build/libs/Geyser-Standalone.jar \
+            bootstrap/spigot/build/libs/Geyser-Spigot.jar \
+            bootstrap/bungeecord/build/libs/Geyser-BungeeCord.jar \
+            bootstrap/velocity/build/libs/Geyser-Velocity.jar \
+            bootstrap/viaproxy/build/libs/Geyser-ViaProxy.jar; do
+            [ -f "$f" ] && cp "$f" dist/ || echo "missing $f"
+          done
+          gh release create "$TAG" dist/*.jar \
+            --target "$GITHUB_SHA" \
+            --title "Build ${{ github.run_number }} ($SHORT)" \
+            --notes "Automated build of commit $GITHUB_SHA" \
+            --latest
