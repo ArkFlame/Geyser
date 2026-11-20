@@ -633,9 +633,10 @@ public class LivingEntity extends Entity implements Tickable {
      * @param attributes the Java list of attributes sent from the server
      */
     public void updateBedrockAttributes(GeyserSession session, List<Attribute> attributes) {
-        if (!valid) return;
+        if (!valid || attributes.isEmpty()) return;
 
-        List<AttributeData> newAttributes = new ArrayList<>();
+        // Each Java attribute adds at most one Bedrock attribute; size once to avoid backing-array growth
+        List<AttributeData> newAttributes = new ArrayList<>(attributes.size());
 
         for (Attribute attribute : attributes) {
             // Convert the attribute to a Bedrock version, if relevant

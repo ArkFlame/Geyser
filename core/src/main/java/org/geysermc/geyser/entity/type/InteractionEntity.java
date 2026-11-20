@@ -31,6 +31,7 @@ import org.cloudburstmc.nbt.NbtMap;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag;
 import org.cloudburstmc.protocol.bedrock.packet.AnimatePacket;
+import org.geysermc.geyser.entity.GeyserEntityDataManager;
 import org.geysermc.geyser.entity.VanillaEntities;
 import org.geysermc.geyser.entity.spawn.EntitySpawnContext;
 import org.geysermc.geyser.entity.type.living.ArmorStandEntity;
@@ -43,6 +44,9 @@ import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
 import java.util.Optional;
 
 public class InteractionEntity extends Entity {
+
+    // Reused so the per-metadata-packet name tag update does not autobox 0.0f twice per call.
+    private static final Float ZERO_FLOAT = 0.0f;
 
     /**
      * true - java client hears swing sound when attacking, and arm swings when right-clicking
@@ -169,13 +173,14 @@ public class InteractionEntity extends Entity {
         if (this.secondEntity == null) {
             secondEntity = new ArmorStandEntity(EntitySpawnContext.inherited(session, VanillaEntities.ARMOR_STAND, this, position.up(getBoundingBoxHeight())));
         }
-        secondEntity.getMetadata().put(EntityDataTypes.NAME, nametag);
-        secondEntity.getMetadata().put(EntityDataTypes.NAMETAG_ALWAYS_SHOW, customNameVisible ? (byte) 1 : (byte) 0);
+        GeyserEntityDataManager metadata = secondEntity.getMetadata();
+        metadata.put(EntityDataTypes.NAME, nametag);
+        metadata.put(EntityDataTypes.NAMETAG_ALWAYS_SHOW, customNameVisible ? (byte) 1 : (byte) 0);
         // Scale to 0 to show nametag
         secondEntity.setScale(0f);
         // No bounding box as we don't want to interact with this entity
-        secondEntity.getMetadata().put(EntityDataTypes.WIDTH, 0.0f);
-        secondEntity.getMetadata().put(EntityDataTypes.HEIGHT, 0.0f);
-        secondEntity.getMetadata().put(EntityDataTypes.HITBOX, NbtMap.EMPTY);
+        metadata.put(EntityDataTypes.WIDTH, ZERO_FLOAT);
+        metadata.put(EntityDataTypes.HEIGHT, ZERO_FLOAT);
+        metadata.put(EntityDataTypes.HITBOX, NbtMap.EMPTY);
     }
 }

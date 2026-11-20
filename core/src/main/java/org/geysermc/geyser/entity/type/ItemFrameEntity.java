@@ -34,6 +34,7 @@ import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.packet.BlockEntityDataPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket;
 import org.geysermc.geyser.entity.spawn.EntitySpawnContext;
+import org.geysermc.geyser.registry.type.ItemMappings;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.item.ItemTranslator;
 import org.geysermc.geyser.util.InteractionResult;
@@ -67,6 +68,11 @@ public class ItemFrameEntity extends HangingEntity {
      */
     private NbtMap cachedTag;
     /**
+     * Immutable default tag for this frame. It depends only on fields fixed at construction,
+     * so build it once instead of on every block update.
+     */
+    private final NbtMap defaultTag;
+    /**
      * The item currently in the item frame. Used for block picking.
      */
     @Getter
@@ -81,6 +87,7 @@ public class ItemFrameEntity extends HangingEntity {
 
         blockDefinition = buildBlockDefinition(Direction.SOUTH); // Default to SOUTH direction, like on Java - entity metadata should correct this when necessary
         bedrockPosition = position().toInt();
+        defaultTag = buildDefaultTag();
 
         session.getItemFrameCache().put(bedrockPosition, this);
     }
@@ -107,8 +114,9 @@ public class ItemFrameEntity extends HangingEntity {
     public void setItemInFrame(EntityMetadata<ItemStack, ?> entityMetadata) {
         if (entityMetadata.getValue() != null) {
             this.heldItem = entityMetadata.getValue();
+            ItemMappings itemMappings = session.getItemMappings();
             ItemData itemData = ItemTranslator.translateToBedrock(session, heldItem);
-            String customIdentifier = session.getItemMappings().getCustomIdMappings().get(itemData.getDefinition().getRuntimeId());
+            String customIdentifier = itemMappings.getCustomIdMappings().get(itemData.getDefinition().getRuntimeId());
 
             NbtMapBuilder builder = NbtMap.builder();
             builder.putByte("Count", (byte) itemData.getCount());
@@ -116,7 +124,7 @@ public class ItemFrameEntity extends HangingEntity {
             if (itemDataTag != null) {
                 // Remove custom name that Geyser sets for items due to translating non-"custom_name" components
                 String customName = ItemTranslator.getCustomName(session, heldItem.getDataComponentsPatch(),
-                    session.getItemMappings().getMapping(heldItem), 'f', true, false);
+                    itemMappings.getMapping(heldItem), 'f', true, false);
                 if (customName == null) {
                     // No custom name found, must modify tag if custom name exists
                     NbtMapBuilder copy = itemDataTag.toBuilder();
@@ -127,15 +135,15 @@ public class ItemFrameEntity extends HangingEntity {
                 builder.put("tag", itemDataTag);
             }
             builder.putShort("Damage", (short) itemData.getDamage());
-            builder.putString("Name", customIdentifier != null ? customIdentifier : session.getItemMappings().getMapping(entityMetadata.getValue()).getBedrockIdentifier());
-            NbtMapBuilder tag = getDefaultTag().toBuilder();
+            builder.putString("Name", customIdentifier != null ? customIdentifier : itemMappings.getMapping(entityMetadata.getValue()).getBedrockIdentifier());
+            NbtMapBuilder tag = defaultTag.toBuilder();
             tag.put("Item", builder.build());
             tag.putFloat("ItemDropChance", 1.0f);
             tag.putFloat("ItemRotation", rotation);
             cachedTag = tag.build();
             changed = true;
         } else if (cachedTag != null) {
-            cachedTag = getDefaultTag();
+            cachedTag = defaultTag;
             changed = true;
         }
     }
@@ -167,7 +175,7 @@ public class ItemFrameEntity extends HangingEntity {
         valid = false;
     }
 
-    private NbtMap getDefaultTag() {
+    private NbtMap buildDefaultTag() {
         NbtMapBuilder builder = NbtMap.builder();
         builder.putInt("x", bedrockPosition.getX());
         builder.putInt("y", bedrockPosition.getY());
@@ -204,7 +212,7 @@ public class ItemFrameEntity extends HangingEntity {
         if (cachedTag != null) {
             blockEntityDataPacket.setData(cachedTag);
         } else {
-            blockEntityDataPacket.setData(getDefaultTag());
+            blockEntityDataPacket.setData(defaultTag);
         }
 
         session.sendUpstreamPacket(blockEntityDataPacket);

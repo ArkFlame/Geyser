@@ -175,7 +175,11 @@ public abstract class AvatarEntity extends LivingEntity implements GeyserAvatarE
         setYaw(yaw);
         setPitch(pitch);
         setHeadYaw(headYaw);
-        this.position = this.position.add(relX, relY, relZ);
+        // Rotation-only updates (head look / rotate packets) pass zero offsets. Vector3f is
+        // immutable, so adding zero allocates an identical copy; keep the existing instance.
+        if (relX != 0 || relY != 0 || relZ != 0) {
+            this.position = this.position.add(relX, relY, relZ);
+        }
 
         setOnGround(isOnGround);
 

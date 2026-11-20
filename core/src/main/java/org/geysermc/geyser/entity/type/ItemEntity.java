@@ -76,10 +76,13 @@ public class ItemEntity extends ProjectileEntity {
         if (removedInVoid() || vehicle != null || isInWater()) {
             return;
         }
-        if (!isOnGround() || (motion.getX() * motion.getX() + motion.getZ() * motion.getZ()) > 0.00001) {
+        boolean onGround = isOnGround();
+        float motionX = motion.getX();
+        float motionZ = motion.getZ();
+        if (!onGround || (motionX * motionX + motionZ * motionZ) > 0.00001) {
             float gravity = getGravity();
             motion = motion.down(gravity);
-            moveAbsoluteImmediate(position.add(motion), getYaw(), getPitch(), getHeadYaw(), isOnGround(), false);
+            moveAbsoluteImmediate(position.add(motion), getYaw(), getPitch(), getHeadYaw(), onGround, false);
             float drag = getDrag();
             motion = motion.mul(drag, 0.98f, drag);
         }

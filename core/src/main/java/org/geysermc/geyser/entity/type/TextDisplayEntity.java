@@ -143,7 +143,27 @@ public class TextDisplayEntity extends DisplayBaseEntity {
         if (text == null) {
             return 0;
         }
-        return PlainTextComponentSerializer.plainText().serialize(text).split("\n").length;
+        String plain = PlainTextComponentSerializer.plainText().serialize(text);
+        int length = plain.length();
+        if (length == 0) {
+            return 1;
+        }
+        // Equivalent to plain.split("\n").length without allocating the String[]: split drops
+        // trailing empty lines, and an all-newline string yields zero lines.
+        int newlines = 0;
+        int lastNonNewline = -1;
+        for (int i = 0; i < length; i++) {
+            char c = plain.charAt(i);
+            if (c == '\n') {
+                newlines++;
+            } else {
+                lastNonNewline = i;
+            }
+        }
+        if (lastNonNewline == -1) {
+            return 0;
+        }
+        return 1 + newlines - (length - 1 - lastNonNewline);
     }
 
     @Override

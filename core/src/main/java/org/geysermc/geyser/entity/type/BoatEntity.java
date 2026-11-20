@@ -70,7 +70,7 @@ public class BoatEntity extends Entity implements Tickable, Leashable, ClientVeh
     private long leashHolderBedrockId = -1;
 
     // This is the best value, I can't really found any value that doesn't look choppy and laggy or that is not too slow, blame bedrock.
-    private final float ROWING_SPEED = 0.04f;
+    private static final float ROWING_SPEED = 0.04f;
 
     public BoatEntity(EntitySpawnContext context, BoatVariant variant) {
         super(context);
@@ -97,9 +97,10 @@ public class BoatEntity extends Entity implements Tickable, Leashable, ClientVeh
     @Override
     public void moveAbsoluteRaw(Vector3f position, float yaw, float pitch, float headYaw, boolean isOnGround, boolean teleported) {
         // We don't include the rotation (y) as it causes the boat to appear sideways
+        float bedrockYaw = yaw + 90;
         setPosition(position);
-        setYaw(yaw + 90);
-        setHeadYaw(yaw + 90);
+        setYaw(bedrockYaw);
+        setHeadYaw(bedrockYaw);
         setOnGround(isOnGround);
 
         MoveEntityAbsolutePacket moveEntityPacket = new MoveEntityAbsolutePacket();

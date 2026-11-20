@@ -58,7 +58,8 @@ public class ProjectileEntity extends Entity implements Tickable {
         moveAbsoluteImmediate(position.add(motion), getYaw(), getPitch(), getHeadYaw(), isOnGround(), false);
         float drag = getDrag();
         float gravity = getGravity();
-        setMotion(motion.mul(drag).down(gravity));
+        // mul + down each allocate a Vector3f; compute the identical result in one allocation
+        setMotion(Vector3f.from(motion.getX() * drag, motion.getY() * drag - gravity, motion.getZ() * drag));
     }
 
     protected void moveAbsoluteImmediate(Vector3f position, float yaw, float pitch, float headYaw, boolean isOnGround, boolean teleported) {

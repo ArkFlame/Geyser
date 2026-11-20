@@ -918,14 +918,17 @@ public class Entity implements GeyserEntity {
 
     public boolean hasLeashesToDrop() {
         BoundingBox searchBB = new BoundingBox(position.getX(), position.getY(), position.getZ(), 32, 32, 32);
-        List<Leashable> leashedInRange = session.getEntityCache().getEntitiesUnsafe().values().stream()
-            .filter(entity -> entity instanceof Leashable leashablex && leashablex.leashHolderBedrockId() == this.geyserId())
-            .filter(entity -> {
-                BoundingBox leashedBB = new BoundingBox(entity.position().toDouble(), entity.boundingBoxWidth, entity.boundingBoxHeight, entity.boundingBoxWidth);
-                return searchBB.checkIntersection(leashedBB);
-            }).map(Leashable.class::cast).toList();
-
-        boolean found = !leashedInRange.isEmpty();
+        boolean found = false;
+        for (Entity entity : session.getEntityCache().getEntitiesUnsafe().values()) {
+            if (!(entity instanceof Leashable leashablex) || leashablex.leashHolderBedrockId() != this.geyserId()) {
+                continue;
+            }
+            BoundingBox leashedBB = new BoundingBox(entity.position().toDouble(), entity.boundingBoxWidth, entity.boundingBoxHeight, entity.boundingBoxWidth);
+            if (searchBB.checkIntersection(leashedBB)) {
+                found = true;
+                break;
+            }
+        }
         if (this instanceof Leashable leashable && leashable.isLeashed()) {
             found = true;
         }

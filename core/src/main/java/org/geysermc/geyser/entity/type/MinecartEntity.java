@@ -41,14 +41,14 @@ import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.IntEnt
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundMoveMinecartPacket;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MinecartEntity extends Entity implements Tickable {
     private static final int POS_ROT_LERP_TICKS = 3;
 
-    private final List<MinecartStep> lerpSteps = new LinkedList<>();
-    private final List<MinecartStep> currentLerpSteps = new LinkedList<>();
+    private final List<MinecartStep> lerpSteps = new ArrayList<>();
+    private final List<MinecartStep> currentLerpSteps = new ArrayList<>();
 
     // NewMinecartBehavior
     private MinecartStep lastCompletedStep = new MinecartStep(Vector3d.ZERO, Vector3d. ZERO, 0.0F, 0.0F, 0.0F);
@@ -58,6 +58,8 @@ public class MinecartEntity extends Entity implements Tickable {
     private PartialStep cachedPartialStep;
     private int cachedStepDelay;
     private float cachedDelta;
+    private Vector3f cachedBedrockRotation;
+    private float cachedRotationYaw = Float.NaN;
 
     // OldMinecartBehavior
     private Vector3f lerpPosition;
@@ -203,8 +205,8 @@ public class MinecartEntity extends Entity implements Tickable {
         if (isLerping()) {
             float delta = 1.0F; // This is always 1, maybe it should be removed
 
-            Vector3f position = getCurrentLerpPosition(delta).toFloat();
-            Vector3f movement = getCurrentLerpMovement(delta).toFloat();
+            Vector3f position = getCurrentLerpPosition(delta);
+            Vector3f movement = getCurrentLerpMovement(delta);
             setPosition(position);
             setMotion(movement);
 
@@ -254,14 +256,26 @@ public class MinecartEntity extends Entity implements Tickable {
         return lerpRotation(partialStep.delta, partialStep.previousStep.yRot(), partialStep.currentStep.yRot());
     }
 
-    private Vector3d getCurrentLerpPosition(float delta) {
+    private Vector3f getCurrentLerpPosition(float delta) {
         PartialStep partialStep = getCurrentLerpStep(delta);
-        return lerp(partialStep.delta, partialStep.previousStep.position(), partialStep.currentStep.position());
+        Vector3d start = partialStep.previousStep.position();
+        Vector3d end = partialStep.currentStep.position();
+        return Vector3f.from(
+                (float) lerp(partialStep.delta, start.getX(), end.getX()),
+                (float) lerp(partialStep.delta, start.getY(), end.getY()),
+                (float) lerp(partialStep.delta, start.getZ(), end.getZ())
+        );
     }
 
-    private Vector3d getCurrentLerpMovement(float delta) {
+    private Vector3f getCurrentLerpMovement(float delta) {
         PartialStep partialStep = getCurrentLerpStep(delta);
-        return lerp(partialStep.delta, partialStep.previousStep.movement(), partialStep.currentStep.movement());
+        Vector3d start = partialStep.previousStep.movement();
+        Vector3d end = partialStep.currentStep.movement();
+        return Vector3f.from(
+                (float) lerp(partialStep.delta, start.getX(), end.getX()),
+                (float) lerp(partialStep.delta, start.getY(), end.getY()),
+                (float) lerp(partialStep.delta, start.getZ(), end.getZ())
+        );
     }
 
     private PartialStep getCurrentLerpStep(float delta) {
@@ -305,7 +319,12 @@ public class MinecartEntity extends Entity implements Tickable {
     @Override
     public Vector3f bedrockRotation() {
         // Note: minecart rotation on rails does not care about the actual rotation value
-        return Vector3f.from(0, getYaw(), 0);
+        float yaw = getYaw();
+        if (yaw != cachedRotationYaw) {
+            cachedRotationYaw = yaw;
+            cachedBedrockRotation = Vector3f.from(0, yaw, 0);
+        }
+        return cachedBedrockRotation;
     }
 
     @Override
@@ -348,10 +367,6 @@ public class MinecartEntity extends Entity implements Tickable {
                 return InteractionResult.SUCCESS;
             }
         }
-    }
-
-    private static Vector3d lerp(double delta, Vector3d start, Vector3d end) {
-        return Vector3d.from(lerp(delta, start.getX(), end.getX()), lerp(delta, start.getY(), end.getY()), lerp(delta, start.getZ(), end.getZ()));
     }
 
     public static double lerp(double delta, double start, double end) {

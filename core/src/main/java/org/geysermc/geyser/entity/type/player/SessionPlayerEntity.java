@@ -543,10 +543,12 @@ public class SessionPlayerEntity extends PlayerEntity {
     }
 
     public void setVehicleInput(Vector2f vehicleInput) {
-        this.vehicleInput = Vector2f.from(
-                MathUtils.clamp(vehicleInput.getX(), -1.0f, 1.0f),
-                MathUtils.clamp(vehicleInput.getY(), -1.0f, 1.0f)
-        );
+        float inputX = vehicleInput.getX();
+        float inputY = vehicleInput.getY();
+        float x = MathUtils.clamp(inputX, -1.0f, 1.0f);
+        float y = MathUtils.clamp(inputY, -1.0f, 1.0f);
+        // Vector2f is immutable; reuse the input when already in range to avoid an allocation on every input packet.
+        this.vehicleInput = (x == inputX && y == inputY) ? vehicleInput : Vector2f.from(x, y);
     }
 
     public void setVehicleJumpStrength(int vehicleJumpStrength) {

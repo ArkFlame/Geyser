@@ -31,6 +31,7 @@ import org.cloudburstmc.protocol.bedrock.data.camera.CameraEase;
 import org.cloudburstmc.protocol.bedrock.data.camera.CameraSetInstruction;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag;
 import org.cloudburstmc.protocol.bedrock.packet.CameraInstructionPacket;
+import org.cloudburstmc.protocol.common.NamedDefinition;
 import org.cloudburstmc.protocol.common.util.OptionalBoolean;
 import org.geysermc.geyser.api.bedrock.camera.CameraPerspective;
 import org.geysermc.geyser.api.entity.data.GeyserEntityDataTypes;
@@ -48,6 +49,9 @@ public final class EntitySpectateHelper {
     private static final int FREE_PRESET = CameraPerspective.FREE.ordinal();
     private static final double DISTANCE = 4.0;
     private static final float EYE_HEIGHT_RATIO = 0.85f;
+    // Immutable values shared across every spectate camera update; the definition registry and EaseData are both immutable.
+    private static final NamedDefinition FREE_PRESET_DEFINITION = CameraDefinitions.getById(FREE_PRESET);
+    private static final CameraSetInstruction.EaseData LINEAR_EASE = new CameraSetInstruction.EaseData(CameraEase.LINEAR, 0.15f);
 
     private EntitySpectateHelper() {
     }
@@ -141,7 +145,6 @@ public final class EntitySpectateHelper {
     private static void sendCamera(GeyserSession session, Entity entity, SpectateMode mode) {
         float yaw = entity.getHeadYaw();
         float pitch = entity.getPitch();
-        Vector3f forward = MathUtils.calculateViewVector(pitch, yaw);
 
         Vector3f pos = entity.position();
         double eyeY = pos.getY() + eyeHeight(entity);
@@ -164,16 +167,26 @@ public final class EntitySpectateHelper {
             }
             default -> throw new IllegalStateException("Unexpected spectate mode: " + mode);
         }
-        double cx = pos.getX() + forward.getX() * distance;
-        double cy = eyeY + forward.getY() * distance;
-        double cz = pos.getZ() + forward.getZ() * distance;
+
+        double cx, cy, cz;
+        if (distance == 0.0) {
+            // First person: the view vector would only be multiplied by zero, so don't compute it.
+            cx = pos.getX();
+            cy = eyeY;
+            cz = pos.getZ();
+        } else {
+            Vector3f forward = MathUtils.calculateViewVector(pitch, yaw);
+            cx = pos.getX() + forward.getX() * distance;
+            cy = eyeY + forward.getY() * distance;
+            cz = pos.getZ() + forward.getZ() * distance;
+        }
 
         CameraInstructionPacket packet = new CameraInstructionPacket();
         CameraSetInstruction set = new CameraSetInstruction();
-        set.setPreset(CameraDefinitions.getById(FREE_PRESET));
+        set.setPreset(FREE_PRESET_DEFINITION);
         set.setPos(Vector3f.from(cx, cy, cz));
         set.setRot(rot);
-        set.setEase(new CameraSetInstruction.EaseData(CameraEase.LINEAR, 0.15f));
+        set.setEase(LINEAR_EASE);
         packet.setSetInstruction(set);
         session.sendUpstreamPacket(packet);
     }
