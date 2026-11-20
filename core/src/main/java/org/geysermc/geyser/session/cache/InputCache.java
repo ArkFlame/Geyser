@@ -125,18 +125,23 @@ public final class InputCache {
 
         boolean sneaking = isSneaking(bedrockInput);
 
-        this.inputPacket = this.inputPacket
-            .withForward(up)
-            .withBackward(down)
-            .withLeft(left)
-            .withRight(right)
-            // https://mojang.github.io/bedrock-protocol-docs/html/enums.html
-            // using the "raw" values allows us sending key presses even with locked input
-            // There appear to be cases where the raw value is not sent - e.g. sneaking with a shield on mobile (1.21.80)
-            // We also need to check for water auto jumping, since bedrock don't send jumping value in those cases.
-            .withJump(bedrockInput.contains(PlayerAuthInputData.JUMP_CURRENT_RAW) || bedrockInput.contains(PlayerAuthInputData.JUMP_DOWN) || bedrockInput.contains(PlayerAuthInputData.AUTO_JUMPING_IN_WATER))
-            .withShift(session.isShouldSendSneak() || sneaking)
-            .withSprint(bedrockInput.contains(PlayerAuthInputData.SPRINT_DOWN));
+        // https://mojang.github.io/bedrock-protocol-docs/html/enums.html
+        // using the "raw" values allows us sending key presses even with locked input
+        // There appear to be cases where the raw value is not sent - e.g. sneaking with a shield on mobile (1.21.80)
+        // We also need to check for water auto jumping, since bedrock don't send jumping value in those cases.
+        boolean jump = bedrockInput.contains(PlayerAuthInputData.JUMP_CURRENT_RAW) || bedrockInput.contains(PlayerAuthInputData.JUMP_DOWN) || bedrockInput.contains(PlayerAuthInputData.AUTO_JUMPING_IN_WATER);
+        boolean shift = session.isShouldSendSneak() || sneaking;
+        boolean sprint = bedrockInput.contains(PlayerAuthInputData.SPRINT_DOWN);
+
+        // The packet is immutable: each with* call allocates a new instance when its value changes,
+        // so a chain of seven of them can allocate up to seven packets for a single input tick.
+        // Compare against the current packet once and build a single replacement only when something changed.
+        if (oldInputPacket.isForward() != up || oldInputPacket.isBackward() != down
+            || oldInputPacket.isLeft() != left || oldInputPacket.isRight() != right
+            || oldInputPacket.isJump() != jump || oldInputPacket.isShift() != shift
+            || oldInputPacket.isSprint() != sprint) {
+            this.inputPacket = new ServerboundPlayerInputPacket(up, down, left, right, jump, shift, sprint);
+        }
 
         // TODO - test whether we can rely on the Java server setting sneaking for us.
         // 1.21.6+ only sends the shifting state in the input packet, and removed the START/STOP sneak command packet sending

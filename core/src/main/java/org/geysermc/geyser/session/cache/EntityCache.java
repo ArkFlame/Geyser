@@ -251,8 +251,9 @@ public class EntityCache {
      * the read lock; on the event loop it reads directly since it is sequential with all writes there.
      */
     public Entity getEntityByJavaId(int javaId) {
-        if (javaId == session.getPlayerEntity().getEntityId()) {
-            return session.getPlayerEntity();
+        PlayerEntity playerEntity = session.getPlayerEntity();
+        if (javaId == playerEntity.getEntityId()) {
+            return playerEntity;
         }
         if (session.getTickEventLoop().inEventLoop()) {
             return getEntityByJavaId0(javaId);
@@ -275,8 +276,9 @@ public class EntityCache {
      * the read lock; on the event loop it reads directly since it is sequential with all writes there.
      */
     public Entity getEntityByUuid(UUID uuid) {
-        if (Objects.equals(uuid, session.getPlayerEntity().uuid())) {
-            return session.getPlayerEntity();
+        PlayerEntity playerEntity = session.getPlayerEntity();
+        if (Objects.equals(uuid, playerEntity.uuid())) {
+            return playerEntity;
         }
         if (session.getTickEventLoop().inEventLoop()) {
             return getEntityByUuid0(uuid);

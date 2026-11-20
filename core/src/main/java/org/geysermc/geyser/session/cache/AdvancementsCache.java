@@ -266,7 +266,8 @@ public class AdvancementsCache {
      * @return the progress on the advancement.
      */
     public int getProgress(GeyserAdvancement advancement) {
-        if (advancement.getRequirements().isEmpty()) {
+        List<List<String>> requirements = advancement.getRequirements();
+        if (requirements.isEmpty()) {
             // Minecraft handles this case
             return 0;
         }
@@ -276,8 +277,8 @@ public class AdvancementsCache {
             // Each advancement's requirement must be fulfilled
             // For example, [[zombie, blaze, skeleton]] means that one of those three categories must be achieved
             // But [[zombie], [blaze], [skeleton]] means that all three requirements must be completed
-            for (List<String> requirements : advancement.getRequirements()) {
-                for (String requirement : requirements) {
+            for (List<String> requirementGroup : requirements) {
+                for (String requirement : requirementGroup) {
                     Long obtained = progressMap.get(requirement);
                     // -1 means that this particular component required for completing the advancement
                     // has yet to be fulfilled

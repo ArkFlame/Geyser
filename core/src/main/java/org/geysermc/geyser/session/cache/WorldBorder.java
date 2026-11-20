@@ -150,7 +150,9 @@ public class WorldBorder {
     }
 
     public boolean isInsideBorderBoundaries(Vector3f position) {
-        return position.getX() > minX && position.getX() < maxX && position.getZ() > minZ && position.getZ() < maxZ;
+        float x = position.getX();
+        float z = position.getZ();
+        return x > minX && x < maxX && z > minZ && z < maxZ;
     }
 
     /**
@@ -178,8 +180,9 @@ public class WorldBorder {
      */
     public boolean isInsideBorderZone() {
         SessionPlayerEntity player = session.getPlayerEntity();
+        Vector3f position = player.position();
         double bbMax = Math.max(Math.max(player.getBoundingBoxWidth(), player.getBoundingBoxHeight()), 1.0);
-        return this.getDistanceToBorder(player.position().getX(), player.position().getZ()) < bbMax * 2.0 && this.isWithinBounds(player.position().getX(), player.position().getZ(), bbMax);
+        return this.getDistanceToBorder(position.getX(), position.getZ()) < bbMax * 2.0 && this.isWithinBounds(position.getX(), position.getZ(), bbMax);
     }
 
     private static final int CLOSE_TO_BORDER = 5;
@@ -190,8 +193,10 @@ public class WorldBorder {
      */
     public boolean isCloseToBorderBoundaries() {
         Vector3f position = session.getPlayerEntity().position();
-        return !(position.getX() > minX + CLOSE_TO_BORDER && position.getX() < maxX - CLOSE_TO_BORDER
-            && position.getZ() > minZ + CLOSE_TO_BORDER && position.getZ() < maxZ - CLOSE_TO_BORDER);
+        float x = position.getX();
+        float z = position.getZ();
+        return !(x > minX + CLOSE_TO_BORDER && x < maxX - CLOSE_TO_BORDER
+            && z > minZ + CLOSE_TO_BORDER && z < maxZ - CLOSE_TO_BORDER);
     }
 
     /**
@@ -201,21 +206,27 @@ public class WorldBorder {
      */
     public boolean isWithinWarningBoundaries() {
         Vector3f entityPosition = session.getPlayerEntity().position();
-        return entityPosition.getX() > warningMinX && entityPosition.getX() < warningMaxX && entityPosition.getZ() > warningMinZ && entityPosition.getZ() < warningMaxZ;
+        float x = entityPosition.getX();
+        float z = entityPosition.getZ();
+        return x > warningMinX && x < warningMaxX && z > warningMinZ && z < warningMaxZ;
     }
 
     /**
      * Check if the player is passing into the border, mostly meant for vehicles where the collision hacks don't work.
      */
     public boolean isPassingIntoBorderBoundaries(Vector3f newEntityPosition) {
-        int entityX = GenericMath.floor(newEntityPosition.getX());
-        int entityZ = GenericMath.floor(newEntityPosition.getZ());
+        float newX = newEntityPosition.getX();
+        float newZ = newEntityPosition.getZ();
+        int entityX = GenericMath.floor(newX);
+        int entityZ = GenericMath.floor(newZ);
         Vector3f currentEntityPosition = session.getPlayerEntity().position();
+        float currentX = currentEntityPosition.getX();
+        float currentZ = currentEntityPosition.getZ();
         // Make sure we can't move out of the world border, but if we're out of the world border, we can move in
-        return (entityX == (int) minX && currentEntityPosition.getX() > newEntityPosition.getX()) ||
-            (entityX == (int) maxX && currentEntityPosition.getX() < newEntityPosition.getX()) ||
-            (entityZ == (int) minZ && currentEntityPosition.getZ() > newEntityPosition.getZ()) ||
-            (entityZ == (int) maxZ && currentEntityPosition.getZ() < newEntityPosition.getZ());
+        return (entityX == (int) minX && currentX > newX) ||
+            (entityX == (int) maxX && currentX < newX) ||
+            (entityZ == (int) minZ && currentZ > newZ) ||
+            (entityZ == (int) maxZ && currentZ < newZ);
     }
 
     /**
@@ -226,11 +237,12 @@ public class WorldBorder {
      * @return the corrected movement
      */
     public Vector3d correctMovement(BoundingBox boundingBox, Vector3d movement) {
+        double moveX = movement.getX();
         double correctedX;
-        if (movement.getX() < 0) {
-            correctedX = -limitMovement(-movement.getX(), boundingBox.getMin(Axis.X) - GenericMath.floor(minX));
+        if (moveX < 0) {
+            correctedX = -limitMovement(-moveX, boundingBox.getMin(Axis.X) - GenericMath.floor(minX));
         } else {
-            correctedX = limitMovement(movement.getX(), GenericMath.ceil(maxX) - boundingBox.getMax(Axis.X));
+            correctedX = limitMovement(moveX, GenericMath.ceil(maxX) - boundingBox.getMax(Axis.X));
         }
 
         // Outside of border, don't adjust movement
@@ -238,11 +250,12 @@ public class WorldBorder {
             return movement;
         }
 
+        double moveZ = movement.getZ();
         double correctedZ;
-        if (movement.getZ() < 0) {
-            correctedZ = -limitMovement(-movement.getZ(), boundingBox.getMin(Axis.Z) - GenericMath.floor(minZ));
+        if (moveZ < 0) {
+            correctedZ = -limitMovement(-moveZ, boundingBox.getMin(Axis.Z) - GenericMath.floor(minZ));
         } else {
-            correctedZ = limitMovement(movement.getZ(), GenericMath.ceil(maxZ) - boundingBox.getMax(Axis.Z));
+            correctedZ = limitMovement(moveZ, GenericMath.ceil(maxZ) - boundingBox.getMax(Axis.Z));
         }
 
         if (Double.isNaN(correctedZ)) {
@@ -421,8 +434,10 @@ public class WorldBorder {
      * Spawn and move the border (entity) according the player position so that the player able to collide with it.
      */
     public void spawnOrMoveBorderCollision(Vector3f playerPosition) {
-        boolean canSpawnXCollision = !(playerPosition.getX() > minX + WORLD_BORDER_COLLISION_RANGE && playerPosition.getX() < maxX - WORLD_BORDER_COLLISION_RANGE);
-        boolean canSpawnZCollision = !(playerPosition.getZ() > minZ + WORLD_BORDER_COLLISION_RANGE && playerPosition.getZ() < maxZ - WORLD_BORDER_COLLISION_RANGE);
+        float px = playerPosition.getX();
+        float pz = playerPosition.getZ();
+        boolean canSpawnXCollision = !(px > minX + WORLD_BORDER_COLLISION_RANGE && px < maxX - WORLD_BORDER_COLLISION_RANGE);
+        boolean canSpawnZCollision = !(pz > minZ + WORLD_BORDER_COLLISION_RANGE && pz < maxZ - WORLD_BORDER_COLLISION_RANGE);
 
         // Spawn collision entity in if the player is within the defined range.
         if (xCollisionEntity == null) {
@@ -486,15 +501,18 @@ public class WorldBorder {
     private void moveBorderCollision(Vector3f playerPosition) {
         // We need to account for ULP, also since the bounding box is centered around the entity, it needs to be moved backwards by half the width to be correct.
         // Min Y collision also started at the entity feet, which is why we want to move it downwards, so that the player won't clip through the collision when falling.
-        final float xDistance = 5 - Math.ulp(Math.abs(playerPosition.getX())), zDistance = 5 - Math.ulp(Math.abs(playerPosition.getZ()));
+        float px = playerPosition.getX();
+        float py = playerPosition.getY();
+        float pz = playerPosition.getZ();
+        final float xDistance = 5 - Math.ulp(Math.abs(px)), zDistance = 5 - Math.ulp(Math.abs(pz));
 
         if (xCollisionEntity != null) {
             Vector3f position = null;
-            if (playerPosition.getX() < Math.max(warningMinX, minX + WORLD_BORDER_COLLISION_RANGE)) {
-                position = Vector3f.from(Math.floor(minX) - xDistance, playerPosition.getY() - BORDER_COLLISION_Y_DISTANCE, playerPosition.getZ());
+            if (px < Math.max(warningMinX, minX + WORLD_BORDER_COLLISION_RANGE)) {
+                position = Vector3f.from(Math.floor(minX) - xDistance, py - BORDER_COLLISION_Y_DISTANCE, pz);
             }
-            if (playerPosition.getX() > Math.min(warningMaxX, maxX - WORLD_BORDER_COLLISION_RANGE)) {
-                position = Vector3f.from(Math.floor(maxX) + xDistance, playerPosition.getY() - BORDER_COLLISION_Y_DISTANCE, playerPosition.getZ());
+            if (px > Math.min(warningMaxX, maxX - WORLD_BORDER_COLLISION_RANGE)) {
+                position = Vector3f.from(Math.floor(maxX) + xDistance, py - BORDER_COLLISION_Y_DISTANCE, pz);
             }
 
             if (position != null) {
@@ -510,11 +528,11 @@ public class WorldBorder {
 
         if (zCollisionEntity != null) {
             Vector3f position = null;
-            if (playerPosition.getZ() > Math.min(warningMaxZ, maxZ - WORLD_BORDER_COLLISION_RANGE)) {
-                position = Vector3f.from(playerPosition.getX(), playerPosition.getY() - BORDER_COLLISION_Y_DISTANCE, Math.floor(maxZ) + zDistance);
+            if (pz > Math.min(warningMaxZ, maxZ - WORLD_BORDER_COLLISION_RANGE)) {
+                position = Vector3f.from(px, py - BORDER_COLLISION_Y_DISTANCE, Math.floor(maxZ) + zDistance);
             }
-            if (playerPosition.getZ() < Math.max(warningMinZ, minZ + WORLD_BORDER_COLLISION_RANGE)) {
-                position = Vector3f.from(playerPosition.getX(), playerPosition.getY() - BORDER_COLLISION_Y_DISTANCE, Math.floor(minZ) - zDistance);
+            if (pz < Math.max(warningMinZ, minZ + WORLD_BORDER_COLLISION_RANGE)) {
+                position = Vector3f.from(px, py - BORDER_COLLISION_Y_DISTANCE, Math.floor(minZ) - zDistance);
             }
 
             if (position != null) {

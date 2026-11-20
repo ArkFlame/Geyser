@@ -192,9 +192,10 @@ public final class WorldCache {
         this.unverifiedPredictions.removeInt(position);
 
         // Hack to avoid looking up blockstates for the currently broken position each tick
-        Vector3i clientBreakPos = session.getBlockBreakHandler().getCurrentBlockPos();
+        BlockBreakHandler blockBreakHandler = session.getBlockBreakHandler();
+        Vector3i clientBreakPos = blockBreakHandler.getCurrentBlockPos();
         if (clientBreakPos != null && Objects.equals(clientBreakPos, position)) {
-            session.getBlockBreakHandler().setUpdatedServerBlockStateId(blockState);
+            blockBreakHandler.setUpdatedServerBlockStateId(blockState);
         }
 
         ChunkUtils.updateBlock(session, blockState, position);
@@ -255,10 +256,8 @@ public final class WorldCache {
 
     public boolean hasCooldown(GeyserItemStack item) {
         UseCooldown cooldown = item.getComponent(DataComponentTypes.USE_COOLDOWN);
-        Key cooldownGroup;
-        if (cooldown != null && cooldown.cooldownGroup() != null) {
-            cooldownGroup = cooldown.cooldownGroup();
-        } else {
+        Key cooldownGroup = cooldown == null ? null : cooldown.cooldownGroup();
+        if (cooldownGroup == null) {
             cooldownGroup = item.asItem().javaKey();
         }
         return this.activeCooldowns.containsKey(cooldownGroup);

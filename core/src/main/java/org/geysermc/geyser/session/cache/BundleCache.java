@@ -282,7 +282,7 @@ public final class BundleCache {
         private boolean freshFromServer = true;
 
         public BundleData(GeyserSession session, List<ItemStack> contents) {
-            this();
+            this(new ArrayList<>(contents.size()));
             for (ItemStack content : contents) {
                 GeyserItemStack itemStack = GeyserItemStack.from(session, content);
                 // Check recursively
@@ -291,8 +291,12 @@ public final class BundleCache {
             }
         }
 
+        private BundleData(List<GeyserItemStack> contents) {
+            this.contents = contents;
+        }
+
         BundleData() {
-            this.contents = new ArrayList<>();
+            this(new ArrayList<>());
         }
 
         public int bundleId() {
@@ -371,7 +375,7 @@ public final class BundleCache {
         }
 
         public BundleData copy() {
-            BundleData data = new BundleData();
+            BundleData data = new BundleData(new ArrayList<>(this.contents.size()));
             data.bundleId = this.bundleId;
             for (GeyserItemStack content : this.contents) {
                 data.contents.add(content.copy());

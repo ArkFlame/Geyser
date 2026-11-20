@@ -1392,6 +1392,12 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     }
 
     /**
+     * Reused when no packets were queued for immediate sending, so that a fresh
+     * zero-length array is not allocated on every tick.
+     */
+    private static final BedrockPacket[] EMPTY_IMMEDIATE_PACKETS = new BedrockPacket[0];
+
+    /**
      * Called every Minecraft tick.
      */
     protected void tick() {
@@ -1474,7 +1480,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
             this.dialogManager.tick();
             this.waypointCache.tick();
 
-            this.upstream.getSession().getPeer().sendPacketsImmediately(0, 0, queuedImmediatelyPackets.toArray(new BedrockPacket[0]));
+            this.upstream.getSession().getPeer().sendPacketsImmediately(0, 0, queuedImmediatelyPackets.toArray(EMPTY_IMMEDIATE_PACKETS));
             queuedImmediatelyPackets.clear();
 
             CooldownUtils.tickCooldown(this);
@@ -2629,12 +2635,14 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         return clientData.getGameVersion();
     }
 
+    private static final BedrockPlatform[] PLATFORMS = BedrockPlatform.values();
+
     @Override
     public @NonNull BedrockPlatform platform() {
         if (clientData == null) {
             return BedrockPlatform.UNKNOWN;
         }
-        return BedrockPlatform.values()[clientData.getDeviceOs().ordinal()]; //todo
+        return PLATFORMS[clientData.getDeviceOs().ordinal()]; //todo
     }
 
     @Override

@@ -66,7 +66,7 @@ public class ChunkCache {
      */
     private GeyserChunk getChunk(int chunkX, int chunkZ) {
         long chunkPosition = MathUtils.chunkPositionToLong(chunkX, chunkZ);
-        return chunks.getOrDefault(chunkPosition, null);
+        return chunks.get(chunkPosition);
     }
 
     /**
@@ -79,14 +79,17 @@ public class ChunkCache {
             return null;
         }
 
-        if (chunkY < getChunkMinY() || chunkY - getChunkMinY() > chunk.sections().length - 1) {
+        int minY = getChunkMinY();
+        DataPalette[] sections = chunk.sections();
+        int sectionY = chunkY - minY;
+        if (chunkY < minY || sectionY > sections.length - 1) {
             return null;
         }
 
-        DataPalette palette = chunk.sections()[chunkY - getChunkMinY()];
+        DataPalette palette = sections[sectionY];
         if (createIfAbsent && palette == null) {
             palette = DataPalette.createForBlockState(Block.JAVA_AIR_ID, BlockRegistries.BLOCK_STATES.get().size());
-            chunk.sections()[chunkY - getChunkMinY()] = palette;
+            sections[sectionY] = palette;
         }
 
         return palette;

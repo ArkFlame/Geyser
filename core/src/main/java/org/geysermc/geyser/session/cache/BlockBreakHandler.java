@@ -72,6 +72,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.Serv
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundUseItemOnPacket;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -188,8 +189,10 @@ public class BlockBreakHandler {
     }
 
     protected void handleBlockBreakActions(PlayerAuthInputPacket packet) {
-        for (int i = 0; i < packet.getPlayerActions().size(); i++) {
-            PlayerBlockActionData actionData = packet.getPlayerActions().get(i);
+        List<PlayerBlockActionData> actions = packet.getPlayerActions();
+        long tick = packet.getTick();
+        for (int i = 0; i < actions.size(); i++) {
+            PlayerBlockActionData actionData = actions.get(i);
             Vector3i position = actionData.getBlockPosition();
             // Worth noting: the bedrock client, as of version  1.21.101, sends weird values for the face, outside the [0;6] range, when sending ABORT_BREAK
             // Not sure why, but, blockFace isn't used for ABORT_BREAK, so it's fine
@@ -219,7 +222,7 @@ public class BlockBreakHandler {
                         continue;
                     }
 
-                    handleStartBreak(position, state, Direction.getUntrusted(actionData, PlayerBlockActionData::getFace), packet.getTick());
+                    handleStartBreak(position, state, Direction.getUntrusted(actionData, PlayerBlockActionData::getFace), tick);
                 }
                 case BLOCK_CONTINUE_DESTROY -> {
                     if (testForItemFrameEntity(position) || testForLastBreakPosOrReset(position) || abortDueToBlockRestoring(position)) {
@@ -228,8 +231,8 @@ public class BlockBreakHandler {
 
                     // The client loves to send this block action alongside BLOCK_PREDICT_DESTROY in the same packet;
                     // we can skip handling this action about the current position if the next action is also about it
-                    if (Objects.equals(currentBlockPos, position) && i < packet.getPlayerActions().size() - 1) {
-                        PlayerBlockActionData nextAction = packet.getPlayerActions().get(i + 1);
+                    if (Objects.equals(currentBlockPos, position) && i < actions.size() - 1) {
+                        PlayerBlockActionData nextAction = actions.get(i + 1);
                         if (Objects.equals(nextAction.getBlockPosition(), position)) {
                             continue;
                         }
@@ -247,7 +250,7 @@ public class BlockBreakHandler {
                         continue;
                     }
 
-                    handleContinueDestroy(position, state, Direction.getUntrusted(actionData, PlayerBlockActionData::getFace), false, true, packet.getTick());
+                    handleContinueDestroy(position, state, Direction.getUntrusted(actionData, PlayerBlockActionData::getFace), false, true, tick);
                 }
                 case BLOCK_PREDICT_DESTROY -> {
                     if (testForItemFrameEntity(position)) {
@@ -281,7 +284,7 @@ public class BlockBreakHandler {
                         continue;
                     }
 
-                    handlePredictDestroy(position, state, Direction.getUntrusted(actionData, PlayerBlockActionData::getFace), packet.getTick());
+                    handlePredictDestroy(position, state, Direction.getUntrusted(actionData, PlayerBlockActionData::getFace), tick);
                 }
                 case ABORT_BREAK -> {
                     // Also handles item frame interactions in adventure mode
