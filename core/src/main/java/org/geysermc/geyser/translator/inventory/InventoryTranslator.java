@@ -84,7 +84,6 @@ import org.geysermc.mcprotocollib.protocol.data.game.recipe.display.slot.SlotDis
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1094,7 +1093,8 @@ public abstract class InventoryTranslator<Type extends Inventory> {
     }
 
     protected final List<ItemStackResponseContainer> makeContainerEntries(GeyserSession session, Type inventory, IntSet affectedSlots) {
-        Map<ContainerSlotType, List<ItemStackResponseSlot>> containerMap = new HashMap<>();
+        // ContainerSlotType is an enum - EnumMap avoids hashing/equals on every slot and iterates by ordinal.
+        Map<ContainerSlotType, List<ItemStackResponseSlot>> containerMap = new EnumMap<>(ContainerSlotType.class);
         // Manually call iterator to prevent Integer boxing
         IntIterator it = affectedSlots.iterator();
         while (it.hasNext()) {
@@ -1104,7 +1104,7 @@ public abstract class InventoryTranslator<Type extends Inventory> {
             list.add(makeItemEntry(bedrockSlot.slot(), inventory.getItem(slot)));
         }
 
-        List<ItemStackResponseContainer> containerEntries = new ArrayList<>();
+        List<ItemStackResponseContainer> containerEntries = new ArrayList<>(containerMap.size() + 1);
         for (Map.Entry<ContainerSlotType, List<ItemStackResponseSlot>> entry : containerMap.entrySet()) {
             containerEntries.add(new ItemStackResponseContainer(entry.getKey(), entry.getValue(), new FullContainerName(entry.getKey(), null)));
         }

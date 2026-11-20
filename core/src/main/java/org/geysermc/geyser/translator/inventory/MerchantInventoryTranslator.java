@@ -50,6 +50,11 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.S
 import java.util.concurrent.TimeUnit;
 
 public class MerchantInventoryTranslator extends BaseInventoryTranslator<MerchantContainer> {
+    // These slots are immutable records with constant values; reuse them instead of allocating on every request.
+    private static final BedrockContainerSlot INGREDIENT_1 = new BedrockContainerSlot(ContainerSlotType.TRADE2_INGREDIENT_1, 4);
+    private static final BedrockContainerSlot INGREDIENT_2 = new BedrockContainerSlot(ContainerSlotType.TRADE2_INGREDIENT_2, 5);
+    private static final BedrockContainerSlot RESULT = new BedrockContainerSlot(ContainerSlotType.TRADE2_RESULT, 50);
+
     private final InventoryUpdater updater;
 
     public MerchantInventoryTranslator() {
@@ -70,9 +75,9 @@ public class MerchantInventoryTranslator extends BaseInventoryTranslator<Merchan
     @Override
     public BedrockContainerSlot javaSlotToBedrockContainer(int slot, MerchantContainer container) {
         return switch (slot) {
-            case 0 -> new BedrockContainerSlot(ContainerSlotType.TRADE2_INGREDIENT_1, 4);
-            case 1 -> new BedrockContainerSlot(ContainerSlotType.TRADE2_INGREDIENT_2, 5);
-            case 2 -> new BedrockContainerSlot(ContainerSlotType.TRADE2_RESULT, 50);
+            case 0 -> INGREDIENT_1;
+            case 1 -> INGREDIENT_2;
+            case 2 -> RESULT;
             default -> super.javaSlotToBedrockContainer(slot, container);
         };
     }

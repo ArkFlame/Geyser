@@ -75,6 +75,33 @@ import java.util.function.IntFunction;
 public class PlayerInventoryTranslator extends InventoryTranslator<PlayerInventory> {
     private static final IntFunction<ItemData> UNUSUABLE_CRAFTING_SPACE_BLOCK = InventoryUtils.createUnusableSpaceBlock(GeyserLocale.getLocaleStringLog("geyser.inventory.unusable_item.creative"));
 
+    /**
+     * Player inventory slots map to a fixed, finite set of Bedrock container slots. Since {@link BedrockContainerSlot}
+     * is an immutable record, precompute them once instead of allocating a new one for every affected slot of every
+     * inventory request.
+     */
+    private static final BedrockContainerSlot[] BEDROCK_SLOTS = createBedrockSlots();
+
+    private static BedrockContainerSlot[] createBedrockSlots() {
+        BedrockContainerSlot[] slots = new BedrockContainerSlot[46];
+        for (int slot = 0; slot < slots.length; slot++) {
+            if (slot >= 36 && slot <= 44) {
+                slots[slot] = new BedrockContainerSlot(ContainerSlotType.HOTBAR, slot - 36);
+            } else if (slot >= 9 && slot <= 35) {
+                slots[slot] = new BedrockContainerSlot(ContainerSlotType.INVENTORY, slot);
+            } else if (slot >= 5 && slot <= 8) {
+                slots[slot] = new BedrockContainerSlot(ContainerSlotType.ARMOR, slot - 5);
+            } else if (slot == 45) {
+                slots[slot] = new BedrockContainerSlot(ContainerSlotType.OFFHAND, 1);
+            } else if (slot >= 1 && slot <= 4) {
+                slots[slot] = new BedrockContainerSlot(ContainerSlotType.CRAFTING_INPUT, slot + 27);
+            } else if (slot == 0) {
+                slots[slot] = new BedrockContainerSlot(ContainerSlotType.CRAFTING_OUTPUT, 0);
+            }
+        }
+        return slots;
+    }
+
     public PlayerInventoryTranslator() {
         super(46);
     }
@@ -231,21 +258,10 @@ public class PlayerInventoryTranslator extends InventoryTranslator<PlayerInvento
 
     @Override
     public BedrockContainerSlot javaSlotToBedrockContainer(int slot, PlayerInventory inventory) {
-        if (slot >= 36 && slot <= 44) {
-            return new BedrockContainerSlot(ContainerSlotType.HOTBAR, slot - 36);
-        } else if (slot >= 9 && slot <= 35) {
-            return new BedrockContainerSlot(ContainerSlotType.INVENTORY, slot);
-        } else if (slot >= 5 && slot <= 8) {
-            return new BedrockContainerSlot(ContainerSlotType.ARMOR, slot - 5);
-        } else if (slot == 45) {
-            return new BedrockContainerSlot(ContainerSlotType.OFFHAND, 1);
-        } else if (slot >= 1 && slot <= 4) {
-            return new BedrockContainerSlot(ContainerSlotType.CRAFTING_INPUT, slot + 27);
-        } else if (slot == 0) {
-            return new BedrockContainerSlot(ContainerSlotType.CRAFTING_OUTPUT, 0);
-        } else {
-            throw new IllegalArgumentException("Unknown bedrock slot");
+        if (slot >= 0 && slot < BEDROCK_SLOTS.length) {
+            return BEDROCK_SLOTS[slot];
         }
+        throw new IllegalArgumentException("Unknown bedrock slot");
     }
 
     @Override

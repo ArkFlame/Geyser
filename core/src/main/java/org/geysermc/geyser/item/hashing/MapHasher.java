@@ -169,7 +169,9 @@ public class MapHasher<Type> {
      */
     public <Value> MapHasher<Type> optional(String key, MinecraftHasher<Value> hasher, Function<Type, Optional<Value>> extractor) {
         Optional<Value> value = extractor.apply(object);
-        value.ifPresent(v -> acceptConstant(key, hasher, v));
+        if (value.isPresent()) {
+            acceptConstant(key, hasher, value.get());
+        }
         return this;
     }
 
@@ -183,7 +185,11 @@ public class MapHasher<Type> {
      * @param <Value> the type of the value.
      */
     public <Value> MapHasher<Type> optional(String key, MinecraftHasher<Value> hasher, Function<Type, Value> extractor, Value defaultValue) {
-        return optionalPredicate(key, hasher, extractor, value -> !value.equals(defaultValue));
+        Value value = extractor.apply(object);
+        if (!value.equals(defaultValue)) {
+            acceptConstant(key, hasher, value);
+        }
+        return this;
     }
 
     /**

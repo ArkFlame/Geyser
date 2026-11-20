@@ -305,9 +305,10 @@ public final class ItemTranslator {
      * @param language the locale of the player
      */
     private static void addAttributeLore(GeyserSession session, ItemAttributeModifiers modifiers, BedrockItemBuilder builder, String language) {
+        List<ItemAttributeModifiers.Entry> modifierList = modifiers.getModifiers();
         // maps each slot to the modifiers applied when in such slot
-        Map<ItemAttributeModifiers.EquipmentSlotGroup, List<String>> slotsToModifiers = new HashMap<>();
-        for (ItemAttributeModifiers.Entry entry : modifiers.getModifiers()) {
+        Map<ItemAttributeModifiers.EquipmentSlotGroup, List<String>> slotsToModifiers = new HashMap<>(modifierList.size());
+        for (ItemAttributeModifiers.Entry entry : modifierList) {
             // convert the modifier tag to a lore entry
             String loreEntry = attributeToLore(session, entry.getAttribute(), entry.getModifier(), entry.getDisplay(), language);
             if (loreEntry == null) {
@@ -515,7 +516,18 @@ public final class ItemTranslator {
         }
         List<AdventureModePredicate.BlockPredicate> predicates = canModifyJava.getPredicates();
         if (!predicates.isEmpty()) {
-            List<String> canModifyBedrock = new ArrayList<>(); // This used to be an array, but we need to be flexible with what blocks can be supported
+            // Count the block holders up front so the result list is sized exactly once
+            int capacity = 0;
+            for (int i = 0; i < predicates.size(); i++) {
+                HolderSet holderSet = predicates.get(i).getBlocks();
+                if (holderSet != null) {
+                    IntList holders = holderSet.getHolders();
+                    if (holders != null) {
+                        capacity += holders.size();
+                    }
+                }
+            }
+            List<String> canModifyBedrock = new ArrayList<>(capacity); // This used to be an array, but we need to be flexible with what blocks can be supported
             for (int i = 0; i < predicates.size(); i++) {
                 HolderSet holderSet = predicates.get(i).getBlocks();
                 if (holderSet == null) {
@@ -541,7 +553,7 @@ public final class ItemTranslator {
                     }
                 }
             }
-            return canModifyBedrock.toArray(new String[0]);
+            return canModifyBedrock.toArray(new String[canModifyBedrock.size()]);
         }
         return null;
     }

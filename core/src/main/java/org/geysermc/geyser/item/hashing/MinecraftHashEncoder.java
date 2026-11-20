@@ -133,15 +133,17 @@ public class MinecraftHashEncoder {
     public HashCode map(Map<HashCode, HashCode> map) {
         Hasher mapHasher = hasher.newHasher();
         mapHasher.putByte(TAG_MAP_START);
-        map.entrySet().stream()
-            .sorted(MAP_ENTRY_ORDER)
-            .forEach(entry -> mapHasher.putBytes(entry.getKey().asBytes()).putBytes(entry.getValue().asBytes()));
+        List<Map.Entry<HashCode, HashCode>> entries = new ArrayList<>(map.entrySet());
+        entries.sort(MAP_ENTRY_ORDER);
+        for (Map.Entry<HashCode, HashCode> entry : entries) {
+            mapHasher.putBytes(entry.getKey().asBytes()).putBytes(entry.getValue().asBytes());
+        }
         mapHasher.putByte(TAG_MAP_END);
         return mapHasher.hash();
     }
 
     public HashCode nbtMap(NbtMap map) {
-        Map<HashCode, HashCode> hashed = new HashMap<>();
+        Map<HashCode, HashCode> hashed = new HashMap<>(map.size());
         for (String key : map.keySet()) {
             HashCode hashedKey = string(key);
             Object value = map.get(key);
@@ -163,31 +165,46 @@ public class MinecraftHashEncoder {
     public HashCode list(List<HashCode> list) {
         Hasher listHasher = hasher.newHasher();
         listHasher.putByte(TAG_LIST_START);
-        list.forEach(hash -> listHasher.putBytes(hash.asBytes()));
+        for (HashCode hash : list) {
+            listHasher.putBytes(hash.asBytes());
+        }
         listHasher.putByte(TAG_LIST_END);
         return listHasher.hash();
     }
 
-    // TODO can this be written better?
     @SuppressWarnings("unchecked")
     public HashCode nbtList(NbtList<?> nbtList) {
         NbtType<?> type = nbtList.getType();
-        List<HashCode> hashed = new ArrayList<>();
+        List<HashCode> hashed = new ArrayList<>(nbtList.size());
 
         if (type == NbtType.BYTE) {
-            hashed.addAll(((List<Byte>) nbtList).stream().map(this::number).toList());
+            for (Byte b : (List<Byte>) nbtList) {
+                hashed.add(number(b));
+            }
         } else if (type == NbtType.SHORT) {
-            hashed.addAll(((List<Short>) nbtList).stream().map(this::number).toList());
+            for (Short s : (List<Short>) nbtList) {
+                hashed.add(number(s));
+            }
         } else if (type == NbtType.INT) {
-            hashed.addAll(((List<Integer>) nbtList).stream().map(this::number).toList());
+            for (Integer i : (List<Integer>) nbtList) {
+                hashed.add(number(i));
+            }
         } else if (type == NbtType.LONG) {
-            hashed.addAll(((List<Long>) nbtList).stream().map(this::number).toList());
+            for (Long l : (List<Long>) nbtList) {
+                hashed.add(number(l));
+            }
         } else if (type == NbtType.FLOAT) {
-            hashed.addAll(((List<Float>) nbtList).stream().map(this::number).toList());
+            for (Float f : (List<Float>) nbtList) {
+                hashed.add(number(f));
+            }
         } else if (type == NbtType.DOUBLE) {
-            hashed.addAll(((List<Double>) nbtList).stream().map(this::number).toList());
+            for (Double d : (List<Double>) nbtList) {
+                hashed.add(number(d));
+            }
         } else if (type == NbtType.STRING) {
-            hashed.addAll(((List<String>) nbtList).stream().map(this::string).toList());
+            for (String s : (List<String>) nbtList) {
+                hashed.add(string(s));
+            }
         } else if (type == NbtType.LIST) {
             for (NbtList<?> list : (List<NbtList<?>>) nbtList) {
                 hashed.add(nbtList(list));

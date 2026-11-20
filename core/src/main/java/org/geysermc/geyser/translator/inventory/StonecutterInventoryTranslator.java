@@ -47,6 +47,10 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundContainerButtonClickPacket;
 
 public class StonecutterInventoryTranslator extends AbstractBlockInventoryTranslator<StonecutterContainer> {
+    // Immutable records with constant values; reuse them instead of allocating on every slot lookup.
+    private static final BedrockContainerSlot INPUT_SLOT = new BedrockContainerSlot(ContainerSlotType.STONECUTTER_INPUT, 3);
+    private static final BedrockContainerSlot RESULT_SLOT = new BedrockContainerSlot(ContainerSlotType.STONECUTTER_RESULT, 50);
+
     public StonecutterInventoryTranslator() {
         super(2, Blocks.STONECUTTER, org.cloudburstmc.protocol.bedrock.data.inventory.ContainerType.STONECUTTER, UIInventoryUpdater.INSTANCE);
     }
@@ -140,10 +144,10 @@ public class StonecutterInventoryTranslator extends AbstractBlockInventoryTransl
     @Override
     public BedrockContainerSlot javaSlotToBedrockContainer(int slot, StonecutterContainer container) {
         if (slot == 0) {
-            return new BedrockContainerSlot(ContainerSlotType.STONECUTTER_INPUT, 3);
+            return INPUT_SLOT;
         }
         if (slot == 1) {
-            return new BedrockContainerSlot(ContainerSlotType.STONECUTTER_RESULT, 50);
+            return RESULT_SLOT;
         }
         return super.javaSlotToBedrockContainer(slot, container);
     }

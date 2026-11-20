@@ -47,7 +47,6 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.WritableBook
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.WrittenBookContent;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundContainerButtonClickPacket;
 
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class LecternInventoryTranslator extends AbstractBlockInventoryTranslator<LecternContainer> {
@@ -167,7 +166,7 @@ public class LecternInventoryTranslator extends AbstractBlockInventoryTranslator
                 InventoryUtils.closeInventory(session, container.getJavaId(), false);
             }
             session.setDroppingLecternBook(false);
-        } else if (!Objects.equals(book.hashCode(), container.getCurrentBookHash())) {
+        } else if (book.hashCode() != container.getCurrentBookHash()) {
             Vector3i position = container.getHolderPosition();
 
             int currentPage;

@@ -376,17 +376,27 @@ public class DataComponentHashers {
             return new HashedStack(stack.getId(), stack.getAmount(), Map.of(), Set.of());
         }
         Map<DataComponentType<?>, DataComponent<?, ?>> components = patch.getDataComponents();
-        Map<DataComponentType<?>, Integer> hashedAdditions = new HashMap<>();
-        Set<DataComponentType<?>> removals = new HashSet<>();
+        // Lazily allocate the result collections: most stacks only have additions and no removals,
+        // so the removals set (and, when there are none, the additions map) is never needed.
+        Map<DataComponentType<?>, Integer> hashedAdditions = null;
+        Set<DataComponentType<?>> removals = null;
         for (Map.Entry<DataComponentType<?>, DataComponent<?, ?>> component : components.entrySet()) {
             if (NOT_HASHED.contains(component.getKey())) {
                 GeyserImpl.getInstance().getLogger().debug("Not hashing component " + component.getKey() + " on stack " + stack);
             } else if (component.getValue().getValue() == null) {
+                if (removals == null) {
+                    removals = new HashSet<>();
+                }
                 removals.add(component.getKey());
             } else {
+                if (hashedAdditions == null) {
+                    hashedAdditions = new HashMap<>();
+                }
                 hashedAdditions.put(component.getKey(), hash(registries, component.getValue()).asInt());
             }
         }
-        return new HashedStack(stack.getId(), stack.getAmount(), hashedAdditions, removals);
+        return new HashedStack(stack.getId(), stack.getAmount(),
+            hashedAdditions == null ? Map.of() : hashedAdditions,
+            removals == null ? Set.of() : removals);
     }
 }

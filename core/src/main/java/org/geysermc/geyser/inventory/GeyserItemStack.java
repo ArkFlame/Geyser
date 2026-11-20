@@ -293,7 +293,9 @@ public class GeyserItemStack {
                 }
             }
         }
-        return isEmpty() ? null : new ItemStack(javaId, newAmount, components);
+        // isEmpty() was already checked above; nothing between the two checks can change
+        // amount or javaId, so this second check is always false.
+        return new ItemStack(javaId, newAmount, components);
     }
 
     public ItemData getItemData(GeyserSession session) {
@@ -301,7 +303,9 @@ public class GeyserItemStack {
             return ItemData.AIR;
         }
         ItemData.Builder itemData = ItemTranslator.translateToBedrock(session, javaId, amount, components);
-        itemData.netId(getNetId());
+        // Non-empty was guaranteed by the early return above, so netId equals getNetId()
+        // without re-running the isEmpty() check.
+        itemData.netId(netId);
         itemData.usingNetId(true);
 
         return session.getBundleCache().checkForBundle(this, itemData);

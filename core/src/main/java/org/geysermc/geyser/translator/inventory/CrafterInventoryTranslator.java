@@ -53,6 +53,40 @@ public class CrafterInventoryTranslator extends AbstractBlockInventoryTranslator
     private static final int TRIGGERED_KEY = 9; // key of triggered state
     private static final int TRIGGERED = 1; // triggered value
 
+    /**
+     * Crafter slots map to a fixed, finite set of Bedrock container slots. Since {@link BedrockContainerSlot} is an
+     * immutable record, precompute them once instead of allocating a new one for every affected slot of every
+     * inventory request.
+     */
+    private static final BedrockContainerSlot[] BEDROCK_SLOTS = createBedrockSlots();
+
+    private static BedrockContainerSlot[] createBedrockSlots() {
+        BedrockContainerSlot[] slots = new BedrockContainerSlot[JAVA_RESULT_SLOT + 1];
+        for (int slot = 0; slot < slots.length; slot++) {
+            slots[slot] = mapJavaSlotToBedrock(slot);
+        }
+        return slots;
+    }
+
+    private static BedrockContainerSlot mapJavaSlotToBedrock(int javaSlot) {
+        if (javaSlot == JAVA_RESULT_SLOT) {
+            return new BedrockContainerSlot(ContainerSlotType.CRAFTER_BLOCK_CONTAINER, BEDROCK_RESULT_SLOT);
+        }
+
+        // grid slots 0-8
+        if (javaSlot < GRID_SIZE) {
+            return new BedrockContainerSlot(ContainerSlotType.LEVEL_ENTITY, javaSlot);
+        }
+
+        // inventory and hotbar
+        final int tmp = javaSlot - GRID_SIZE;
+        if (tmp < 27) {
+            return new BedrockContainerSlot(ContainerSlotType.INVENTORY, tmp + 9);
+        } else {
+            return new BedrockContainerSlot(ContainerSlotType.HOTBAR, tmp - 27);
+        }
+    }
+
     public CrafterInventoryTranslator() {
         super(10, Blocks.CRAFTER, org.cloudburstmc.protocol.bedrock.data.inventory.ContainerType.CRAFTER, CrafterInventoryUpdater.INSTANCE);
     }
@@ -110,22 +144,10 @@ public class CrafterInventoryTranslator extends AbstractBlockInventoryTranslator
 
     @Override
     public BedrockContainerSlot javaSlotToBedrockContainer(int javaSlot, CrafterContainer container) {
-        if (javaSlot == JAVA_RESULT_SLOT) {
-            return new BedrockContainerSlot(ContainerSlotType.CRAFTER_BLOCK_CONTAINER, BEDROCK_RESULT_SLOT);
+        if (javaSlot >= 0 && javaSlot < BEDROCK_SLOTS.length) {
+            return BEDROCK_SLOTS[javaSlot];
         }
-
-        // grid slots 0-8
-        if (javaSlot < GRID_SIZE) {
-            return new BedrockContainerSlot(ContainerSlotType.LEVEL_ENTITY, javaSlot);
-        }
-
-        // inventory and hotbar
-        final int tmp = javaSlot - GRID_SIZE;
-        if (tmp < 27) {
-            return new BedrockContainerSlot(ContainerSlotType.INVENTORY, tmp + 9);
-        } else {
-            return new BedrockContainerSlot(ContainerSlotType.HOTBAR, tmp - 27);
-        }
+        return mapJavaSlotToBedrock(javaSlot);
     }
 
     @Override

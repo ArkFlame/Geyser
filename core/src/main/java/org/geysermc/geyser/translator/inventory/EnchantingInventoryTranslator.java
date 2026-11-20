@@ -45,8 +45,7 @@ import org.geysermc.geyser.registry.java.JavaRegistries;
 import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerType;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundContainerButtonClickPacket;
 
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.Collections;
 
 public class EnchantingInventoryTranslator extends AbstractBlockInventoryTranslator<EnchantingContainer> {
     public EnchantingInventoryTranslator() {
@@ -74,10 +73,10 @@ public class EnchantingInventoryTranslator extends AbstractBlockInventoryTransla
                 // The Bedrock index might need changed, so let's look it up and see.
                 int bedrockIndex = value;
                 if (bedrockIndex != -1) {
-                    Optional<Enchantment> enchantment = JavaRegistries.ENCHANTMENT.get(session.javaRegistries(), value);
-                    if (enchantment.isPresent() && enchantment.get().bedrockEnchantment() != null) {
+                    Enchantment enchantment = JavaRegistries.ENCHANTMENT.get(session.javaRegistries(), value).orElse(null);
+                    if (enchantment != null && enchantment.bedrockEnchantment() != null) {
                         // Convert the Java enchantment index to Bedrock's
-                        bedrockIndex = enchantment.get().bedrockEnchantment().ordinal();
+                        bedrockIndex = enchantment.bedrockEnchantment().ordinal();
                     } else {
                         // There is no Bedrock enchantment equivalent
                         bedrockIndex = -1;
@@ -100,7 +99,7 @@ public class EnchantingInventoryTranslator extends AbstractBlockInventoryTransla
         if (shouldUpdate && enchantOption.hasChanged()) {
             container.getEnchantOptions()[slotToUpdate] = enchantOption.build(session);
             PlayerEnchantOptionsPacket packet = new PlayerEnchantOptionsPacket();
-            packet.getOptions().addAll(Arrays.asList(container.getEnchantOptions()));
+            Collections.addAll(packet.getOptions(), container.getEnchantOptions());
             session.sendUpstreamPacket(packet);
         }
     }

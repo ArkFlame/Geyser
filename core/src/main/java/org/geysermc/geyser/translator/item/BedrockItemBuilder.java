@@ -49,7 +49,8 @@ public final class BedrockItemBuilder {
     private String customName;
     @Nullable
     private List<String> lore;
-    private OptionalInt damage = OptionalInt.empty();
+    private int damage;
+    private boolean hasDamage;
     /**
      * Miscellaneous NBT that will be put into the final item.
      */
@@ -75,11 +76,12 @@ public final class BedrockItemBuilder {
     }
 
     public OptionalInt getDamage() {
-        return damage;
+        return hasDamage ? OptionalInt.of(damage) : OptionalInt.empty();
     }
 
     public BedrockItemBuilder setDamage(int damage) {
-        this.damage = OptionalInt.of(damage);
+        this.damage = damage;
+        this.hasDamage = true;
         return this;
     }
 
@@ -142,8 +144,8 @@ public final class BedrockItemBuilder {
             }
             getOrCreateNbt().put("display", display.build());
         }
-        if (damage.isPresent()) {
-            getOrCreateNbt().putInt("Damage", damage.getAsInt());
+        if (hasDamage) {
+            getOrCreateNbt().putInt("Damage", damage);
         }
         if (builder == null) {
             return null;

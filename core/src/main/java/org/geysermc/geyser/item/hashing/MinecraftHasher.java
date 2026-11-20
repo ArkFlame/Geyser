@@ -48,15 +48,15 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.Unit;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 /**
  * Encodes an object into a {@link HashCode} using a {@link MinecraftHashEncoder}.
@@ -93,6 +93,9 @@ import java.util.stream.Collectors;
 @SuppressWarnings("UnstableApiUsage")
 @FunctionalInterface
 public interface MinecraftHasher<Type> {
+
+    /** Precompiled form of {@code "\\n *"}, used to strip NBT pretty-print indentation without recompiling a regex per hash. */
+    Pattern NBT_NEWLINE_PATTERN = Pattern.compile("\\n *");
 
     MinecraftHasher<Unit> UNIT = unit();
 
@@ -152,9 +155,10 @@ public interface MinecraftHasher<Type> {
         .optionalNullable("texture", KEY, ResolvableProfile::getBody)
         .optionalNullable("cape", KEY, ResolvableProfile::getCape)
         .optionalNullable("elytra", KEY, ResolvableProfile::getElytra)
-        .optional("model", STRING, resolvableProfile -> Optional.ofNullable(resolvableProfile.getModel())
-            .map(TextureModel::name)
-            .map(model -> model.toLowerCase(Locale.ROOT)))
+        .optionalNullable("model", STRING, resolvableProfile -> {
+            TextureModel model = resolvableProfile.getModel();
+            return model == null ? null : model.name().toLowerCase(Locale.ROOT);
+        })
     );
 
     MinecraftHasher<Integer> RARITY = fromIdEnum(Rarity.values(), Rarity::getName);
@@ -196,7 +200,13 @@ public interface MinecraftHasher<Type> {
      * Creates a hasher that hashes a list of objects this hasher hashes.
      */
     default MinecraftHasher<List<Type>> list() {
-        return (list, encoder) -> encoder.list(list.stream().map(element -> hash(element, encoder)).toList());
+        return (list, encoder) -> {
+            List<HashCode> hashes = new ArrayList<>(list.size());
+            for (Type element : list) {
+                hashes.add(hash(element, encoder));
+            }
+            return encoder.list(hashes);
+        };
     }
 
     /**
@@ -372,8 +382,18 @@ public interface MinecraftHasher<Type> {
      * @see MinecraftHasher#map(MinecraftHasher, MinecraftHasher)
      */
     static <Type> MinecraftHasher<Collection<Type>> mapSet(MinecraftHasher<Type> keyHasher, MinecraftHasher<Type> valueHasher) {
-        return (set, encoder) -> encoder.map(set.stream()
-            .collect(Collectors.toMap(value -> keyHasher.hash(value, encoder), value -> valueHasher.hash(value, encoder))));
+        return (set, encoder) -> {
+            Map<HashCode, HashCode> hashed = new HashMap<>(set.size());
+            for (Type value : set) {
+                HashCode key = keyHasher.hash(value, encoder);
+                HashCode hashedValue = valueHasher.hash(value, encoder);
+                // Collectors.toMap rejects duplicate keys; keep that behaviour.
+                if (hashed.put(key, hashedValue) != null) {
+                    throw new IllegalStateException("Duplicate key " + key);
+                }
+            }
+            return encoder.map(hashed);
+        };
     }
 
     /**
@@ -454,6 +474,6 @@ public interface MinecraftHasher<Type> {
             listString.append(']');
             return listString.toString();
         }
-        return NbtUtils.toString(object).replaceAll("\\n *", "");
+        return NBT_NEWLINE_PATTERN.matcher(NbtUtils.toString(object)).replaceAll("");
     }
 }

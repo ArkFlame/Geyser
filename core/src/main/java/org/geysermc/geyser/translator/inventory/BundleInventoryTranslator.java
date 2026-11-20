@@ -293,16 +293,41 @@ public final class BundleInventoryTranslator {
         Fraction fraction = Fraction.ZERO;
 
         for (GeyserItemStack content : contents) {
-            fraction = fraction.add(calculateWeight(content)
-                .multiplyBy(Fraction.getFraction(content.getAmount(), 1)));
+            fraction = fraction.add(multiplyByInt(calculateWeight(content), content.getAmount()));
         }
 
         return fraction;
     }
 
+    /**
+     * Multiplies a fraction by a whole number, mirroring
+     * {@code fraction.multiplyBy(Fraction.getFraction(amount, 1))} without allocating a
+     * temporary fraction for the whole number on every content item.
+     */
+    private static Fraction multiplyByInt(Fraction fraction, int amount) {
+        if (amount == 0 || fraction.getNumerator() == 0) {
+            return Fraction.ZERO;
+        }
+        int denominator = fraction.getDenominator();
+        int divisor = greatestCommonDivisor(amount, denominator);
+        return Fraction.getReducedFraction(Math.multiplyExact(fraction.getNumerator(), amount / divisor), denominator / divisor);
+    }
+
+    private static int greatestCommonDivisor(int a, int b) {
+        a = Math.abs(a);
+        b = Math.abs(b);
+        while (b != 0) {
+            int remainder = a % b;
+            a = b;
+            b = remainder;
+        }
+        return a;
+    }
+
     private static Fraction calculateWeight(GeyserItemStack itemStack) {
-        if (itemStack.getBundleData() != null) {
-            return BUNDLE_IN_BUNDLE_WEIGHT.add(calculateBundleWeight(itemStack.getBundleData().contents()));
+        var bundleData = itemStack.getBundleData();
+        if (bundleData != null) {
+            return BUNDLE_IN_BUNDLE_WEIGHT.add(calculateBundleWeight(bundleData.contents()));
         }
         DataComponents components = itemStack.getComponents();
         if (components != null) {

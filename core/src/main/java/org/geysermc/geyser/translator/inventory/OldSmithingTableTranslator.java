@@ -58,6 +58,10 @@ public class OldSmithingTableTranslator extends AbstractBlockInventoryTranslator
 
     private static final IntFunction<ItemData> UPGRADE_TEMPLATE = InventoryUtils.getUpgradeTemplate();
 
+    private static final BedrockContainerSlot INPUT_SLOT = new BedrockContainerSlot(ContainerSlotType.SMITHING_TABLE_INPUT, 51);
+    private static final BedrockContainerSlot MATERIAL_SLOT = new BedrockContainerSlot(ContainerSlotType.SMITHING_TABLE_MATERIAL, 52);
+    private static final BedrockContainerSlot RESULT_SLOT = new BedrockContainerSlot(ContainerSlotType.SMITHING_TABLE_RESULT, 50);
+
     private OldSmithingTableTranslator() {
         super(3, Blocks.SMITHING_TABLE, ContainerType.SMITHING_TABLE, UIInventoryUpdater.INSTANCE);
     }
@@ -75,9 +79,9 @@ public class OldSmithingTableTranslator extends AbstractBlockInventoryTranslator
     @Override
     public BedrockContainerSlot javaSlotToBedrockContainer(int slot, Container container) {
         return switch (slot) {
-            case 0 -> new BedrockContainerSlot(ContainerSlotType.SMITHING_TABLE_INPUT, 51);
-            case 1 -> new BedrockContainerSlot(ContainerSlotType.SMITHING_TABLE_MATERIAL, 52);
-            case 2 -> new BedrockContainerSlot(ContainerSlotType.SMITHING_TABLE_RESULT, 50);
+            case 0 -> INPUT_SLOT;
+            case 1 -> MATERIAL_SLOT;
+            case 2 -> RESULT_SLOT;
             default -> super.javaSlotToBedrockContainer(slot, container);
         };
     }

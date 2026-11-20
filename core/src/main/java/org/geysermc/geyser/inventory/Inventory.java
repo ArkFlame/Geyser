@@ -166,8 +166,9 @@ public abstract class Inventory {
                 newItem.mergeBundleData(session, oldItem.getBundleData());
             } else {
                 newItem.setNetId(session.getNextItemNetId());
-                session.getBundleCache().markNewBundle(newItem.getBundleData());
-                session.getBundleCache().onOldItemDelete(oldItem);
+                var bundleCache = session.getBundleCache();
+                bundleCache.markNewBundle(newItem.getBundleData());
+                bundleCache.onOldItemDelete(oldItem);
             }
         } else {
             // Empty item means no more bundle if one existed.
