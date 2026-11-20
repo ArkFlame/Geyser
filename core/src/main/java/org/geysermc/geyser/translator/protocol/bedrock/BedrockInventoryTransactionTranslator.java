@@ -267,11 +267,9 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                         double clickPositionFullY = (double) packetBlockPosition.getY() + (double) cursorY;
                         double clickPositionFullZ = (double) packetBlockPosition.getZ() + (double) cursorZ;
 
-                        Vector3f blockCenter = Vector3f.from(packetBlockPosition.getX() + 0.5f, packetBlockPosition.getY() + 0.5f, packetBlockPosition.getZ() + 0.5f);
-
-                        double clickDistanceX = clickPositionFullX - blockCenter.getX();
-                        double clickDistanceY = clickPositionFullY - blockCenter.getY();
-                        double clickDistanceZ = clickPositionFullZ - blockCenter.getZ();
+                        double clickDistanceX = clickPositionFullX - (packetBlockPosition.getX() + 0.5f);
+                        double clickDistanceY = clickPositionFullY - (packetBlockPosition.getY() + 0.5f);
+                        double clickDistanceZ = clickPositionFullZ - (packetBlockPosition.getZ() + 0.5f);
                         if (!(Math.abs(clickDistanceX) < 1.0000001D && Math.abs(clickDistanceY) < 1.0000001D && Math.abs(clickDistanceZ) < 1.0000001D)) {
                             BlockUtils.restoreCorrectBlock(session, blockPos, packet.getHotbarSlot());
                             return;
@@ -558,11 +556,11 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
         }
 
         Vector3f clickPosition = packet.getClickPosition().sub(entity.bedrockPosition());
+        Vector3d interactPosition = Vector3d.from(clickPosition.getX(), clickPosition.getY(), clickPosition.getZ());
         boolean isSpectator = session.getGameMode() == GameMode.SPECTATOR;
         for (Hand hand : EntityUtils.HANDS) {
             session.sendDownstreamGamePacket(new ServerboundInteractPacket(entity.getEntityId(),
-                hand, Vector3d.from(clickPosition.getX(), clickPosition.getY(), clickPosition.getZ()),
-                session.isSneaking()));
+                hand, interactPosition, session.isSneaking()));
 
             if (!isSpectator) {
                 InteractionResult result = entity.interactAt(hand);
