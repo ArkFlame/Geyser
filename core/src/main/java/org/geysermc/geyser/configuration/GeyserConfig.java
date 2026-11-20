@@ -489,6 +489,11 @@ public interface GeyserConfig {
             ping, it may also cause players to time out more easily.""")
         boolean forwardPlayerPing();
 
+        @Comment("""
+            This will use Spigot offine player uuids to cross-play the same offline accounts from Geyser""")
+        @DefaultBoolean(false)
+        boolean useOfflineUuids();
+
         @SuppressWarnings("BooleanMethodIsAlwaysInverted")
         @Comment("""
             Allows Xbox achievements to be unlocked.

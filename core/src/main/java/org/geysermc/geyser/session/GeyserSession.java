@@ -1054,7 +1054,14 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
 
         loggingIn = true;
         // Always replace spaces with underscores to avoid illegal nicknames, e.g. with GeyserConnect
-        protocol = new MinecraftProtocol(username.replace(' ', '_'));
+        String javaName = username.replace(' ', '_');
+        if (geyser.config().gameplay().useOfflineUuids()) {
+            // Same algorithm as Spigot's Bukkit#getOfflinePlayer(String)
+            UUID offlineUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + javaName).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            protocol = new MinecraftProtocol(new GameProfile(offlineUuid, javaName), null);
+        } else {
+            protocol = new MinecraftProtocol(javaName);
+        }
 
         try {
             connectDownstream();
