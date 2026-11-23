@@ -231,22 +231,11 @@ public class ItemFrameEntity extends HangingEntity {
     }
 
     /**
-     * Updates the item frame as a block
+     * Updates the item frame as a block. The frame entity itself knows it is present, so this draws
+     * it even when Java reports a block in the same cell; world-driven updates go through
+     * {@link #updateBlock(BlockState, boolean)} instead, where a real block wins over the frame.
      */
     public void updateBlock(boolean force) {
-        updateBlock(session.getGeyser().getWorldManager().blockAt(session, bedrockPosition), force);
-    }
-
-    /**
-     * Updates the item frame as a block, when the caller already knows the authoritative Java
-     * block sharing this cell. A non-air block always wins over the frame; the frame is revealed
-     * again by {@link org.geysermc.geyser.util.ChunkUtils#updateBlockClientSide} once it breaks.
-     */
-    public void updateBlock(BlockState javaBlock, boolean force) {
-        if (!javaBlock.isAir()) {
-            // Leave 'changed' untouched so the pending update happens on reveal
-            return;
-        }
         if (!changed && !force) {
             // Don't send a block update packet - nothing changed
             return;
@@ -271,6 +260,19 @@ public class ItemFrameEntity extends HangingEntity {
         session.sendUpstreamPacket(blockEntityDataPacket);
 
         changed = false;
+    }
+
+    /**
+     * Updates the item frame as a block, when the caller already knows the authoritative Java
+     * block sharing this cell. A non-air block always wins over the frame; the frame is revealed
+     * again by {@link org.geysermc.geyser.util.ChunkUtils#updateBlockClientSide} once it breaks.
+     */
+    public void updateBlock(BlockState javaBlock, boolean force) {
+        if (!javaBlock.isAir()) {
+            // Leave 'changed' untouched so the pending update happens on reveal
+            return;
+        }
+        updateBlock(force);
     }
 
     @Override
