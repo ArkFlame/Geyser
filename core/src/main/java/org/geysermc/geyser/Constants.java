@@ -43,7 +43,8 @@ public final class Constants {
 
     public static final String MINECRAFT_SKIN_SERVER_URL = "https://textures.minecraft.net/texture/";
 
-    public static final int CONFIG_VERSION = 12;
+    // Bumped for ip-discovery; the fork already used 12 for the HAProxy migration
+    public static final int CONFIG_VERSION = 13;
 
     public static final int BSTATS_ID = 5273;
 

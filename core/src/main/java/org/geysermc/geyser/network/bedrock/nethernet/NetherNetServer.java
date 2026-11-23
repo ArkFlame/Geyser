@@ -265,7 +265,27 @@ public final class NetherNetServer implements EventRegistrar, DumpMessageSource 
             provider = false;
         }
         warnIfBuiltinSettingsUnused(inbuilt);
-        if (inbuilt) startInbuilt(advertised);
+        boolean discovered = false;
+        if (advertised.isEmpty() && config.stunDiscovery()) {
+            logger().warning("STUN discovery is on, which cannot find this server's address where a firewall drops the UDP replies "
+                + "STUN needs, and players then cannot connect however often they retry. If that happens, set \"stun-discovery\" "
+                + "to false and \"ip-discovery\" to true, or start with -DgeyserDiscoveryMethod=ip.");
+        }
+        // Kept after the relay check above: that fork-specific validation must still see the configured addresses
+        if (advertised.isEmpty() && !config.stunDiscovery() && config.ipDiscovery()) {
+            Optional<String> publicIp = PublicIpDiscovery.discover(logger(), dataFolder.resolve("public-ip.json"));
+            if (publicIp.isPresent()) {
+                // The port goes in explicitly: a public address this machine does not hold is the public side of a
+                // forward, which does not necessarily use the same port number
+                advertised = List.of(publicIp.get() + ":" + webrtcPort);
+                discovered = true;
+                logger().info("ip-discovery is advertising " + advertised.get(0) + " to connecting players");
+            } else {
+                logger().warning("ip-discovery could not find this server's public address, so this machine's own addresses " +
+                    "will be advertised instead. Set the public address in \"advertise-addresses\" if players cannot connect.");
+            }
+        }
+        if (inbuilt) startInbuilt(advertised, discovered);
         if (provider) startProvider(advertised);
         if (geyser.config().bedrock().signaling().lanDiscovery().enabled()) startLanDiscovery();
     }
@@ -289,6 +309,10 @@ public final class NetherNetServer implements EventRegistrar, DumpMessageSource 
     }
 
     private void startInbuilt(List<String> advertised) {
+        startInbuilt(advertised, false);
+    }
+
+    private void startInbuilt(List<String> advertised, boolean discovered) {
         GeyserConfig.SignalingConfig.BuiltinConfig builtin = config.builtin();
         GeyserConfig.AdvancedBedrockConfig advanced = geyser.config().advanced().bedrock();
         NetherNetHTTPServerSignaling.Builder signalingBuilder = new NetherNetHTTPServerSignaling.Builder();
@@ -298,8 +322,17 @@ public final class NetherNetServer implements EventRegistrar, DumpMessageSource 
             boolean relayed = !advanced.webrtcProxyProtocolRelays().isEmpty();
             boolean stun = advertised.isEmpty() && config.stunDiscovery() && !relayed;
             if (!stun && System.getProperty("geyserStunServers") != null) {
-                logger().warning("-DgeyserStunServers is ignored, as " + (!config.stunDiscovery() ? "\"stun-discovery\" is off"
-                    : !advertised.isEmpty() ? "\"advertise-addresses\" is set" : "\"webrtc-proxy-protocol-relays\" is set"));
+                String reason;
+                if (discovered) {
+                    reason = "\"ip-discovery\" found this server's public address";
+                } else if (!config.stunDiscovery()) {
+                    reason = "\"stun-discovery\" is off";
+                } else if (!advertised.isEmpty()) {
+                    reason = "\"advertise-addresses\" is set";
+                } else {
+                    reason = "\"webrtc-proxy-protocol-relays\" is set";
+                }
+                logger().warning("-DgeyserStunServers is ignored, as " + reason);
             }
             List<String> stunServers = stun ? stunServers() : List.of();
             if (advertised.isEmpty() && stunServers.isEmpty() && !relayed) {
@@ -830,7 +863,8 @@ public final class NetherNetServer implements EventRegistrar, DumpMessageSource 
      */
     public record Advertised(@Nullable Builtin builtin, @Nullable Nxs nxs) {
         /**
-         * @param configured the configured addresses. When empty, this machine's own addresses and {@code discovered}
+         * @param configured the addresses sent to players: those in the config, or the one ip-discovery found. When
+         *                   empty, this machine's own addresses and {@code discovered} are sent
          * @param stun whether STUN discovery is on
          * @param discovered the public addresses STUN discovery currently finds
          */
