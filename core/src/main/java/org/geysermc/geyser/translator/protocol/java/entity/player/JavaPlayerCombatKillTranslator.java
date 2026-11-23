@@ -44,6 +44,7 @@ public class JavaPlayerCombatKillTranslator extends PacketTranslator<Clientbound
             DeathInfoPacket deathInfoPacket = new DeathInfoPacket();
             deathInfoPacket.setCauseAttackName(MessageTranslator.convertMessage(deathMessage, session.locale()).replace("%", "%%"));
             session.sendUpstreamPacket(deathInfoPacket);
+            session.setDeathScreenShown(true);
         }
     }
 }

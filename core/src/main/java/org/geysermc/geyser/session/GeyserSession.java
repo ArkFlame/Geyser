@@ -124,6 +124,7 @@ import org.geysermc.geyser.api.entity.EntityData;
 import org.geysermc.geyser.api.entity.type.player.GeyserPlayerEntity;
 import org.geysermc.geyser.api.event.bedrock.SessionDisconnectEvent;
 import org.geysermc.geyser.api.event.bedrock.SessionLoginEvent;
+import org.geysermc.geyser.api.network.AuthType;
 import org.geysermc.geyser.api.network.RemoteServer;
 import org.geysermc.geyser.api.skin.SkinData;
 import org.geysermc.geyser.api.util.PlatformType;
@@ -139,6 +140,7 @@ import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.FishingHookEntity;
 import org.geysermc.geyser.entity.type.ItemFrameEntity;
 import org.geysermc.geyser.entity.type.Tickable;
+import org.geysermc.geyser.entity.type.player.AvatarEntity;
 import org.geysermc.geyser.entity.type.player.PlayerEntity;
 import org.geysermc.geyser.entity.type.player.SessionPlayerEntity;
 import org.geysermc.geyser.entity.vehicle.ClientVehicle;
@@ -204,6 +206,7 @@ import org.geysermc.geyser.translator.text.MessageTranslator;
 import org.geysermc.geyser.util.ChunkUtils;
 import org.geysermc.geyser.util.CooldownUtils;
 import org.geysermc.geyser.util.EntityUtils;
+import org.geysermc.geyser.util.InterruptibleFuture;
 import org.geysermc.geyser.util.GeyserIntegratedPackUtil;
 import org.geysermc.geyser.util.InventoryUtils;
 import org.geysermc.geyser.util.LoginEncryptionUtils;
@@ -274,6 +277,8 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     private final GeyserImpl geyser;
     private final UpstreamSession upstream;
     private DownstreamSession downstream;
+    @Setter
+    private GeyserSession parentSession;
     /**
      * The loop where all packets and ticking is processed to prevent concurrency issues.
      * If this is manually called, ensure that any exceptions are properly handled.
@@ -404,6 +409,12 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     private ScheduledFuture<?> containerOutputFuture;
 
     /**
+     * Used to delay specific inventory transactions until we know that the
+     * client isn't actually about to close their inventory
+     */
+    private final InterruptibleFuture inventoryTransactionFuture;
+
+    /**
      * Stores session collision
      */
     private final CollisionManager collisionManager;
@@ -452,6 +463,14 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
 
     @Setter
     private boolean spawned;
+
+    /**
+     * Whether the Bedrock client has been shown the death screen for the current death.
+     * Used to avoid sending a second, empty death screen when the server also sends a combat kill packet.
+     */
+    @Setter
+    private boolean deathScreenShown;
+
     /**
      * Accessed on the initial Java and Bedrock packet processing threads
      */
@@ -892,7 +911,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         this.bundleCache = new BundleCache(this);
         this.chunkCache = new ChunkCache(this);
         this.entityCache = new EntityCache(this);
-        this.effectCache = new EntityEffectCache();
+        this.effectCache = new EntityEffectCache(this);
         this.formCache = new FormCache(this);
         this.inputCache = new InputCache(this);
         this.lodestoneCache = new LodestoneCache();
@@ -910,6 +929,8 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         this.collisionManager = new CollisionManager(this);
         this.gameRuleHandler = new GameRuleHandler(this);
         this.blockBreakHandler = new BlockBreakHandler(this);
+
+        this.inventoryTransactionFuture = new InterruptibleFuture(this);
         this.worldBorder = new WorldBorder(this);
 
         this.playerEntity = new SessionPlayerEntity(this);
@@ -1295,9 +1316,18 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
                 geyser.getLogger().info(GeyserLocale.getLocaleStringLog("geyser.network.disconnect", address, MessageTranslator.convertMessage(reason)));
             }
 
-            // Disconnect upstream if necessary
+            // Disconnect upstream if necessary. A sub-client shares one console's RakNet connection
+            // with every other local player, so it must never close the peer - that would eject the
+            // whole couch. BedrockSession#close is already a no-op for sub-clients, but that cuts
+            // both ways: nothing removes the closed session from the peer's sub-client map either,
+            // and the next SubClientLoginPacket for that slot would be routed to this dead session
+            // instead of creating a fresh one. So evict it explicitly.
             if (!upstream.isClosed()) {
-                upstream.disconnect(disconnectEvent.disconnectReason());
+                if (isSubClient()) {
+                    upstream.evictSubClientSession();
+                } else {
+                    upstream.disconnect(disconnectEvent.disconnectReason());
+                }
             }
 
             // Remove from session manager
@@ -1408,6 +1438,14 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
      * Called every Minecraft tick.
      */
     protected void tick() {
+        // A sub-client has no transport-level disconnect of its own to notice the parent leaving.
+        // The peer closing does cascade to every sub-client session, so this is only a backstop for
+        // a parent whose GeyserSession is torn down without the peer going down with it.
+        if (isSubClient() && parentSession != null && parentSession.isClosed()) {
+            disconnect("Parent session closed");
+            return;
+        }
+
         try {
             inventoryClicksLeft = ClickPlan.MAX_CLICKS_PER_TICK;
             pistonCache.tick();
@@ -1487,7 +1525,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
             this.dialogManager.tick();
             this.waypointCache.tick();
 
-            this.upstream.getSession().getPeer().sendPacketsImmediately(0, 0, queuedImmediatelyPackets.toArray(EMPTY_IMMEDIATE_PACKETS));
+            this.upstream.sendPacketsImmediately(queuedImmediatelyPackets.toArray(EMPTY_IMMEDIATE_PACKETS));
             queuedImmediatelyPackets.clear();
 
             CooldownUtils.tickCooldown(this);
@@ -1787,7 +1825,11 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
 
     @Override
     public String locale() {
-        return clientData != null ? clientData.getLanguageCode() : GeyserLocale.getDefaultLocale();
+        if (clientData == null) {
+            return GeyserLocale.getDefaultLocale();
+        }
+        String languageCode = clientData.getLanguageCode();
+        return languageCode != null ? languageCode : GeyserLocale.getDefaultLocale();
     }
 
     @Override
@@ -1861,7 +1903,9 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         Objects.requireNonNull(player, "player uuid must not be null!");
         Objects.requireNonNull(skinData, "skinData must not be null!");
 
-        PlayerEntity entity = this.entityCache.getPlayerEntity(player);
+        // getEntityByUuid also finds the session's own player and spawned entities such as mannequins.
+        // Players in the tab list that are not currently spawned are only in the player cache.
+        AvatarEntity entity = this.entityCache.getEntityByUuid(player) instanceof AvatarEntity avatar ? avatar : this.entityCache.getPlayerEntity(player);
         if (entity == null) {
             return;
         }
@@ -2670,6 +2714,19 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     @Override
     public boolean isLinked() {
         return false; //todo
+    }
+
+    /**
+     * Whether this session is a split-screen sub-client: a second, third or fourth local player
+     * sharing one console's single RakNet connection with whoever signed in first.
+     *
+     * <p>Derived from the transport rather than from {@link #parentSession}. A session is a
+     * sub-client from the moment the peer creates it, which is well before sub-client login has run
+     * and found the parent - so keying this off {@code parentSession} reports {@code false} for a
+     * sub-client during login, which is exactly when the answer matters most.
+     */
+    public boolean isSubClient() {
+        return upstream.getSession().isSubClient();
     }
 
     @SuppressWarnings("ConstantConditions") // Need to enforce the parameter annotations

@@ -81,7 +81,15 @@ public class JavaGameEventTranslator extends PacketTranslator<ClientboundGameEve
                 SetPlayerGameTypePacket playerGameTypePacket = new SetPlayerGameTypePacket();
                 playerGameTypePacket.setGamemode(EntityUtils.toBedrockGamemode(gameMode).ordinal());
                 session.sendUpstreamPacket(playerGameTypePacket);
+                boolean wasSpectator = session.getGameMode() == GameMode.SPECTATOR;
                 session.setGameMode(gameMode);
+                if (wasSpectator && gameMode != GameMode.SPECTATOR) {
+                    // Geyser forces the flying state while in spectator mode, and Bedrock does not
+                    // automatically stop flying when the gamemode changes. Clear the stale state so
+                    // the client does not keep flying after being moved back to survival/adventure.
+                    // https://github.com/GeyserMC/Geyser/issues/3678
+                    session.setFlying(false);
+                }
 
                 session.sendAdventureSettings();
 

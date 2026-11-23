@@ -26,6 +26,7 @@
 package org.geysermc.geyser.entity.type;
 
 import lombok.Getter;
+import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.cloudburstmc.nbt.NbtMap;
 import org.cloudburstmc.nbt.NbtMapBuilder;
@@ -34,9 +35,11 @@ import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.packet.BlockEntityDataPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateBlockPacket;
 import org.geysermc.geyser.entity.spawn.EntitySpawnContext;
+import org.geysermc.geyser.level.block.type.BlockState;
 import org.geysermc.geyser.registry.type.ItemMappings;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.item.ItemTranslator;
+import org.geysermc.geyser.util.ChunkUtils;
 import org.geysermc.geyser.util.InteractionResult;
 import org.geysermc.geyser.util.InventoryUtils;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.EntityMetadata;
@@ -54,7 +57,7 @@ public class ItemFrameEntity extends HangingEntity {
      * Used for getting the Bedrock block position.
      * Blocks deal with integers whereas entities deal with floats.
      */
-    private final Vector3i bedrockPosition;
+    private Vector3i bedrockPosition;
     /**
      * Specific block 'state' we are emulating in Bedrock.
      */
@@ -68,10 +71,9 @@ public class ItemFrameEntity extends HangingEntity {
      */
     private NbtMap cachedTag;
     /**
-     * Immutable default tag for this frame. It depends only on fields fixed at construction,
-     * so build it once instead of on every block update.
+     * Default tag for this frame, rebuilt on relocation so its coordinates remain current.
      */
-    private final NbtMap defaultTag;
+    private NbtMap defaultTag;
     /**
      * The item currently in the item frame. Used for block picking.
      */
@@ -103,6 +105,48 @@ public class ItemFrameEntity extends HangingEntity {
         updateBlock(true);
         session.getGeyser().getLogger().debug("Spawned item frame at location " + bedrockPosition + " with java id " + entityId);
         valid = true;
+    }
+
+    @Override
+    public void moveRelativeRaw(double relX, double relY, double relZ, float yaw, float pitch, float headYaw, boolean isOnGround) {
+        moveAbsoluteRaw(position.add(relX, relY, relZ), yaw, pitch, headYaw, isOnGround, false);
+    }
+
+    @Override
+    public void moveAbsoluteRaw(Vector3f position, float yaw, float pitch, float headYaw, boolean isOnGround, boolean teleported) {
+        // Frames are Bedrock blocks, not entities: track the Java transform without sending a movement packet.
+        setPosition(position);
+        setYaw(yaw);
+        setPitch(pitch);
+        setHeadYaw(headYaw);
+        setOnGround(isOnGround);
+
+        Vector3i newPosition = position.toInt();
+        if (newPosition.equals(bedrockPosition)) {
+            return;
+        }
+
+        Vector3i oldPosition = bedrockPosition;
+        session.getItemFrameCache().remove(oldPosition, this);
+        bedrockPosition = newPosition;
+        session.getItemFrameCache().put(newPosition, this);
+        defaultTag = defaultTag.toBuilder()
+            .putInt("x", newPosition.getX())
+            .putInt("y", newPosition.getY())
+            .putInt("z", newPosition.getZ())
+            .build();
+        if (cachedTag != null) {
+            cachedTag = cachedTag.toBuilder()
+                .putInt("x", newPosition.getX())
+                .putInt("y", newPosition.getY())
+                .putInt("z", newPosition.getZ())
+                .build();
+        }
+
+        if (isValid()) {
+            ChunkUtils.updateBlockClientSide(session, session.getGeyser().getWorldManager().blockAt(session, oldPosition), oldPosition);
+            updateBlock(true);
+        }
     }
 
     @Override
@@ -161,16 +205,12 @@ public class ItemFrameEntity extends HangingEntity {
 
     @Override
     public void despawnEntity() {
-        UpdateBlockPacket updateBlockPacket = new UpdateBlockPacket();
-        updateBlockPacket.setDataLayer(0);
-        updateBlockPacket.setBlockPosition(bedrockPosition);
-        updateBlockPacket.setDefinition(session.getBlockMappings().getBedrockAir()); //TODO maybe set this to the world block or another item frame?
-        updateBlockPacket.getFlags().add(UpdateBlockPacket.Flag.PRIORITY);
-        updateBlockPacket.getFlags().add(UpdateBlockPacket.Flag.NETWORK);
-        updateBlockPacket.getFlags().add(UpdateBlockPacket.Flag.NEIGHBORS);
-        session.sendUpstreamPacket(updateBlockPacket);
-
         session.getItemFrameCache().remove(bedrockPosition, this);
+
+        // Send whatever Java has in the cell: air when the frame stood alone, or the real block it
+        // was sharing the cell with
+        BlockState javaBlock = session.getGeyser().getWorldManager().blockAt(session, bedrockPosition);
+        javaBlock.block().updateBlock(session, javaBlock, bedrockPosition);
 
         valid = false;
     }
@@ -191,7 +231,9 @@ public class ItemFrameEntity extends HangingEntity {
     }
 
     /**
-     * Updates the item frame as a block
+     * Updates the item frame as a block. The frame entity itself knows it is present, so this draws
+     * it even when Java reports a block in the same cell; world-driven updates go through
+     * {@link #updateBlock(BlockState, boolean)} instead, where a real block wins over the frame.
      */
     public void updateBlock(boolean force) {
         if (!changed && !force) {
@@ -218,6 +260,19 @@ public class ItemFrameEntity extends HangingEntity {
         session.sendUpstreamPacket(blockEntityDataPacket);
 
         changed = false;
+    }
+
+    /**
+     * Updates the item frame as a block, when the caller already knows the authoritative Java
+     * block sharing this cell. A non-air block always wins over the frame; the frame is revealed
+     * again by {@link org.geysermc.geyser.util.ChunkUtils#updateBlockClientSide} once it breaks.
+     */
+    public void updateBlock(BlockState javaBlock, boolean force) {
+        if (!javaBlock.isAir()) {
+            // Leave 'changed' untouched so the pending update happens on reveal
+            return;
+        }
+        updateBlock(force);
     }
 
     @Override

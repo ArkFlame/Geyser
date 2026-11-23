@@ -131,8 +131,8 @@ public class BoatVehicleComponent extends VehicleComponent<BoatEntity> {
         moveVehicle(context.centerPos(), lastRotation);
         vehicle.setMotion(motion);
 
-        // This got ran twice in Boat entity for certain reason?
-        applyBlockCollisionEffects(context);
+        // Java's Boat#tick calls checkBlockCollision only once per tick; applying block effects
+        // twice doubles the bubble column impulse and desyncs the boat from the backend.
         applyBlockCollisionEffects(context);
     }
 

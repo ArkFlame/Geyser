@@ -27,7 +27,6 @@ package org.geysermc.geyser.session.cache;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import it.unimi.dsi.fastutil.Pair;
 import lombok.Getter;
 import lombok.Setter;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -50,6 +49,7 @@ import org.geysermc.geyser.level.block.Blocks;
 import org.geysermc.geyser.level.block.property.Properties;
 import org.geysermc.geyser.level.block.type.Block;
 import org.geysermc.geyser.level.block.type.BlockState;
+import org.geysermc.geyser.level.block.type.DoorBlock;
 import org.geysermc.geyser.level.block.type.LecternBlock;
 import org.geysermc.geyser.level.physics.Direction;
 import org.geysermc.geyser.registry.BlockRegistries;
@@ -68,6 +68,7 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.AdventureMod
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.ToolData;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundAttackPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerStatusOnlyPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPlayerActionPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundUseItemOnPacket;
 
@@ -148,7 +149,7 @@ public class BlockBreakHandler {
      * See {@link JavaBlockDestructionTranslator} for usage and explanation
      */
     @Getter
-    private final Cache<Vector3i, Pair<Long, BlockBreakStage>> destructionStageCache = CacheBuilder.newBuilder()
+    private final Cache<Vector3i, DestructionProgress> destructionStageCache = CacheBuilder.newBuilder()
         .maximumSize(200)
         .expireAfterWrite(3, TimeUnit.MINUTES)
         .build();
@@ -311,6 +312,7 @@ public class BlockBreakHandler {
 
     protected void handleStartBreak(@NonNull Vector3i position, @NonNull BlockState state, Direction blockFace, long tick) {
         GeyserItemStack item = session.getPlayerInventory().getItemInHand();
+        sendFlyingBreakGroundState();
 
         // Account for fire - the client likes to hit the block behind.
         Vector3i fireBlockPos = BlockUtils.getBlockPosition(position, blockFace);
@@ -450,7 +452,9 @@ public class BlockBreakHandler {
         }
 
         Entity itemFrameEntity = ItemFrameEntity.getItemFrameEntity(session, position);
-        if (itemFrameEntity != null) {
+        // A frame sharing its cell with a real block is not the block the player can see or aim at,
+        // so breaking there has to hit that block instead of the frame
+        if (itemFrameEntity != null && session.getGeyser().getWorldManager().blockAt(session, position).isAir()) {
             ServerboundAttackPacket attackPacket = new ServerboundAttackPacket(itemFrameEntity.getEntityId());
             session.sendDownstreamGamePacket(attackPacket);
             interactPosition = position;
@@ -565,10 +569,22 @@ public class BlockBreakHandler {
     }
 
     protected void destroyBlock(BlockState state, Vector3i vector, Direction direction, boolean instamine) {
+        sendFlyingBreakGroundState();
+
         // Send java packet
         session.sendDownstreamGamePacket(new ServerboundPlayerActionPacket(instamine ? PlayerAction.START_DIGGING : PlayerAction.FINISH_DIGGING,
             vector, direction.mcpl(), session.getWorldCache().nextPredictionSequence()));
         session.getWorldCache().markPositionInSequence(vector);
+
+        // When the lower half of a door is broken, the Bedrock client predicts the whole door (both halves) as gone.
+        // If the Java server rejects the break (e.g. a protection plugin), only the broken position is tracked by the
+        // prediction rollback, leaving the upper half as a ghost block. Track it as well so both halves are restored.
+        if (state.block() instanceof DoorBlock && "lower".equals(state.getValue(Properties.DOUBLE_BLOCK_HALF))) {
+            Vector3i upperHalf = vector.up();
+            if (session.getGeyser().getWorldManager().blockAt(session, upperHalf).block() instanceof DoorBlock) {
+                session.getWorldCache().markPositionInSequence(upperHalf);
+            }
+        }
 
         if (canDestroyBlock(state)) {
             BlockUtils.spawnBlockBreakParticles(session, direction, vector, state);
@@ -581,6 +597,21 @@ public class BlockBreakHandler {
 
     protected float calculateBreakProgress(BlockState state, Vector3i vector, GeyserItemStack stack) {
         return BlockUtils.getBlockMiningProgressPerTick(session, state.block(), stack);
+    }
+
+    public boolean shouldSpoofOnGroundForFlyingBreak() {
+        return currentBlockPos != null && shouldIgnoreAirborneMiningPenalty();
+    }
+
+    public boolean shouldIgnoreAirborneMiningPenalty() {
+        return session.isFlying() && !session.isInstabuild() && session.getGameMode() != GameMode.SPECTATOR;
+    }
+
+    private void sendFlyingBreakGroundState() {
+        if (shouldIgnoreAirborneMiningPenalty() && !session.getPlayerEntity().isOnGround()) {
+            session.sendDownstreamGamePacket(new ServerboundMovePlayerStatusOnlyPacket(
+                true, session.getInputCache().lastHorizontalCollision()));
+        }
     }
 
     /**
@@ -647,6 +678,9 @@ public class BlockBreakHandler {
         clearCurrentVariables();
         this.lastMinedPosition = null;
         this.destructionStageCache.invalidateAll();
+    }
+
+    public record DestructionProgress(long tick, BlockBreakStage stage, double displayedProgress, int rate) {
     }
 
     private static class BlockPredicateCache {

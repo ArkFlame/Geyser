@@ -279,6 +279,8 @@ public class ConfigMigrations {
                     return null;
                 })
                 .build()))
+            // Public IP discovery over web APIs, for servers where STUN is disabled or blocked
+            .addVersion(13, ConfigurationTransformation.empty())
         .build();
 
     /**

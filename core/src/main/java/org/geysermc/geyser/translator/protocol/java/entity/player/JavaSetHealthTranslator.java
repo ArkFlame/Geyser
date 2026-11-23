@@ -26,6 +26,7 @@
 package org.geysermc.geyser.translator.protocol.java.entity.player;
 
 import org.cloudburstmc.protocol.bedrock.data.AttributeData;
+import org.cloudburstmc.protocol.bedrock.packet.DeathInfoPacket;
 import org.cloudburstmc.protocol.bedrock.packet.RespawnPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateAttributesPacket;
 import org.geysermc.geyser.entity.attribute.GeyserAttributeType;
@@ -45,7 +46,20 @@ public class JavaSetHealthTranslator extends PacketTranslator<ClientboundSetHeal
         SessionPlayerEntity entity = session.getPlayerEntity();
 
         float oldHealth = entity.getHealth();
-        if (oldHealth <= 0f && Math.ceil(packet.getHealth()) > 0f) {
+        float newHealth = packet.getHealth();
+        if (oldHealth > 0f && newHealth <= 0f) {
+            if (!session.isDeathScreenShown()) {
+                // When a player logs out while dead (e.g. combat logging), the server can send a health
+                // update on rejoin without a matching combat kill packet. Bedrock only shows the respawn
+                // UI when it receives a DeathInfoPacket, so the client otherwise stays stuck in a
+                // half-dead state with no respawn button.
+                // https://github.com/GeyserMC/Geyser/issues/6805
+                DeathInfoPacket deathInfoPacket = new DeathInfoPacket();
+                deathInfoPacket.setCauseAttackName("");
+                session.sendUpstreamPacket(deathInfoPacket);
+                session.setDeathScreenShown(true);
+            }
+        } else if (oldHealth <= 0f && Math.ceil(newHealth) > 0f) {
             // Needed as of 1.18.30 (tested with a totem of undying on SPIGOT 1.12.2
             // This shouldn't be triggered on a proper respawn because JavaSetHealthTranslator sets the health back to 20
             // https://github.com/GeyserMC/Geyser/issues/2957
@@ -54,9 +68,10 @@ public class JavaSetHealthTranslator extends PacketTranslator<ClientboundSetHeal
             respawnPacket.setPosition(entity.bedrockPosition());
             respawnPacket.setState(RespawnPacket.State.SERVER_READY);
             session.sendUpstreamPacket(respawnPacket);
+            session.setDeathScreenShown(false);
         }
 
-        entity.setHealth(packet.getHealth());
+        entity.setHealth(newHealth);
 
         UpdateAttributesPacket attributesPacket = new UpdateAttributesPacket();
         List<AttributeData> attributes = attributesPacket.getAttributes();

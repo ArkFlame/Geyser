@@ -127,6 +127,15 @@ public abstract class Inventory {
         if ((session.getInventoryHolder() != null && session.getInventoryHolder().bedrockId() == bedrockId) || session.isClosingInventory()) {
             this.bedrockId += 1;
         }
+
+        // A pending/queued inventory keeps ownership of its Bedrock id until the client confirms the close or the
+        // delayed-open latency packet returns. Reusing that id lets a late ContainerClosePacket close the wrong menu
+        // and makes Bedrock apply clicks to the wrong inventory (GeyserMC/Geyser#6683).
+        int inFlightId = session.getPendingOrCurrentBedrockInventoryId();
+        while (this.bedrockId == inFlightId ||
+               (session.getInventoryHolder() != null && session.getInventoryHolder().bedrockId() == this.bedrockId)) {
+            this.bedrockId = this.bedrockId == 100 ? 1 : this.bedrockId + 1;
+        }
     }
 
     public GeyserItemStack getItem(int slot) {

@@ -76,6 +76,36 @@ public class ConfigLoaderTest {
         );
     }
 
+    @Test
+    void lanDiscoveryIsOptInAndHasSeparatePorts() throws Exception {
+        var file = tempDirectory.resolve("lan-default.yml").toFile();
+        GeyserConfig config = new ConfigLoader(file, PlatformType.STANDALONE).load0(GeyserRemoteConfig.class);
+        assertFalse(config.bedrock().signaling().lanDiscovery().enabled());
+        assertEquals("0.0.0.0", config.bedrock().signaling().lanDiscovery().address());
+        assertEquals(19134, config.bedrock().signaling().lanDiscovery().icePort());
+        assertTrue(Files.readString(file.toPath()).contains("lan-discovery:"));
+    }
+
+    @Test
+    void explicitLanConfigurationSurvivesReload() throws Exception {
+        var file = tempDirectory.resolve("lan-enabled.yml");
+        Files.writeString(file, """
+                config-version: 12
+                bedrock:
+                  signaling:
+                    lan-discovery:
+                      enabled: true
+                      address: 127.0.0.1
+                      ice-port: 19154
+                """);
+        for (int reload = 0; reload < 2; reload++) {
+            GeyserConfig config = new ConfigLoader(file.toFile(), PlatformType.STANDALONE).load0(GeyserRemoteConfig.class);
+            assertTrue(config.bedrock().signaling().lanDiscovery().enabled());
+            assertEquals("127.0.0.1", config.bedrock().signaling().lanDiscovery().address());
+            assertEquals(19154, config.bedrock().signaling().lanDiscovery().icePort());
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("platformTypes")
     void testCreateNewConfig(PlatformType platformType, Class<? extends GeyserConfig> configClass) throws Exception {
@@ -243,6 +273,8 @@ public class ConfigLoaderTest {
         GeyserConfig.SignalingConfig signaling = config.bedrock().signaling();
         assertEquals(List.of("1.1.1.1", "play.example.com:19133", "8.8.8.8:19133"), signaling.advertiseAddresses());
         assertFalse(signaling.stunDiscovery());
+        // Added later than v10, so it takes its default
+        assertTrue(signaling.ipDiscovery());
         assertEquals(GeyserConfig.SignalingConfig.Mode.HYBRID, signaling.mode());
         assertTrue(config.advanced().nxs().assistedJoins());
         assertEquals(Constants.CONFIG_VERSION, config.configVersion());

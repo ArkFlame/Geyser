@@ -53,18 +53,24 @@ import java.util.regex.Pattern;
 
 @Getter
 public final class BedrockClientData {
+    @SerializedName(value = "Nonce")
+    private String nonce;
+
     /**
      * Shape of the codes Bedrock sends, such as en_US.
      */
     private static final Pattern LANGUAGE_CODE = Pattern.compile("[a-zA-Z]{2,3}_[a-zA-Z]{2,3}");
 
     @SerializedName(value = "GameVersion")
+    @Setter
     private String gameVersion;
     @SerializedName(value = "ServerAddress")
+    @Setter
     private String serverAddress;
     @SerializedName(value = "ThirdPartyName")
     private String username;
     @SerializedName(value = "LanguageCode")
+    @Setter
     private String languageCode;
 
     @SerializedName(value = "SkinId")

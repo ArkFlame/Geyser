@@ -47,6 +47,8 @@ public final class GeyserEntityDataManager {
 
     /**
      * Map storing the metadata updates until they're sent to Bedrock, then cleared.
+     * Written from packet-processing threads and drained from the Bedrock event loop,
+     * so every access is synchronized on this manager.
      */
     private final Map<EntityDataType<?>, Object> dirtyMetadata = new Object2ObjectLinkedOpenHashMap<>();
 
@@ -55,7 +57,7 @@ public final class GeyserEntityDataManager {
      */
     private final Map<EntityDataType<?>, Object> overrides = new ConcurrentHashMap<>();
 
-    public <T> void put(EntityDataType<T> entityData, T value) {
+    public synchronized <T> void put(EntityDataType<T> entityData, T value) {
         if (EntityDataBehaviorRegistry.TRACKED_ENTITY_DATA.contains(entityData)) {
             // Track the original value
             metadata.put(entityData, value);
@@ -69,7 +71,7 @@ public final class GeyserEntityDataManager {
         dirtyMetadata.put(entityData, value);
     }
 
-    public <T> void updateOverride(@NonNull EntityDataType<T> entityData, @Nullable T value) {
+    public synchronized <T> void updateOverride(@NonNull EntityDataType<T> entityData, @Nullable T value) {
         if (!EntityDataBehaviorRegistry.TRACKED_ENTITY_DATA.contains(entityData)) {
             throw new IllegalArgumentException("Entity data type not tracked: " + entityData.getClass().getSimpleName());
         }
@@ -106,25 +108,25 @@ public final class GeyserEntityDataManager {
     /**
      * Applies the contents of the dirty metadata into the input and clears the contents of our map.
      */
-    public void apply(EntityDataMap map) {
+    public synchronized void apply(EntityDataMap map) {
         map.putAll(dirtyMetadata);
         dirtyMetadata.clear();
     }
 
-    public boolean hasEntries() {
+    public synchronized boolean hasEntries() {
         return !dirtyMetadata.isEmpty();
     }
 
     /**
      * Intended for testing purposes only
      */
-    public <T> T get(EntityDataType<T> entityData) {
+    public synchronized <T> T get(EntityDataType<T> entityData) {
         //noinspection unchecked
         return (T) dirtyMetadata.get(entityData);
     }
 
     @Override
-    public String toString() {
+    public synchronized String toString() {
         return dirtyMetadata.toString();
     }
 }

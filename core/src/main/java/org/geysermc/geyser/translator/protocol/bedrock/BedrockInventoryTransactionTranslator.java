@@ -38,6 +38,7 @@ import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryActionData;
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventorySource;
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType;
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.ItemUseTransaction;
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.LegacySetItemSlotData;
 import org.cloudburstmc.protocol.bedrock.packet.ContainerOpenPacket;
 import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket;
@@ -212,9 +213,14 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
 
                         // Check to make sure the client isn't spamming interaction
                         // Based on Nukkit 1.0, with changes to ensure holding down still works
+                        // Bedrock flags input repeats of a held button as SIMULATION_TICK. Those must be
+                        // throttled even when the targeted block changes, or looking away mid-hold (e.g.
+                        // from a respawn anchor) forwards every repeat as a fresh placement.
+                        // See https://github.com/GeyserMC/Geyser/issues/6901
                         boolean hasAlreadyClicked = System.currentTimeMillis() - session.getLastInteractionTime() < 110.0 &&
-                                packetBlockPosition.distanceSquared(session.getLastInteractionBlockPosition()) < 0.00001 &&
-                                packet.getBlockFace() == session.getLastInteractionBlockFace();
+                                (packet.getTriggerType() == ItemUseTransaction.TriggerType.SIMULATION_TICK ||
+                                        (packetBlockPosition.distanceSquared(session.getLastInteractionBlockPosition()) < 0.00001 &&
+                                                packet.getBlockFace() == session.getLastInteractionBlockFace()));
                         session.setLastInteractionBlockPosition(packetBlockPosition);
                         session.setLastInteractionPlayerPosition(session.getPlayerEntity().position());
                         session.setLastInteractionBlockFace(packet.getBlockFace());
@@ -228,6 +234,15 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                         }
 
                         if (isIncorrectHeldItem(session, packet)) {
+                            BlockUtils.restoreCorrectBlock(session, blockPos, packet.getHotbarSlot());
+                            return;
+                        }
+
+                        // The Java server rejects placing a block whose item is still on cooldown, but Bedrock
+                        // predicts the placement client-side. Revert that prediction so the client is not left
+                        // with a ghost block. See https://github.com/GeyserMC/Geyser/issues/4911
+                        if (session.getPlayerInventory().getItemInHand().asItem() instanceof BlockItem &&
+                                session.getWorldCache().hasCooldown(session.getPlayerInventory().getItemInHand())) {
                             BlockUtils.restoreCorrectBlock(session, blockPos, packet.getHotbarSlot());
                             return;
                         }
@@ -349,6 +364,18 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                                     session.setPlacedBucket(useItem(session, packet, blockState.javaId(), true));
                                 } else {
                                     session.setPlacedBucket(true);
+                                }
+
+                                if (blockState.block() instanceof DoorBlock) {
+                                    BlockUtils.restoreCorrectBlock(session, packet.getBlockPosition(), packet.getHotbarSlot());
+                                    String doubleBlockHalf = blockState.getValue(Properties.DOUBLE_BLOCK_HALF, "lower");
+                                    Vector3i otherHalf = "lower".equals(doubleBlockHalf) ? packet.getBlockPosition().up() : packet.getBlockPosition().down();
+                                    BlockState otherState = session.getGeyser().getWorldManager().blockAt(session, otherHalf);
+                                    if (otherState.block() instanceof DoorBlock) {
+                                        BlockUtils.restoreCorrectBlock(session, otherHalf, packet.getHotbarSlot());
+                                    }
+                                } else if (blockState.getValueNullable(Properties.WATERLOGGED) == null) {
+                                    BlockUtils.restoreCorrectBlock(session, packet.getBlockPosition(), packet.getHotbarSlot());
                                 }
                             }
 

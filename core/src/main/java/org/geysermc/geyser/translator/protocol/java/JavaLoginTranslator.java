@@ -32,6 +32,7 @@ import org.cloudburstmc.protocol.bedrock.packet.SetPlayerGameTypePacket;
 import org.geysermc.erosion.Constants;
 import org.geysermc.floodgate.pluginmessage.PluginMessageChannels;
 import org.geysermc.geyser.api.network.AuthType;
+import org.geysermc.geyser.entity.attribute.GeyserAttributeType;
 import org.geysermc.geyser.entity.type.player.SessionPlayerEntity;
 import org.geysermc.geyser.level.BedrockDimension;
 import org.geysermc.geyser.level.JavaDimension;
@@ -77,6 +78,10 @@ public class JavaLoginTranslator extends PacketTranslator<ClientboundLoginPacket
             session.getEntityCache().removeAllBossBars();
             // Remove extra hearts, hunger, etc.
             entity.resetAttributes();
+            // resetAttributes() clears the attribute map without restoring the default movement speed.
+            // Servers that only sync modified attributes (e.g. Leaf) omit it, so re-add it for when the
+            // client resends attributes after finishing the server switch/reconnect.
+            entity.getAttributes().put(GeyserAttributeType.MOVEMENT_SPEED, GeyserAttributeType.MOVEMENT_SPEED.getAttribute());
             entity.resetMetadata();
 
             // Reset inventories; just in case. Might resolve some issues where inventories get stuck?

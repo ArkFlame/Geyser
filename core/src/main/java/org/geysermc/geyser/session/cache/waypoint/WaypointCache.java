@@ -98,7 +98,10 @@ public final class WaypointCache {
             return;
         }
 
-        GeyserWaypoint waypoint = waypoints.get(uuid.toString());
+        GeyserWaypoint waypoint;
+        synchronized (waypoints) {
+            waypoint = waypoints.get(uuid.toString());
+        }
         if (waypoint != null) {
             // This will re-initialise the waypoint, adding the entity ID to it and letting the client take authority
             waypoint.setEntity(entity);
@@ -111,7 +114,10 @@ public final class WaypointCache {
             return;
         }
 
-        GeyserWaypoint waypoint = waypoints.get(uuid.toString());
+        GeyserWaypoint waypoint;
+        synchronized (waypoints) {
+            waypoint = waypoints.get(uuid.toString());
+        }
         if (waypoint != null) {
             // This will re-initialise the waypoint, removing the entity ID from it and not letting the client take authority
             waypoint.setEntity(null);
@@ -119,9 +125,15 @@ public final class WaypointCache {
     }
 
     public void tick() {
-        for (GeyserWaypoint waypoint : waypoints.values()) {
-            if (waypoint instanceof TickingWaypoint ticking) {
-                ticking.tick();
+        // The waypoints map is also modified from the packet handling thread, so it must not be
+        // iterated while a packet is adding or removing a waypoint. fastutil's iterator caches the
+        // map size and lazily allocates its wrapped-entry list; a concurrent modification can drive
+        // it past the end of the table and dereference that still-null list, causing an NPE.
+        synchronized (waypoints) {
+            for (GeyserWaypoint waypoint : waypoints.values()) {
+                if (waypoint instanceof TickingWaypoint ticking) {
+                    ticking.tick();
+                }
             }
         }
     }
@@ -135,7 +147,9 @@ public final class WaypointCache {
         GeyserWaypoint tracked = GeyserWaypoint.create(session, entity, waypoint, waypointStyles);
         if (tracked != null) {
             tracked.track(waypoint.data());
-            waypoints.put(waypointId(waypoint), tracked);
+            synchronized (waypoints) {
+                waypoints.put(waypointId(waypoint), tracked);
+            }
         }
     }
 
@@ -145,11 +159,15 @@ public final class WaypointCache {
 
     private void untrack(TrackedWaypoint waypoint) {
         getWaypoint(waypoint).ifPresent(GeyserWaypoint::untrack);
-        waypoints.remove(waypointId(waypoint));
+        synchronized (waypoints) {
+            waypoints.remove(waypointId(waypoint));
+        }
     }
 
     private Optional<GeyserWaypoint> getWaypoint(TrackedWaypoint waypoint) {
-        return Optional.ofNullable(waypoints.get(waypointId(waypoint)));
+        synchronized (waypoints) {
+            return Optional.ofNullable(waypoints.get(waypointId(waypoint)));
+        }
     }
 
     private static String waypointId(TrackedWaypoint waypoint) {
@@ -159,6 +177,8 @@ public final class WaypointCache {
     }
 
     public void clear() {
-        waypoints.clear();
+        synchronized (waypoints) {
+            waypoints.clear();
+        }
     }
 }

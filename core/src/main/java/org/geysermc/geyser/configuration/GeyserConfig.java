@@ -163,17 +163,61 @@ public interface GeyserConfig {
 
         @Comment("""
             Finds this server's public address through STUN when "advertise-addresses" is empty.
-            Built-in signaling asks public STUN servers, and the external signaling service asks its own.""")
+            Built-in signaling asks public STUN servers, and the external signaling service asks its own.
+            Many firewalls drop the UDP replies STUN needs, and players then cannot connect no matter how often they retry.
+            If that happens, set this to false and "ip-discovery" to true: the public address is then looked up over HTTPS,
+            which such firewalls usually let through.
+            Hosting providers can choose either without editing the config, with "-DgeyserDiscoveryMethod=stun" or
+            "-DgeyserDiscoveryMethod=ip" on the command line.""")
         @DefaultBoolean(true)
         boolean stunDiscovery();
 
         void stunDiscovery(boolean stunDiscovery);
+
+        @Comment("""
+            Finds this server's public IPv4 address by asking a web API when "advertise-addresses" is empty and
+            "stun-discovery" is off, then advertises "<public-ip>:<port>" to connecting players, where "port" is the
+            NetherNet UDP port. Several APIs are asked in rotation, so one of them being blocked or down does not stop
+            discovery. The answer is cached in "nethernet/public-ip.json" for 6 hours, so restarts do not ask again.
+            Use this when outbound UDP is blocked and STUN cannot work, or set "-DgeyserDiscoveryMethod=ip" to choose it
+            without editing the config.""")
+        @DefaultBoolean(true)
+        boolean ipDiscovery();
+
+        void ipDiscovery(boolean ipDiscovery);
 
         @Comment("Settings for built-in signaling. Only used in the \"builtin\" and \"hybrid\" modes.")
         BuiltinConfig builtin();
 
         @Comment("Settings for the external signaling service. Only used in the \"nxs\" and \"hybrid\" modes, or when built-in signaling cannot run.")
         NxsConfig nxs();
+
+        @Comment("Settings for discovery and connections on the local network, independent of builtin or nxs signaling.")
+        LanDiscoveryConfig lanDiscovery();
+
+        @ConfigSerializable
+        interface LanDiscoveryConfig {
+            @Comment("""
+                Answer Bedrock LAN discovery on UDP 7551. Only one process per address may own that port.
+                Disabled by default; enable only on trusted local networks and restrict both UDP ports with a firewall.
+                Xbox compatibility requires signed login data and this server's nonce when the LAN offer has no
+                transport identity. The public server-lifetime nonce does not prevent a live relay or same-lifetime replay.""")
+            @DefaultBoolean(false)
+            boolean enabled();
+
+            @Comment("""
+                Address used for LAN discovery broadcasts. 0.0.0.0 receives broadcasts on all IPv4 interfaces;
+                restrict access to trusted LAN interfaces with a firewall. This is not a public Internet listener.""")
+            @DefaultString("0.0.0.0")
+            String address();
+
+            @Comment("""
+                Fixed UDP port for LAN WebRTC connections, bound on bedrock.address.
+                Must differ from webrtc-port and discovery port 7551. No ephemeral fallback is used.""")
+            @DefaultNumeric(19134)
+            @NumericRange(from = 1, to = 65535)
+            int icePort();
+        }
 
         enum Mode {
             BUILTIN,

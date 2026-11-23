@@ -86,7 +86,10 @@ public class JavaSystemChatTranslator extends PacketTranslator<ClientboundSystem
         TextPacket textPacket = new TextPacket();
         textPacket.setPlatformChatId("");
         textPacket.setSourceName("");
-        textPacket.setXuid(session.getAuthData().xuid());
+        // TextPacket XUID identifies the sender, and a system message has no sender. Never use
+        // the receiving session XUID here: protocol 2193+ clients discard system messages
+        // attributed to the local player.
+        textPacket.setXuid("");
         textPacket.setType(packet.isOverlay() ? TextPacket.Type.JUKEBOX_POPUP : TextPacket.Type.SYSTEM);
 
         textPacket.setNeedsTranslation(false);

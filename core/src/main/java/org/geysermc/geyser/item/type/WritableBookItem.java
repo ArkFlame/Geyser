@@ -57,10 +57,15 @@ public class WritableBookItem extends Item {
 
         List<NbtMap> bedrockPages = new ArrayList<>();
         for (Filterable<String> page : bookContent.getPages()) {
+            // Bounded for the same reason as WrittenBookItem: Bedrock echoes the full item back,
+            // and an oversized plugin-made book gets the session disconnected.
+            if (bedrockPages.size() >= WrittenBookItem.MAXIMUM_BEDROCK_PAGE_COUNT) {
+                break;
+            }
             NbtMapBuilder pageBuilder = NbtMap.builder();
             pageBuilder.putString("photoname", "");
             // **Writable** books don't contain text components, but their string can contain formatting codes
-            pageBuilder.putString("text", MessageTranslator.convertLegacyMessage(session, page.getRaw()));
+            pageBuilder.putString("text", WrittenBookItem.boundedPageText(MessageTranslator.convertLegacyMessage(session, page.getRaw())));
             bedrockPages.add(pageBuilder.build());
         }
 

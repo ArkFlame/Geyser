@@ -130,8 +130,8 @@ abstract class RepositoryUrlValueSource : RepositoryValueSource.Parameterless<St
 val gitBranch = indraGit.branchName().orElse("DEV")
 val gitCommit = indraGit.commit()
 
-val gitCommitName = gitCommit.map { it?.name ?: "0".repeat(40) }
-val gitCommitAbbrev = gitCommit.map { it?.name?.substring(0, 7) ?: "0".repeat(7) }
+val gitCommitName = gitCommit.map { it?.name ?: "0".repeat(40) }.orElse("0".repeat(40))
+val gitCommitAbbrev = gitCommit.map { it?.name?.substring(0, 7) ?: "0".repeat(7) }.orElse("0".repeat(7))
 
 val gitCommitMessage = indraGit.repositoryValue(CommitMessageValueSource::class.java).orElse("")
 val gitRepositoryUrl = indraGit.repositoryValue(RepositoryUrlValueSource::class.java).orElse("").map {
