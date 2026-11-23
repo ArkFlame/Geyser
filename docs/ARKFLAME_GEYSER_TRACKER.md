@@ -37,14 +37,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3342 |
+| `UNFIXED` | 3329 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 48 |
+| `FIXED` | 53 |
 | `UPSTREAM_FIXED` | 2339 |
-| `DUPLICATE` | 382 |
-| `BLOCKED` | 6 |
-| `UNSUPPORTED` | 284 |
-| `NOT_APPLICABLE` | 416 |
+| `DUPLICATE` | 383 |
+| `BLOCKED` | 7 |
+| `UNSUPPORTED` | 287 |
+| `NOT_APPLICABLE` | 419 |
 
 ## Mass audit (two passes)
 
@@ -63,9 +63,9 @@ A two-pass mass audit was applied to the `UNFIXED` inventory using the on-disk s
 | Disposition | Records reclassified |
 | --- | ---: |
 | `UPSTREAM_FIXED` | 578 |
-| `DUPLICATE` | 382 |
+| `DUPLICATE` | 383 |
 | `UNSUPPORTED` | 277 |
-| `NOT_APPLICABLE` | 416 |
+| `NOT_APPLICABLE` | 419 |
 | **Total** | **1641** |
 
 Roughly 5,000 closed records are now classified. **No runtime verification was performed** — these are static dispositions based on cached GitHub data and fork source inspection; protocol-document grounding was used where applicable. The mass-audit dispositions themselves were static; see Final integration state for the separate compile-only build run over the integrated fixes.
@@ -111,6 +111,10 @@ This pass recorded seven more dispositions against the green `integration/final-
 
 Wave-2 audit workers are still running; final dispositions will be reconciled continuously against new git and CI evidence. This pass records the verified wave-2 dispositions below. No status was set to `FIXED` without a merged commit present in `integration/final-release`: #6840 (`f88753d4c4bcb4967b2d38082f36e99dcfbed222`) and #6848 (`e91c8cd125fc9157ec99f0a090df9ae0487e03f8`) are verified ancestors of HEAD `a132a1f7a5f88585cd21ee3092f6b9cd7a2a90b1`. Compile-only CI at `0e79e51fa`: **BUILD SUCCESSFUL in 1m 16s** (exit 0); **no runtime or gameplay verification was performed**. References: https://github.com/GeyserMC/Geyser/pull/6840, https://github.com/GeyserMC/Geyser/issues/6848, https://github.com/GeyserMC/Geyser/issues/6903.
 
+### Final reconciliation (wave 2 fixes)
+
+Five fixes are recorded as `FIXED` with integrated commits verified as ancestors of `integration/final-release` HEAD `0e1fe19b3656a6564604e798079236bb58d10029`: #6805 (`ae0bbc2dbaa215ca4659d7c132323250feb3c3ce`), #6715 (`51fc0081e5ed90c46828274a9b7897e5e5e36b10`), #6626 (`fd26af6ca70290a3d0b42f4e42da5139060deda6`), #6830 (`6c7fb2a45f1e63bc80875ad753e6072adc733b01`) and #6683 (`0e1fe19b3656a6564604e798079236bb58d10029`). CI evidence is compile-only: earlier green build at `0e79e51fa` **BUILD SUCCESSFUL in 1m 16s** (exit 0); the final verification build at `0e1fe19b3` was still running when this update was written. **No runtime or gameplay verification was performed.** The remaining audited records received disposition-only updates with source URLs in their JSON evidence. References: https://github.com/GeyserMC/Geyser/issues/6903, https://github.com/GeyserMC/Geyser/issues/6675, https://github.com/GeyserMC/Geyser/issues/6883, https://github.com/GeyserMC/Cumulus/pull/15.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -147,22 +151,22 @@ _(291 records)_
 | 6084617421 | Velocity MOTD showing instead of the passthrough from Paper | https://github.com/GeyserMC/Geyser/issues/6842 | `UNFIXED` |
 | 6082502683 | NetherNet: IPv4-bound Geyser logs "juice: Send failed, errno=97" WARNs for clients' IPv6 ICE candidates | https://github.com/GeyserMC/Geyser/issues/6841 | `UNSUPPORTED` |
 | 6049372589 | Add a dump option to indicate whether NetherNet/signaling is being used by another component. | https://github.com/GeyserMC/Geyser/issues/6831 | `FIXED` |
-| 6048759025 | Text Displays appear way higher than they should on Bedrock Edition | https://github.com/GeyserMC/Geyser/issues/6830 | `UNFIXED` |
+| 6048759025 | Text Displays appear way higher than they should on Bedrock Edition | https://github.com/GeyserMC/Geyser/issues/6830 | `FIXED` |
 | 6012421771 | NetherNet DLL blocked by Windows Smart App Control on Windows 11 | https://github.com/GeyserMC/Geyser/issues/6822 | `UNSUPPORTED` |
 | 5958150713 | Wierd Itemswap/Item deletion in Creative Mode | https://github.com/GeyserMC/Geyser/issues/6813 | `UNFIXED` |
-| 5922887066 | Players in death state and cannot respawn urgent bug | https://github.com/GeyserMC/Geyser/issues/6805 | `UNFIXED` |
+| 5922887066 | Players in death state and cannot respawn urgent bug | https://github.com/GeyserMC/Geyser/issues/6805 | `FIXED` |
 | 5916322359 | Some items in Bedrock are invisible | https://github.com/GeyserMC/Geyser/issues/6802 | `UNFIXED` |
 | 5914104967 | Implements block_placer component | https://github.com/GeyserMC/Geyser/issues/6801 | `NOT_APPLICABLE` |
 | 5910296029 | Player takes fall damage when landing on a waterlogged chest while colliding with the side of an adjacent full block | https://github.com/GeyserMC/Geyser/issues/6798 | `DUPLICATE` |
-| 5903758607 | Bedrock blocks dont appear server side | https://github.com/GeyserMC/Geyser/issues/6795 | `UNFIXED` |
+| 5903758607 | Bedrock blocks dont appear server side | https://github.com/GeyserMC/Geyser/issues/6795 | `BLOCKED` |
 | 5839390609 | Custom entities in mapping | https://github.com/GeyserMC/Geyser/issues/6770 | `UNSUPPORTED` |
 | 5726325261 | Can't use axes, shovels or hoes with Java Edition 26.3 | https://github.com/GeyserMC/Geyser/issues/6753 | `UNFIXED` |
 | 5634129504 | Boat ejects Bedrock player in bubble columns longer than 8 blocks | https://github.com/GeyserMC/Geyser/issues/6741 | `UNFIXED` |
 | 5578485037 | purpur-geyser bug | https://github.com/GeyserMC/Geyser/issues/6734 | `UPSTREAM_FIXED` |
 | 5494589283 | Sliding display entity translation updates are sent to the client but do not visually apply on Bedrock | https://github.com/GeyserMC/Geyser/issues/6723 | `NOT_APPLICABLE` |
 | 5494554880 | Doors with a dynamic barrier block hitbox have unreliable click detection on Bedrock | https://github.com/GeyserMC/Geyser/issues/6722 | `UNFIXED` |
-| 5476694429 | Protocol 2193 clients never render system chat (all Floodgate-origin chat invisible) on b1243 | https://github.com/GeyserMC/Geyser/issues/6715 | `UNFIXED` |
-| 5437008603 | [bug] Got disconnected from the skin uploader: failed to find the given code in combination with the verify code | https://github.com/GeyserMC/Geyser/issues/6699 | `UNFIXED` |
+| 5476694429 | Protocol 2193 clients never render system chat (all Floodgate-origin chat invisible) on b1243 | https://github.com/GeyserMC/Geyser/issues/6715 | `FIXED` |
+| 5437008603 | [bug] Got disconnected from the skin uploader: failed to find the given code in combination with the verify code | https://github.com/GeyserMC/Geyser/issues/6699 | `NOT_APPLICABLE` |
 | 5429408847 | [Fabric] JVM remains alive after clean shutdown due to FloodgateSkinUploader WebSocket threads | https://github.com/GeyserMC/Geyser/issues/6695 | `FIXED` |
 | 5391485278 | falling in the void infinitely | https://github.com/GeyserMC/Geyser/issues/6692 | `DUPLICATE` |
 | 5352851619 | Ghost block problem with specific blocks and some blocks only above y224? | https://github.com/GeyserMC/Geyser/issues/6687 | `UNSUPPORTED` |
@@ -170,12 +174,12 @@ _(291 records)_
 | 5249345569 | Taking, discarding and moving items | https://github.com/GeyserMC/Geyser/issues/6677 | `UNFIXED` |
 | 5247497208 | Server-side Entity Culling | https://github.com/GeyserMC/Geyser/issues/6676 | `UNSUPPORTED` |
 | 5244501862 | Bedrock player skin not showing on Java - "Ignoring player info update" logged for Floodgate players | https://github.com/GeyserMC/Geyser/issues/6675 | `FIXED` |
-| 5242221308 | Stopsound command fix | https://github.com/GeyserMC/Geyser/issues/6674 | `UNFIXED` |
+| 5242221308 | Stopsound command fix | https://github.com/GeyserMC/Geyser/issues/6674 | `UNSUPPORTED` |
 | 5234500656 | Sudden Speedmissmatch of Donkeys (Probably Horses too) when using Swiftness  potions | https://github.com/GeyserMC/Geyser/issues/6670 | `UNFIXED` |
 | 5233488856 | Hopper minecart appears as furnace minecart on Bedrock (Geyser 2.11.2-b1230) | https://github.com/GeyserMC/Geyser/issues/6668 | `UNFIXED` |
 | 5219153527 | Resource packs zipped on MacOS do not read properly | https://github.com/GeyserMC/Geyser/issues/6663 | `FIXED` |
-| 5285638522 | [Bedrock] GUI clicks became unreliable after Geyser b1225 | https://github.com/GeyserMC/Geyser/issues/6683 | `UNFIXED` |
-| 5217173715 | BetterView causes chunks to start flickering on bedrock | https://github.com/GeyserMC/Geyser/issues/6661 | `UNFIXED` |
+| 5285638522 | [Bedrock] GUI clicks became unreliable after Geyser b1225 | https://github.com/GeyserMC/Geyser/issues/6683 | `FIXED` |
+| 5217173715 | BetterView causes chunks to start flickering on bedrock | https://github.com/GeyserMC/Geyser/issues/6661 | `UNSUPPORTED` |
 | 5211481247 | All Bedrocks skins do not show for Java clients | https://github.com/GeyserMC/Geyser/issues/6659 | `DUPLICATE` |
 | 5192944394 | ItemStack rejected without cause | https://github.com/GeyserMC/Geyser/issues/6653 | `UNFIXED` |
 | 5186978565 | Paper Anti-Xray engine-mode 2 causes Bedrock clientbound updates to freeze and eventually time out | https://github.com/GeyserMC/Geyser/issues/6650 | `UNFIXED` |
@@ -183,7 +187,7 @@ _(291 records)_
 | 5176721889 | Bedrock GUI buttons sometimes trigger the wrong button after Geyser update | https://github.com/GeyserMC/Geyser/issues/6648 | `UNFIXED` |
 | 5164064477 | Pearl catch issue | https://github.com/GeyserMC/Geyser/issues/6646 | `UNFIXED` |
 | 5157745642 | Chunk loading issue | https://github.com/GeyserMC/Geyser/issues/6641 | `UNFIXED` |
-| 5157629372 | Buggy inventory and crafting | https://github.com/GeyserMC/Geyser/issues/6640 | `UNFIXED` |
+| 5157629372 | Buggy inventory and crafting | https://github.com/GeyserMC/Geyser/issues/6640 | `UNSUPPORTED` |
 | 5156275649 | Sprites in quick actions components cause error | https://github.com/GeyserMC/Geyser/issues/6639 | `UPSTREAM_FIXED` |
 | 5144259158 | Bedrock players cannot break vanilla blocks after Geyser update | https://github.com/GeyserMC/Geyser/issues/6637 | `UNFIXED` |
 | 5141425466 | Add container_empty predicate for Geyser Custom Items V2 | https://github.com/GeyserMC/Geyser/issues/6634 | `UNFIXED` |
@@ -448,18 +452,18 @@ _(56 records)_
 | 4569560222 | Fix collision loading and addon-pack flags for non-vanilla blocks | https://github.com/GeyserMC/Geyser/pull/6724 | `UNFIXED` |
 | 4540681458 | Fix client-side waterlogging prediction on doors and non-waterloggable blocks | https://github.com/GeyserMC/Geyser/pull/6706 | `FIXED` |
 | 4496366694 | Lava fishing workaround | https://github.com/GeyserMC/Geyser/pull/6694 | `UNFIXED` |
-| 4476271563 | Add support for Npc Dialogues | https://github.com/GeyserMC/Geyser/pull/6690 | `UNFIXED` |
+| 4476271563 | Add support for Npc Dialogues | https://github.com/GeyserMC/Geyser/pull/6690 | `NOT_APPLICABLE` |
 | 4457015299 | Xbox split-screen support, reworked onto master and fixed on hardware | https://github.com/GeyserMC/Geyser/pull/6689 | `FIXED` |
 | 4440438587 | Move recipe shift clicking to use ServerboundPlaceRecipePacket | https://github.com/GeyserMC/Geyser/pull/6686 | `UNFIXED` |
 | 4345263370 | Avoid have no response when trading using touch or the Shift key cause by client bug since v1.21.30 | https://github.com/GeyserMC/Geyser/pull/6667 | `FIXED` |
 | 4336073923 | Improve `manifest.json` search loop | https://github.com/GeyserMC/Geyser/pull/6664 | `BLOCKED` |
 | 4286226682 | Add model-specific custom block item overrides support | https://github.com/GeyserMC/Geyser/pull/6643 | `UNFIXED` |
 | 4258541122 | Fix: Bound the Bedrock projection of oversized books | https://github.com/GeyserMC/Geyser/pull/6627 | `FIXED` |
-| 4258382559 | Fix: Let real blocks take priority over item frames | https://github.com/GeyserMC/Geyser/pull/6626 | `UNFIXED` |
-| 4234891940 | Add extensible server-authoritative custom block breaking | https://github.com/GeyserMC/Geyser/pull/6605 | `UNFIXED` |
+| 4258382559 | Fix: Let real blocks take priority over item frames | https://github.com/GeyserMC/Geyser/pull/6626 | `FIXED` |
+| 4234891940 | Add extensible server-authoritative custom block breaking | https://github.com/GeyserMC/Geyser/pull/6605 | `DUPLICATE` |
 | 4203696760 | Introduce useful debug command | https://github.com/GeyserMC/Geyser/pull/6586 | `UNFIXED` |
 | 4172942473 | Fix geyser connection timeout caused by translation expansion | https://github.com/GeyserMC/Geyser/pull/6579 | `FIXED` |
-| 4170224258 | Download Java resourcepacks sent by the server, and load translations from them | https://github.com/GeyserMC/Geyser/pull/6578 | `UNFIXED` |
+| 4170224258 | Download Java resourcepacks sent by the server, and load translations from them | https://github.com/GeyserMC/Geyser/pull/6578 | `NOT_APPLICABLE` |
 | 4150378049 | Refactor WebUtils to make use of modern HTTP APIs in Java | https://github.com/GeyserMC/Geyser/pull/6573 | `UNFIXED` |
 | 4111042967 | Interpolate per-tick entity movement on Bedrock | https://github.com/GeyserMC/Geyser/pull/6566 | `NOT_APPLICABLE` |
 | 4083854339 | Improve bamboo collision | https://github.com/GeyserMC/Geyser/pull/6560 | `FIXED` |
