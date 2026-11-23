@@ -38,8 +38,10 @@ import org.geysermc.geyser.util.ChunkUtils;
 import org.geysermc.geyser.util.DimensionUtils;
 import org.geysermc.geyser.util.EntityUtils;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerSpawnInfo;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerState;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundRespawnPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundPlayerLoadedPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPlayerCommandPacket;
 
 @Translator(packet = ClientboundRespawnPacket.class)
 public class JavaRespawnTranslator extends PacketTranslator<ClientboundRespawnPacket> {
@@ -55,6 +57,11 @@ public class JavaRespawnTranslator extends PacketTranslator<ClientboundRespawnPa
 
         if (!packet.isKeepAttributeModifiers()) {
             entity.resetAttributes();
+            // resetAttributes() clears the attribute map without restoring the default movement speed.
+            // Servers that only sync modified attributes (e.g. Leaf) omit it from the following update,
+            // so it must be present again before BedrockPlayerActionTranslator resends attributes after
+            // the client finishes respawning.
+            entity.getAttributes().put(GeyserAttributeType.MOVEMENT_SPEED, GeyserAttributeType.MOVEMENT_SPEED.getAttribute());
         }
 
         session.setSpawned(false);
@@ -98,5 +105,14 @@ public class JavaRespawnTranslator extends PacketTranslator<ClientboundRespawnPa
         }
 
         session.sendDownstreamGamePacket(ServerboundPlayerLoadedPacket.INSTANCE);
+
+        // Bedrock stops sprinting while on the respawn/dimension-change loading screen, but Paper/Leaf reuse
+        // the ServerPlayer instance and leave it marked as sprinting. STOP_SPRINTING sent before the loaded
+        // packet is ignored by the server, so send it now to clear the sprinting movement-speed modifier
+        // (0.13) that would otherwise make the player walk at sprint speed until they sprint or sneak again.
+        if (session.isSprinting()) {
+            session.setSprinting(false);
+            session.sendDownstreamGamePacket(new ServerboundPlayerCommandPacket(entity.javaId(), PlayerState.STOP_SPRINTING));
+        }
     }
 }
