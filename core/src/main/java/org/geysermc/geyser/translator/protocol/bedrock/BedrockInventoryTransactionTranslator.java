@@ -232,6 +232,15 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                             return;
                         }
 
+                        // The Java server rejects placing a block whose item is still on cooldown, but Bedrock
+                        // predicts the placement client-side. Revert that prediction so the client is not left
+                        // with a ghost block. See https://github.com/GeyserMC/Geyser/issues/4911
+                        if (session.getPlayerInventory().getItemInHand().asItem() instanceof BlockItem &&
+                                session.getWorldCache().hasCooldown(session.getPlayerInventory().getItemInHand())) {
+                            BlockUtils.restoreCorrectBlock(session, blockPos, packet.getHotbarSlot());
+                            return;
+                        }
+
                         // Bedrock sends block interact code for a Java entity so we send entity code back to Java
                         if (session.getBlockMappings().isItemFrame(packet.getBlockDefinition())) {
                             Entity itemFrameEntity = ItemFrameEntity.getItemFrameEntity(session, packet.getBlockPosition());

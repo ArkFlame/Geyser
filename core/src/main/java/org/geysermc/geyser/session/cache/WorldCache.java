@@ -260,7 +260,9 @@ public final class WorldCache {
         if (cooldownGroup == null) {
             cooldownGroup = item.asItem().javaKey();
         }
-        return this.activeCooldowns.containsKey(cooldownGroup);
+        int expiration = this.activeCooldowns.getInt(cooldownGroup);
+        // The server does not always send a packet to clear the cooldown, so also check the recorded expiration.
+        return expiration != 0 && expiration > session.getTicks();
     }
 
     public void tick() {
