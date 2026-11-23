@@ -38,6 +38,7 @@ import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryActionData;
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventorySource;
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventoryTransactionType;
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.ItemUseTransaction;
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.LegacySetItemSlotData;
 import org.cloudburstmc.protocol.bedrock.packet.ContainerOpenPacket;
 import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket;
@@ -212,9 +213,14 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
 
                         // Check to make sure the client isn't spamming interaction
                         // Based on Nukkit 1.0, with changes to ensure holding down still works
+                        // Bedrock flags input repeats of a held button as SIMULATION_TICK. Those must be
+                        // throttled even when the targeted block changes, or looking away mid-hold (e.g.
+                        // from a respawn anchor) forwards every repeat as a fresh placement.
+                        // See https://github.com/GeyserMC/Geyser/issues/6901
                         boolean hasAlreadyClicked = System.currentTimeMillis() - session.getLastInteractionTime() < 110.0 &&
-                                packetBlockPosition.distanceSquared(session.getLastInteractionBlockPosition()) < 0.00001 &&
-                                packet.getBlockFace() == session.getLastInteractionBlockFace();
+                                (packet.getTriggerType() == ItemUseTransaction.TriggerType.SIMULATION_TICK ||
+                                        (packetBlockPosition.distanceSquared(session.getLastInteractionBlockPosition()) < 0.00001 &&
+                                                packet.getBlockFace() == session.getLastInteractionBlockFace()));
                         session.setLastInteractionBlockPosition(packetBlockPosition);
                         session.setLastInteractionPlayerPosition(session.getPlayerEntity().position());
                         session.setLastInteractionBlockFace(packet.getBlockFace());
