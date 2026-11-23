@@ -34,7 +34,6 @@ import org.cloudburstmc.netty.channel.nethernet.NetherNetChannel;
 import org.cloudburstmc.netty.channel.nethernet.SourcedAddress;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.PacketDirection;
-import org.cloudburstmc.protocol.bedrock.netty.codec.batch.BedrockBatchEncoder;
 import org.cloudburstmc.protocol.bedrock.netty.codec.compression.CompressionCodec;
 import org.cloudburstmc.protocol.bedrock.netty.codec.compression.CompressionStrategy;
 import org.cloudburstmc.protocol.bedrock.netty.codec.compression.NoopCompression;
@@ -46,7 +45,6 @@ import org.geysermc.geyser.network.ConnectionRequests;
 import org.geysermc.geyser.network.GeyserServerInitializer;
 import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.network.bedrock.nethernet.codec.NetherNetFrameCodec;
-import org.geysermc.geyser.network.bedrock.nethernet.codec.NetherNetPacketEncoder;
 import org.geysermc.geyser.network.bedrock.nethernet.signaling.provider.GameOutcomeReporter;
 
 /**
@@ -95,10 +93,9 @@ public class NetherNetChannelInitialiser extends GeyserServerInitializer {
     protected void postInitChannel(Channel channel) throws Exception {
         super.postInitChannel(channel);
 
-        // TODO TEST batching: the BedrockBatchEncoder added by BedrockChannelInitializer batches every packet written between
-        //  flushes into one message, like RakNet. The channel fragments large messages itself, so dropping this replace should
-        //  be all that's needed. Until that is tested, keep sending one packet per message.
-        channel.pipeline().replace(BedrockBatchEncoder.NAME, NetherNetPacketEncoder.NAME, NetherNetPacketEncoder.INSTANCE);
+        // Keep the BedrockBatchEncoder installed by BedrockChannelInitializer: batching packets written between flushes
+        // into one message, as on RakNet, avoids multiplying the reliable NetherNet channel's message rate and backing it
+        // up at high latency. The channel fragments large messages itself.
 
         if (outcomes != null) {
             channel.pipeline().addBefore(BedrockPeer.NAME, GameOutcomeReporter.HANDLER_NAME,
