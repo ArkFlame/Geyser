@@ -235,10 +235,14 @@ public final class NetherNetServer implements EventRegistrar, DumpMessageSource 
         try {
             // Picks this platform's WebRTC library out of the ones bundled for every platform
             LibDataChannelArchDetect.initialize();
-        } catch (LinkageError e) {
+        } catch (LinkageError | IllegalStateException e) {
+            // IllegalStateException comes from libdatachannel's libc detection (e.g. Bionic on Android), which cannot
+            // identify the JVM's libc. Treat it like an unloadable native: skip NetherNet but let the server start.
             reportError("NetherNet will not start! Could not load its WebRTC native library on " + System.getProperty("os.name")
-                + " (" + System.getProperty("os.arch") + "): " + e.getMessage() + ". This usually means a system library it depends on "
-                + "is not installed, or that it is not built for this platform.", e);
+                + " (" + System.getProperty("os.arch") + "): " + e.getMessage()
+                + ". The native library may be missing or not built for this platform, or its libc detection may not "
+                + "support this JVM (for example Bionic on Android); a matching native can be supplied with "
+                + "-Dlibdatachannel.native.datachannel-java.path=<path>.", e);
             return;
         }
 
