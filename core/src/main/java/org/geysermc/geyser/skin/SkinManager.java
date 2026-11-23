@@ -137,11 +137,17 @@ public class SkinManager {
     }
 
     private static SerializedSkin getSkin(GeyserSession session, String skinId, Skin skin, Cape cape, SkinGeometry geometry) {
+        // Bedrock only accepts image data of a handful of specific byte lengths. A malformed skin or cape
+        // (for example a custom texture with non-standard dimensions) makes ImageData.of throw, which
+        // bubbles up and repeatedly logs "Could not translate packet ClientboundPlayerInfoUpdatePacket".
+        // Fall back to known-good data so the entry is still sent and the console is not flooded.
+        byte[] skinData = ImageData.isValidImage(skin.skinData()) ? skin.skinData() : SkinProvider.EMPTY_SKIN.skinData();
+        byte[] capeData = ImageData.isValidImage(cape.capeData()) ? cape.capeData() : SkinProvider.EMPTY_CAPE.capeData();
         return SerializedSkin.builder()
             .skinId(skinId)
             .skinResourcePatch(geometry.geometryName())
-            .skinData(ImageData.of(skin.skinData()))
-            .capeData(ImageData.of(cape.capeData()))
+            .skinData(ImageData.of(skinData))
+            .capeData(ImageData.of(capeData))
             .geometryData(geometry.geometryData().isBlank() ? GEOMETRY : geometry.geometryData())
             .premium(true)
             .capeId(cape.capeId())
