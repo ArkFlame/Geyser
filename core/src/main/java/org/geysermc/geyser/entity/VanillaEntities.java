@@ -469,7 +469,7 @@ public final class VanillaEntities {
                     .addTranslator(null) // Line width
                     .addTranslator(null) // Background color
                     .addTranslator(null) // Text opacity
-                    .addTranslator(null) // Bit mask
+                    .addTranslator(MetadataTypes.BYTE, TextDisplayEntity::setStyleFlags) // Style flags
                     .build();
 
             INTERACTION = VanillaEntityType.inherited(InteractionEntity::new, entityBase)

@@ -37,6 +37,7 @@ import org.geysermc.geyser.entity.type.living.ArmorStandEntity;
 import org.geysermc.geyser.translator.text.MessageTranslator;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.EntityMetadata;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.BooleanEntityMetadata;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.ByteEntityMetadata;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -59,6 +60,7 @@ public class TextDisplayEntity extends DisplayBaseEntity {
     private @Nullable ArmorStandEntity secondEntity = null;
     private boolean isInvisible = false;
     private int lineCount;
+    private boolean seeThroughWalls = false;
 
     public TextDisplayEntity(EntitySpawnContext context) {
         super(context);
@@ -70,7 +72,9 @@ public class TextDisplayEntity extends DisplayBaseEntity {
         // Remove armor stand body / hitbox
         this.metadata.put(EntityDataTypes.HITBOX, NbtMap.EMPTY);
         this.metadata.put(EntityDataTypes.SCALE, 0f);
-        this.metadata.put(EntityDataTypes.NAMETAG_ALWAYS_SHOW, (byte) 1);
+        // Bedrock's NAMETAG_ALWAYS_SHOW renders the text through blocks. Java text displays
+        // are occluded by default; setStyleFlags re-enables this when see_through is true.
+        this.metadata.put(EntityDataTypes.NAMETAG_ALWAYS_SHOW, (byte) 0);
     }
 
     @Override
@@ -125,6 +129,19 @@ public class TextDisplayEntity extends DisplayBaseEntity {
             secondEntity.moveAbsoluteRaw(position.down(LINE_HEIGHT_OFFSET), yaw, pitch, headYaw, isOnGround, teleported);
         }
         super.moveAbsoluteRaw(position, yaw, pitch, headYaw, isOnGround, teleported);
+    }
+
+    public void setStyleFlags(ByteEntityMetadata entityMetadata) {
+        byte flags = entityMetadata.getPrimitiveValue();
+        boolean seeThroughWalls = (flags & 0x02) != 0; // TextDisplay.FLAG_SEE_THROUGH
+        if (this.seeThroughWalls == seeThroughWalls) {
+            return;
+        }
+        this.seeThroughWalls = seeThroughWalls;
+        this.metadata.put(EntityDataTypes.NAMETAG_ALWAYS_SHOW, (byte) (seeThroughWalls ? 1 : 0));
+        if (secondEntity != null) {
+            secondEntity.getMetadata().put(EntityDataTypes.NAMETAG_ALWAYS_SHOW, (byte) (seeThroughWalls ? 1 : 0));
+        }
     }
 
     public void setText(EntityMetadata<Component, ?> entityMetadata) {
@@ -193,7 +210,7 @@ public class TextDisplayEntity extends DisplayBaseEntity {
             secondEntity = new ArmorStandEntity(EntitySpawnContext.inherited(session, VanillaEntities.ARMOR_STAND, this, position.down(LINE_HEIGHT_OFFSET)));
         }
         secondEntity.getMetadata().put(EntityDataTypes.NAME, this.nametag);
-        secondEntity.getMetadata().put(EntityDataTypes.NAMETAG_ALWAYS_SHOW, (byte) 1);
+        secondEntity.getMetadata().put(EntityDataTypes.NAMETAG_ALWAYS_SHOW, (byte) (seeThroughWalls ? 1 : 0));
         // Scale to 0 to show nametag
         secondEntity.setScale(0f);
         // No bounding box as we don't want to interact with this entity
