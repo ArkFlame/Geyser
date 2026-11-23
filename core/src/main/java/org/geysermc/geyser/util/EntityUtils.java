@@ -222,7 +222,7 @@ public final class EntityUtils {
                         zOffset = displayTranslation.getZ();
                     }
                 }
-                case PLAYER -> {
+                case PLAYER, MANNEQUIN -> {
                     if (passenger instanceof TextDisplayEntity textDisplay) {
                         Vector3f displayTranslation = textDisplay.getTranslation();
                         int lines = textDisplay.getLineCount();
@@ -258,8 +258,8 @@ public final class EntityUtils {
              * Horses are tinier
              * Players, Minecarts, and Boats have different origins
              */
-            if (mount.getJavaDefinition() == VanillaEntities.PLAYER) {
-                yOffset -= VanillaEntities.PLAYER.offset();
+            if (mount.getJavaDefinition() == VanillaEntities.PLAYER || mount.getJavaDefinition() == VanillaEntities.MANNEQUIN) {
+                yOffset -= mount.getJavaDefinition().offset();
             }
             if (passenger.getJavaDefinition() == VanillaEntities.PLAYER) {
                 yOffset += VanillaEntities.PLAYER.offset();
