@@ -204,6 +204,7 @@ import org.geysermc.geyser.translator.text.MessageTranslator;
 import org.geysermc.geyser.util.ChunkUtils;
 import org.geysermc.geyser.util.CooldownUtils;
 import org.geysermc.geyser.util.EntityUtils;
+import org.geysermc.geyser.util.InterruptibleFuture;
 import org.geysermc.geyser.util.GeyserIntegratedPackUtil;
 import org.geysermc.geyser.util.InventoryUtils;
 import org.geysermc.geyser.util.LoginEncryptionUtils;
@@ -402,6 +403,12 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
 
     @Setter
     private ScheduledFuture<?> containerOutputFuture;
+
+    /**
+     * Used to delay specific inventory transactions until we know that the
+     * client isn't actually about to close their inventory
+     */
+    private final InterruptibleFuture inventoryTransactionFuture;
 
     /**
      * Stores session collision
@@ -910,6 +917,8 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         this.collisionManager = new CollisionManager(this);
         this.gameRuleHandler = new GameRuleHandler(this);
         this.blockBreakHandler = new BlockBreakHandler(this);
+
+        this.inventoryTransactionFuture = new InterruptibleFuture(this);
         this.worldBorder = new WorldBorder(this);
 
         this.playerEntity = new SessionPlayerEntity(this);
