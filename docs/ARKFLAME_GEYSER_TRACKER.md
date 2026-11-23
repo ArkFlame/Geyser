@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-23T14:58:27Z_
+_Generated at: 2026-11-23T15:00:40Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,12 +38,12 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 | Status | Count |
 | --- | ---: |
 | `UNFIXED` | 5021 |
-| `IN_PROGRESS` | 8 |
+| `IN_PROGRESS` | 1 |
 | `FIXED` | 25 |
 | `UPSTREAM_FIXED` | 1761 |
 | `DUPLICATE` | 0 |
-| `BLOCKED` | 2 |
-| `UNSUPPORTED` | 0 |
+| `BLOCKED` | 7 |
+| `UNSUPPORTED` | 2 |
 | `NOT_APPLICABLE` | 0 |
 
 ## Campaign audit gap
@@ -167,7 +167,7 @@ _(291 records)_
 | 4592672702 | The dialog box is closing the currently open inventory on the server-side | https://github.com/GeyserMC/Geyser/issues/6443 | `UNFIXED` |
 | 4479609325 | Crafting issue PLEASE HELP | https://github.com/GeyserMC/Geyser/issues/6420 | `UNFIXED` |
 | 4444025051 | Horses broken | https://github.com/GeyserMC/Geyser/issues/6408 | `UNFIXED` |
-| 4428303756 | Bucket misalignment/ghosting | https://github.com/GeyserMC/Geyser/issues/6399 | `IN_PROGRESS` |
+| 4428303756 | Bucket misalignment/ghosting | https://github.com/GeyserMC/Geyser/issues/6399 | `BLOCKED` |
 | 4427799377 | Floating Items during Crafting for  some BEDROCK PLAYERS | https://github.com/GeyserMC/Geyser/issues/6398 | `UNFIXED` |
 | 4426982552 | Chests visual bug | https://github.com/GeyserMC/Geyser/issues/6397 | `UNFIXED` |
 | 4424154581 | Bedrock users spawn facing wrong direction | https://github.com/GeyserMC/Geyser/issues/6395 | `UNFIXED` |
@@ -193,7 +193,7 @@ _(291 records)_
 | 3851074699 | Can't Bedrock GUI | https://github.com/GeyserMC/Geyser/issues/6134 | `UNFIXED` |
 | 3844057698 | Client crash/freeze when entering area with many mobs/animals/entities | https://github.com/GeyserMC/Geyser/issues/6129 | `UNFIXED` |
 | 3841214418 | [Bug Report] ArtMap used to work properly but no longer accurate. | https://github.com/GeyserMC/Geyser/issues/6128 | `UNFIXED` |
-| 3824109144 | Enchant table is not working | https://github.com/GeyserMC/Geyser/issues/6116 | `IN_PROGRESS` |
+| 3824109144 | Enchant table is not working | https://github.com/GeyserMC/Geyser/issues/6116 | `BLOCKED` |
 | 3823915450 | Player head texture occasionally not updated | https://github.com/GeyserMC/Geyser/issues/6115 | `UNFIXED` |
 | 3823874351 | Items stuck in cursor after furnace interaction | https://github.com/GeyserMC/Geyser/issues/6113 | `UNFIXED` |
 | 3798882794 | Players can't connect if they have an oversize book in their inventory | https://github.com/GeyserMC/Geyser/issues/6098 | `FIXED` |
@@ -219,14 +219,14 @@ _(291 records)_
 | 3526305160 | Bedrock pov does not update when controlling mounted mobs (MythicMobs/Model Engine) | https://github.com/GeyserMC/Geyser/issues/5911 | `UNFIXED` |
 | 3523810929 | Blocks don't place properly | https://github.com/GeyserMC/Geyser/issues/5910 | `UNFIXED` |
 | 3523399664 | Convert Blocks into skulls For hat wearing helmet | https://github.com/GeyserMC/Geyser/issues/5909 | `UNFIXED` |
-| 3521350341 | Player Heads Glitching as Steve + Steve Entity | https://github.com/GeyserMC/Geyser/issues/5907 | `IN_PROGRESS` |
+| 3521350341 | Player Heads Glitching as Steve + Steve Entity | https://github.com/GeyserMC/Geyser/issues/5907 | `BLOCKED` |
 | 3521287921 | Mining speed difference between custom textured shovel and normal shovel | https://github.com/GeyserMC/Geyser/issues/5906 | `UNFIXED` |
 | 3521263925 | Uncrafting Netherite Block to Ingots not working (Minor Bug) | https://github.com/GeyserMC/Geyser/issues/5905 | `UNFIXED` |
 | 3489885492 | Command Description Bug | https://github.com/GeyserMC/Geyser/issues/5886 | `UNFIXED` |
 | 3484828649 | anvil bug | https://github.com/GeyserMC/Geyser/issues/5879 | `UNFIXED` |
 | 3481725971 | iOS Bedrock crash on specific GeyserMC server | https://github.com/GeyserMC/Geyser/issues/5873 | `UNFIXED` |
 | 3478851061 | Disconnect when a player has a large number of advancements | https://github.com/GeyserMC/Geyser/issues/5869 | `UNFIXED` |
-| 3465131333 | Inaccurate Y-Axis motion when falling/jumping flagging anticheats. | https://github.com/GeyserMC/Geyser/issues/5852 | `IN_PROGRESS` |
+| 3465131333 | Inaccurate Y-Axis motion when falling/jumping flagging anticheats. | https://github.com/GeyserMC/Geyser/issues/5852 | `UNSUPPORTED` |
 | 3462668505 | Mining with pickaxe opens menu when i left click on mobile | https://github.com/GeyserMC/Geyser/issues/5851 | `UNFIXED` |
 | 3456191420 | Bedrock players mine faster than Java when spam clicking | https://github.com/GeyserMC/Geyser/issues/5843 | `UNFIXED` |
 | 3432207558 | 1 out of 2 PS5 Players on same Network getting disconnected | https://github.com/GeyserMC/Geyser/issues/5830 | `UNFIXED` |
@@ -243,7 +243,7 @@ _(291 records)_
 | 3133351765 | Geyser - Anvil Works different on Java/Bedrock | https://github.com/GeyserMC/Geyser/issues/5584 | `UNFIXED` |
 | 3070695219 | Scale command not showing changed 1st person perspective on Bedrock | https://github.com/GeyserMC/Geyser/issues/5554 | `UNFIXED` |
 | 3056086028 | Cannot use Fishing Rods with Custom Model Data | https://github.com/GeyserMC/Geyser/issues/5547 | `UNFIXED` |
-| 2995847786 | bedrock players get stuck in an infinite falling state if they get killed upon logout | https://github.com/GeyserMC/Geyser/issues/5489 | `IN_PROGRESS` |
+| 2995847786 | bedrock players get stuck in an infinite falling state if they get killed upon logout | https://github.com/GeyserMC/Geyser/issues/5489 | `BLOCKED` |
 | 2984093096 | Chunks don't load after joining the server | https://github.com/GeyserMC/Geyser/issues/5474 | `UNFIXED` |
 | 2974939937 | Can't move items with custom tags | https://github.com/GeyserMC/Geyser/issues/5464 | `UNFIXED` |
 | 2958634184 | Players getting kicked | https://github.com/GeyserMC/Geyser/issues/5444 | `UNFIXED` |
@@ -282,7 +282,7 @@ _(291 records)_
 | 2434631878 | Ghost Blocks when attempting to place a block that has an active item Cooldown  | https://github.com/GeyserMC/Geyser/issues/4911 | `UNFIXED` |
 | 2434115139 | Geyser players cannot use enchanted books on anvil | https://github.com/GeyserMC/Geyser/issues/4909 | `UNFIXED` |
 | 2420932284 | Non-functionality of custom arrows with applied texture with Geyser | https://github.com/GeyserMC/Geyser/issues/4881 | `UNFIXED` |
-| 2414195123 | Can't Strip Logs When Holding Shield | https://github.com/GeyserMC/Geyser/issues/4871 | `IN_PROGRESS` |
+| 2414195123 | Can't Strip Logs When Holding Shield | https://github.com/GeyserMC/Geyser/issues/4871 | `UNSUPPORTED` |
 | 2406819757 | Crafting certain items puts them into crafting grid instead of inventory | https://github.com/GeyserMC/Geyser/issues/4855 | `UNFIXED` |
 | 2406672284 | GENERIC_STEP_HEIGHT attribute is not handled correctly for players | https://github.com/GeyserMC/Geyser/issues/4854 | `UNFIXED` |
 | 2394087076 | Item drop animation issue(honeyblock,bedrock) | https://github.com/GeyserMC/Geyser/issues/4832 | `UNFIXED` |
@@ -399,7 +399,7 @@ _(56 records)_
 | 4457015299 | Xbox split-screen support, reworked onto master and fixed on hardware | https://github.com/GeyserMC/Geyser/pull/6689 | `IN_PROGRESS` |
 | 4440438587 | Move recipe shift clicking to use ServerboundPlaceRecipePacket | https://github.com/GeyserMC/Geyser/pull/6686 | `UNFIXED` |
 | 4345263370 | Avoid have no response when trading using touch or the Shift key cause by client bug since v1.21.30 | https://github.com/GeyserMC/Geyser/pull/6667 | `FIXED` |
-| 4336073923 | Improve `manifest.json` search loop | https://github.com/GeyserMC/Geyser/pull/6664 | `IN_PROGRESS` |
+| 4336073923 | Improve `manifest.json` search loop | https://github.com/GeyserMC/Geyser/pull/6664 | `BLOCKED` |
 | 4286226682 | Add model-specific custom block item overrides support | https://github.com/GeyserMC/Geyser/pull/6643 | `UNFIXED` |
 | 4258541122 | Fix: Bound the Bedrock projection of oversized books | https://github.com/GeyserMC/Geyser/pull/6627 | `FIXED` |
 | 4258382559 | Fix: Let real blocks take priority over item frames | https://github.com/GeyserMC/Geyser/pull/6626 | `UNFIXED` |
