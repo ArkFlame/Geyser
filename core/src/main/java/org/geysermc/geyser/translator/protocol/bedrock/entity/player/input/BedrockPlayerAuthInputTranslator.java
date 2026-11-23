@@ -182,9 +182,11 @@ public final class BedrockPlayerAuthInputTranslator extends PacketTranslator<Pla
                 case MISSED_SWING -> {
                     session.setLastAirHitTick(session.getTicks());
 
+                    // Touch devices send MISSED_SWING before the swing Animate packet, which the Animate translator then suppresses.
+                    // Skipping the swing here would therefore drop rapid clicks entirely (GeyserMC/Geyser#6570).
                     if (session.getGameMode() == GameMode.SPECTATOR) {
                         session.sendDownstreamGamePacket(new ServerboundSpectatorActionPacket(OptionalInt.empty()));
-                    } else if (session.getArmAnimationTicks() != 0 && session.getArmAnimationTicks() != 1) {
+                    } else if (session.getArmAnimationTicks() != 0 && (packet.getInputMode() == InputMode.TOUCH || session.getArmAnimationTicks() != 1)) {
                         session.sendDownstreamGamePacket(ServerboundPunchPacket.INSTANCE);
                         session.activateArmAnimationTicking();
                     }
