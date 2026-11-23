@@ -49,6 +49,7 @@ import org.geysermc.geyser.level.block.Blocks;
 import org.geysermc.geyser.level.block.property.Properties;
 import org.geysermc.geyser.level.block.type.Block;
 import org.geysermc.geyser.level.block.type.BlockState;
+import org.geysermc.geyser.level.block.type.DoorBlock;
 import org.geysermc.geyser.level.block.type.LecternBlock;
 import org.geysermc.geyser.level.physics.Direction;
 import org.geysermc.geyser.registry.BlockRegistries;
@@ -568,6 +569,16 @@ public class BlockBreakHandler {
         session.sendDownstreamGamePacket(new ServerboundPlayerActionPacket(instamine ? PlayerAction.START_DIGGING : PlayerAction.FINISH_DIGGING,
             vector, direction.mcpl(), session.getWorldCache().nextPredictionSequence()));
         session.getWorldCache().markPositionInSequence(vector);
+
+        // When the lower half of a door is broken, the Bedrock client predicts the whole door (both halves) as gone.
+        // If the Java server rejects the break (e.g. a protection plugin), only the broken position is tracked by the
+        // prediction rollback, leaving the upper half as a ghost block. Track it as well so both halves are restored.
+        if (state.block() instanceof DoorBlock && "lower".equals(state.getValue(Properties.DOUBLE_BLOCK_HALF))) {
+            Vector3i upperHalf = vector.up();
+            if (session.getGeyser().getWorldManager().blockAt(session, upperHalf).block() instanceof DoorBlock) {
+                session.getWorldCache().markPositionInSequence(upperHalf);
+            }
+        }
 
         if (canDestroyBlock(state)) {
             BlockUtils.spawnBlockBreakParticles(session, direction, vector, state);
