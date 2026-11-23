@@ -86,9 +86,16 @@ public class JavaPlayerInfoUpdateTranslator extends PacketTranslator<Clientbound
             List<PlayerListPacket.Entry> toRemove = new ArrayList<>();
 
             for (PlayerListEntry entry : packet.getEntries()) {
-                PlayerEntity entity = session.getEntityCache().getPlayerEntity(entry.getProfileId());
+                UUID uuid = entry.getProfileId();
+                PlayerEntity entity = session.getEntityCache().getPlayerEntity(uuid);
+                if (entity == null && uuid.equals(session.getPlayerEntity().uuid())) {
+                    // The session player entity is held directly on the session rather than in the entity
+                    // cache's player map. Handle it here so its listed state is kept in sync and its skin
+                    // is added to Bedrock's player list persistently (notably for Floodgate players).
+                    entity = session.getPlayerEntity();
+                }
                 if (entity == null) {
-                    session.getGeyser().getLogger().debug("Ignoring player info update for " + entry.getProfileId());
+                    session.getGeyser().getLogger().debug("Ignoring player info update for " + uuid);
                     continue;
                 }
 
