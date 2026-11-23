@@ -135,7 +135,8 @@ public final class BlockUtils {
             destroySpeed *= (float) playerEntity.getSubmergedMiningSpeed();
         }
 
-        if (!playerEntity.isOnGround()) {
+        if (!playerEntity.isOnGround()
+            && !session.getBlockBreakHandler().shouldIgnoreAirborneMiningPenalty()) {
             destroySpeed /= 5.0F;
         }
 
