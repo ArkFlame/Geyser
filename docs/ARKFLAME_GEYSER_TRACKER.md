@@ -37,9 +37,9 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3329 |
+| `UNFIXED` | 3328 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 53 |
+| `FIXED` | 54 |
 | `UPSTREAM_FIXED` | 2339 |
 | `DUPLICATE` | 383 |
 | `BLOCKED` | 7 |
@@ -113,7 +113,7 @@ Wave-2 audit workers are still running; final dispositions will be reconciled co
 
 ### Final reconciliation (wave 2 fixes)
 
-Five fixes are recorded as `FIXED` with integrated commits verified as ancestors of `integration/final-release` HEAD `0e1fe19b3656a6564604e798079236bb58d10029`: #6805 (`ae0bbc2dbaa215ca4659d7c132323250feb3c3ce`), #6715 (`51fc0081e5ed90c46828274a9b7897e5e5e36b10`), #6626 (`fd26af6ca70290a3d0b42f4e42da5139060deda6`), #6830 (`6c7fb2a45f1e63bc80875ad753e6072adc733b01`) and #6683 (`0e1fe19b3656a6564604e798079236bb58d10029`). CI evidence is compile-only: earlier green build at `0e79e51fa` **BUILD SUCCESSFUL in 1m 16s** (exit 0); the final verification build at `0e1fe19b3` was still running when this update was written. **No runtime or gameplay verification was performed.** The remaining audited records received disposition-only updates with source URLs in their JSON evidence. References: https://github.com/GeyserMC/Geyser/issues/6903, https://github.com/GeyserMC/Geyser/issues/6675, https://github.com/GeyserMC/Geyser/issues/6883, https://github.com/GeyserMC/Cumulus/pull/15.
+Six fixes are recorded as `FIXED` with integrated commits verified as ancestors of `integration/final-release` HEAD `0e1fe19b3656a6564604e798079236bb58d10029`: #6805 (`ae0bbc2dbaa215ca4659d7c132323250feb3c3ce`), #6715 (`51fc0081e5ed90c46828274a9b7897e5e5e36b10`), #6626 (`fd26af6ca70290a3d0b42f4e42da5139060deda6`), #6830 (`6c7fb2a45f1e63bc80875ad753e6072adc733b01`) and #6683 (`0e1fe19b3656a6564604e798079236bb58d10029`) and #6570 (`c943be7b846933f460842e5c41ceb128290564bf`). CI evidence is compile-only: earlier green build at `0e79e51fa` **BUILD SUCCESSFUL in 1m 16s** (exit 0); the final verification build at `0e1fe19b3` was still running when this update was written. **No runtime or gameplay verification was performed.** The remaining audited records received disposition-only updates with source URLs in their JSON evidence. References: https://github.com/GeyserMC/Geyser/issues/6903, https://github.com/GeyserMC/Geyser/issues/6570, https://github.com/GeyserMC/Geyser/issues/6675, https://github.com/GeyserMC/Geyser/issues/6883, https://github.com/GeyserMC/Cumulus/pull/15.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
@@ -200,7 +200,7 @@ _(291 records)_
 | 5040716111 | Players at Y 64 get inexplicably stuck | https://github.com/GeyserMC/Geyser/issues/6580 | `UNFIXED` |
 | 5011405882 | Crafting Crash - Book & Quill / Book | https://github.com/GeyserMC/Geyser/issues/6577 | `UNFIXED` |
 | 5001803063 | Bedrock chat not visible to Java players & Bedrock skins show as Steve/Alex | https://github.com/GeyserMC/Geyser/issues/6574 | `UNFIXED` |
-| 4979519119 | Click register delay | https://github.com/GeyserMC/Geyser/issues/6570 | `UNFIXED` |
+| 4979519119 | Click register delay | https://github.com/GeyserMC/Geyser/issues/6570 | `FIXED` |
 | 4969896275 | Bedrock Players left incapacitated by ImageFrame maps | https://github.com/GeyserMC/Geyser/issues/6569 | `UNFIXED` |
 | 4953133141 | ViaProxy: first join via NetherNet relay times out at ~19s (rejoin works); unguarded getLocalAddress() NPE in GeyserViaProxyPlugin channel-init | https://github.com/GeyserMC/Geyser/issues/6567 | `FIXED` |
 | 4934805024 | Recipe book auto-craft reverts inventory / returns ingredients instead of crafted item | https://github.com/GeyserMC/Geyser/issues/6563 | `DUPLICATE` |

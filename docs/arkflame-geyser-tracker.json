@@ -48,10 +48,10 @@
       "total": 6817
     }
   },
-      "status_counts": {
-    "UNFIXED": 3329,
+        "status_counts": {
+    "UNFIXED": 3328,
     "IN_PROGRESS": 0,
-    "FIXED": 53,
+    "FIXED": 54,
     "UPSTREAM_FIXED": 2339,
     "DUPLICATE": 383,
     "BLOCKED": 7,
@@ -5268,9 +5268,9 @@
       "links": [],
       "worker": null,
       "branch": null,
-      "status": "UNFIXED",
-      "sha": null,
-      "evidence": null,
+      "status": "FIXED",
+      "sha": "c943be7b846933f460842e5c41ceb128290564bf",
+      "evidence": "Integrated into integration/final-release @ c943be7b846933f460842e5c41ceb128290564bf (fix: register rapid touch air swings missed by arm-animation throttle, https://github.com/GeyserMC/Geyser/issues/6570); verified ancestor of HEAD c4f9e49cba0e11e9f08c8eff13d1fa4655f38228. CI: compile-only; earlier green build at 0e79e51fa BUILD SUCCESSFUL in 1m 16s (exit 0); final verification build pending. No runtime or gameplay verification was performed.",
       "gap": null,
       "timestamp": "2026-11-23T14:40:48Z",
       "number": 6570,
