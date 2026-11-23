@@ -26,6 +26,8 @@
 package org.geysermc.geyser.translator.text;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentIteratorFlag;
+import net.kyori.adventure.text.ComponentIteratorType;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.TranslationArgument;
 import net.kyori.adventure.text.flattener.ComponentFlattener;
@@ -445,6 +447,29 @@ public class MessageTranslator {
      */
     public static String convertMessageForTooltip(Component message, String locale) {
         return RESET + ChatColor.GRAY + convertMessageRaw(message, locale);
+    }
+
+    /**
+     * Convert a Java item name or lore line to the legacy format ready for bedrock.
+     * Bedrock italicizes these by default, which can only be undone with a reset, so a reset is
+     * added only when the message explicitly disables italics. The reset also clears Bedrock's
+     * built-in color, so the supplied default color is restored when the message has no color.
+     *
+     * @param message Java message
+     * @param locale Locale to use for translation strings
+     * @param defaultColor Color to restore after the reset, if the message does not set its own
+     * @return Parsed and formatted message for bedrock
+     */
+    public static String convertMessageForItem(Component message, String locale, TextColor defaultColor) {
+        for (Component component : message.iterable(ComponentIteratorType.DEPTH_FIRST,
+            ComponentIteratorFlag.INCLUDE_TRANSLATABLE_COMPONENT_ARGUMENTS)) {
+            if (component.decoration(TextDecoration.ITALIC) == TextDecoration.State.FALSE) {
+                return convertMessage(message
+                    .colorIfAbsent(defaultColor)
+                    .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.TRUE), locale);
+            }
+        }
+        return convertMessageRaw(message, locale);
     }
 
     /* === Java -> Bedrock conversion (plain text) === */
