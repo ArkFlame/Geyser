@@ -463,6 +463,14 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
 
     @Setter
     private boolean spawned;
+
+    /**
+     * Whether the Bedrock client has been shown the death screen for the current death.
+     * Used to avoid sending a second, empty death screen when the server also sends a combat kill packet.
+     */
+    @Setter
+    private boolean deathScreenShown;
+
     /**
      * Accessed on the initial Java and Bedrock packet processing threads
      */

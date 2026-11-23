@@ -70,6 +70,7 @@ public class JavaRespawnTranslator extends PacketTranslator<ClientboundRespawnPa
 
         entity.setHealth(entity.getMaxHealth());
         entity.getAttributes().put(GeyserAttributeType.HEALTH, entity.createHealthAttribute());
+        session.setDeathScreenShown(false);
 
         session.setInventoryHolder(null);
         session.setClosingInventory(false);
