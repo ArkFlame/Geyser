@@ -37,11 +37,11 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3369 |
+| `UNFIXED` | 3362 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 41 |
+| `FIXED` | 46 |
 | `UPSTREAM_FIXED` | 2338 |
-| `DUPLICATE` | 376 |
+| `DUPLICATE` | 378 |
 | `BLOCKED` | 6 |
 | `UNSUPPORTED` | 279 |
 | `NOT_APPLICABLE` | 408 |
@@ -91,6 +91,22 @@ The task brief cited `4ee18fc525150ddc6953128fd8f8238004a8d6fa` as the new #6903
 
 **Merged upstream fix recorded after reconciliation — GeyserMC/Geyser#6937.** The upstream PR [Fix sendSkin for the session's own player and support mannequins (#6937)](https://github.com/GeyserMC/Geyser/pull/6937), fix commit `d2cf20058c6c875f7036deb6f6c59e0c39775199`, entered this branch through merge commit `4d3a072301090a1bd68f988bd1541134d1489efe` (`Merge upstream/master (d2cf20058) into integration/final-release`). This inventory has no record numbered 6937 and no record carrying that URL, so no JSON status was changed and `status_counts` remains unchanged (6817 total). Re-check CI: `./gradlew build --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.workers.max=1 -Dorg.gradle.jvmargs='-Xmx8G -XX:MaxMetaspaceSize=1G'` -> **BUILD SUCCESSFUL in 5m 39s** (exit 0), compile-only. **No runtime or gameplay verification was performed.**
 
+## Wave 1-2 integration
+
+This pass recorded seven more dispositions against the green `integration/final-release` HEAD `0e79e51fa06dffe8c656ee5064f223c19692ac26`. Five records moved to `FIXED` with integrated commits present on that branch and two moved to `DUPLICATE` after git-verified root-cause checks.
+
+| ID | Disposition | Integrated commit / reference |
+| ---: | --- | --- |
+| #6854 | `FIXED` | `c1c8705ad709f0694b2f5315fc0f9ef11743c314` — NetherNet packet batching; PR #6873 adopted only partially, usrsctp fork NOT adopted |
+| #6876 | `FIXED` | `041292682b1d891b34a206e0c697825dd6ca72ef` — text display `see_through` occlusion |
+| #6929 | `FIXED` | `c84074574bbdf96640ae8c35d008261b275a0fbb` — keep explicit italic:false item names and lore upright on Bedrock |
+| #6893 | `FIXED` | `cadf12a952a7f74b05d1cb874d28f3b9b199a505` — entity metadata dirty-map thread safety |
+| #6901 | `FIXED` | `0e79e51fa06dffe8c656ee5064f223c19692ac26` — held-input placement throttle |
+| #6927 | `DUPLICATE` | of #6903; shared cause with #6800, fix `f7d4dcb9a81bde74e72a7cefaf22ce86b5818efa` (attribute reset in `JavaRespawnTranslator` / `BedrockPlayerActionTranslator`) |
+| #6919 | `DUPLICATE` | of #6834; fixed upstream by PR #6843 / commit `64bb3993b4beef6743af0ab76ee5dfc8e67a0d21` (ancestor of HEAD via network 2.0.0.CR6 snapshot with CloudburstMC/Network#105) |
+
+`status_counts` recomputed from all 6817 records (UNFIXED 3369 → 3362, FIXED 41 → 46, DUPLICATE 376 → 378); all IDs remain unique and every status is in the documented enum. Re-check CI at `0e79e51fa`: `./gradlew build --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.workers.max=1 -Dorg.gradle.jvmargs='-Xmx8G -XX:MaxMetaspaceSize=1G'` -> **BUILD SUCCESSFUL in 1m 16s** (exit 0), **compile-only**. **No runtime or gameplay verification was performed.**
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -101,24 +117,24 @@ _(291 records)_
 
 | ID | Title | URL | Status |
 | ---: | --- | --- | --- |
-| 6491152696 | Item names are italicised for bedrock players | https://github.com/GeyserMC/Geyser/issues/6929 | `UNFIXED` |
-| 6478673359 | Bedrock player moves extremely fast after a cross-world teleport until relog | https://github.com/GeyserMC/Geyser/issues/6927 | `UNFIXED` |
+| 6491152696 | Item names are italicised for bedrock players | https://github.com/GeyserMC/Geyser/issues/6929 | `FIXED` |
+| 6478673359 | Bedrock player moves extremely fast after a cross-world teleport until relog | https://github.com/GeyserMC/Geyser/issues/6927 | `DUPLICATE` |
 | 6449358192 | NetherNet Doesn't Work on FreeBSD | https://github.com/GeyserMC/Geyser/issues/6923 | `UNFIXED` |
 | 6413008617 | [NetherNet] Native handles and GeyserSession objects are never released after Bedrock players disconnect (Velocity, Windows) – ~90 handles + ~7–11 MB leaked per connection | https://github.com/GeyserMC/Geyser/issues/6920 | `UNFIXED` |
-| 6398503486 | Regression of #6834 in b1302: players joining through a signaling relay (MCXboxBroadcast) get the relay's IP again | https://github.com/GeyserMC/Geyser/issues/6919 | `UNFIXED` |
+| 6398503486 | Regression of #6834 in b1302: players joining through a signaling relay (MCXboxBroadcast) get the relay's IP again | https://github.com/GeyserMC/Geyser/issues/6919 | `DUPLICATE` |
 | 6392359368 | Bedrock 26.6x (NetherNet): tilling grass/dirt with a hoe is reverted, farmland never reaches the Java server | https://github.com/GeyserMC/Geyser/issues/6918 | `UNFIXED` |
 | 6363398043 | Nethernet and Playit: Connecting via an external IPv4 address and receiving a local IPv4 address. | https://github.com/GeyserMC/Geyser/issues/6915 | `UNFIXED` |
 | 6353841610 | Bedrock Client Cannot Connect (End of Stream) | https://github.com/GeyserMC/Geyser/issues/6913 | `UNFIXED` |
 | 6280416949 | Bedrock players experience abnormally fast movement speed after changing worlds or reconnecting | https://github.com/GeyserMC/Geyser/issues/6903 | `FIXED` |
-| 6274805438 | bedrock player can fast place glowstone when keep holding place button after looking away from a respawn anchor | https://github.com/GeyserMC/Geyser/issues/6901 | `UNFIXED` |
+| 6274805438 | bedrock player can fast place glowstone when keep holding place button after looking away from a respawn anchor | https://github.com/GeyserMC/Geyser/issues/6901 | `FIXED` |
 | 6265656032 | Bedrock players are joining via ipv6 addresses | https://github.com/GeyserMC/Geyser/issues/6899 | `BLOCKED` |
 | 6256269328 | I am getting kicked from the server (Bedrock Edition). | https://github.com/GeyserMC/Geyser/issues/6894 | `UNFIXED` |
-| 6256027037 | EncoderException "MessageToMessageCodec$2 must produce at least one message" kicks Bedrock players on Velocity (since 2026-11-06, also on b1288) | https://github.com/GeyserMC/Geyser/issues/6893 | `UNFIXED` |
+| 6256027037 | EncoderException "MessageToMessageCodec$2 must produce at least one message" kicks Bedrock players on Velocity (since 2026-11-06, also on b1288) | https://github.com/GeyserMC/Geyser/issues/6893 | `FIXED` |
 | 6229661892 | Bedrock players in a boat desync at a static world border (Java players unaffected) | https://github.com/GeyserMC/Geyser/issues/6884 | `UNFIXED` |
 | 6222127447 | Accept PROXY protocol v1 on webrtc-proxy-protocol-relays (or document that only v2 is supported) | https://github.com/GeyserMC/Geyser/issues/6881 | `UNFIXED` |
-| 6201847840 | Text display entities show through walls | https://github.com/GeyserMC/Geyser/issues/6876 | `UNFIXED` |
+| 6201847840 | Text display entities show through walls | https://github.com/GeyserMC/Geyser/issues/6876 | `FIXED` |
 | 6145901311 | GUI Closes on Menu Transfer... sometimes. | https://github.com/GeyserMC/Geyser/issues/6858 | `UNFIXED` |
-| 6138669848 | Very high latency, missing block drops and lag when bedrock players join fabric server. | https://github.com/GeyserMC/Geyser/issues/6854 | `UNFIXED` |
+| 6138669848 | Very high latency, missing block drops and lag when bedrock players join fabric server. | https://github.com/GeyserMC/Geyser/issues/6854 | `FIXED` |
 | 6134779753 | Geyser servers don't appear under Friends > LAN Games for 26.60 clients (NetherNet LAN discovery on UDP 7551 is never started) | https://github.com/GeyserMC/Geyser/issues/6853 | `FIXED` |
 | 6133451417 | Bedrock 26.60 camera/input delay on Anarchy backend through Velocity; Hub works normally | https://github.com/GeyserMC/Geyser/issues/6851 | `UNFIXED` |
 | 6132388000 | NetherNet seems to kick some bedrock players at seemingly random intervals | https://github.com/GeyserMC/Geyser/issues/6850 | `UNFIXED` |
