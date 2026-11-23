@@ -89,6 +89,8 @@ This pass reconciled the tracker with the commits actually present on `integrati
 
 The task brief cited `4ee18fc525150ddc6953128fd8f8238004a8d6fa` as the new #6903 SHA. Git verification shows that commit is actually the #6695 Floodgate shutdown fix; the verified #6903 commit is `f7d4dcb9a81bde74e72a7cefaf22ce86b5818efa`. The tracker records the verified SHA. `status_counts` was recomputed from all 6817 records and still sums to 6817; all 6817 IDs remain unique.
 
+**Merged upstream fix recorded after reconciliation — GeyserMC/Geyser#6937.** The upstream PR [Fix sendSkin for the session's own player and support mannequins (#6937)](https://github.com/GeyserMC/Geyser/pull/6937), fix commit `d2cf20058c6c875f7036deb6f6c59e0c39775199`, entered this branch through merge commit `4d3a072301090a1bd68f988bd1541134d1489efe` (`Merge upstream/master (d2cf20058) into integration/final-release`). This inventory has no record numbered 6937 and no record carrying that URL, so no JSON status was changed and `status_counts` remains unchanged (6817 total). Re-check CI: `./gradlew build --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.workers.max=1 -Dorg.gradle.jvmargs='-Xmx8G -XX:MaxMetaspaceSize=1G'` -> **BUILD SUCCESSFUL in 5m 39s** (exit 0), compile-only. **No runtime or gameplay verification was performed.**
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
