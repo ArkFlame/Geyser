@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T21:26:01Z_
+_Generated at: 2026-11-24T21:44:55Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,14 +38,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 1683 |
+| `UNFIXED` | 1364 |
 | `IN_PROGRESS` | 0 |
 | `FIXED` | 117 |
-| `UPSTREAM_FIXED` | 2621 |
-| `DUPLICATE` | 515 |
-| `BLOCKED` | 29 |
-| `UNSUPPORTED` | 476 |
-| `NOT_APPLICABLE` | 1376 |
+| `UPSTREAM_FIXED` | 2687 |
+| `DUPLICATE` | 546 |
+| `BLOCKED` | 46 |
+| `UNSUPPORTED` | 492 |
+| `NOT_APPLICABLE` | 1565 |
 | `PARTIAL` | 1 |
 
 ## Mass audit (two passes)
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-16 — open PR adoption and open issue fixes
+## Waves 8-17 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -373,6 +373,26 @@ Six workers finished the two remaining PARTIAL PRs, attempted the BLOCKED record
 | #6556, #6399, #6116, #5489, #6795 | BLOCKED (confirmed) | no compile-safe cause was found: armor slot mapping already matches upstream; bucket rotation fixes are already in the baseline and changing them risks known regressions; the enchanting translator matches upstream and repro links are dead; no reliable death-state flag exists for ~1 HP falling; #6795 has no repro or logs |
 
 **Backlog audit F/G/H/I.** Four read-only auditors processed 1600 closed `UNFIXED` records and produced **509 evidence-backed dispositions**: 185 UPSTREAM_FIXED, 169 NOT_APPLICABLE, 83 DUPLICATE, 57 UNSUPPORTED and 15 BLOCKED. UPSTREAM_FIXED required a fix commit verified as an ancestor (via `compare <sha>...master` or `git merge-base`) plus a `file:line` in the fork. Shard G alone yielded 89 such records; shard I verified 67 closing PRs/commits. Because this checkout is shallow, unverifiable cited commits were deliberately left `UNFIXED` rather than asserted.
+
+### Wave 17 — definitive parity decision and backlog J/K/L/M
+
+One worker and four read-only auditors finished this wave. There were no source changes: the worker assigned to #5692 proved that the last claimed gap cannot be closed in this repository, and the other work was documentation-only. A final compile-only verification of the existing tree was run as described below.
+
+**#5692 — definitively PARTIAL, not an unfinished port.** The tooltip provider framework, 22+ providers, all concrete TODOs and the opt-in flag are in place (`core/src/main/java/org/geysermc/geyser/item/tooltip/**` has zero TODO/FIXME markers). The only remaining item is the Java map `level` tooltip line:
+
+```
+javap ClientboundMapItemDataPacket (mcprotocollib 26.3-4):
+  getMapId, getScale, getIcons, getData, isLocked   <- no getLevel
+unzip -l protocol-26.3-4.jar | grep -ci MapItemSavedData  -> 0
+JavaMapItemDataTranslator.java:49-60 reads scale/locked but caches nothing
+GeyserSession has no map cache; upstream PR patch leaves MapTooltip as "// TODO"
+```
+
+`scale` alone is derivable, but adding a partial line would change the all-player map packet path without achieving parity, so no change was made. The other two reported gaps are already resolved: `Holder.ifId`/`ifCustom` provides behaviour equivalent to the upstream per-registry entry contexts (`InstrumentTooltip.java:45-48`, `JukeboxPlayableTooltip.java:44-45`, `BannerPatternLayersTooltip.java:52-56`), and vanilla name providers are superseded by `Item.getName`/`ItemTranslator.getCustomName`.
+
+**#6914 — BLOCKED across every published artifact.** The maven release line ends at `26.3-4` (the fork's version) and the newest `26.3-SNAPSHOT` build is `14` (`20261014.110736`). `javap` on that snapshot shows `PotionContents` still has only `(int,int,List,String)` plus the four getters — no `hasCustomColor`, `OptionalInt` or presence flag. Absent and present `-1` colors both decode to `-1`, and `writePotionContents` gates on `>= 0`, so the distinction is destroyed before hashing. Only GeyserMC/MCProtocolLib#942 plus a new release can resolve it.
+
+**Backlog audit J/K/L/M.** Four read-only auditors processed 1594 closed `UNFIXED` records and produced **319 evidence-backed dispositions**: 189 NOT_APPLICABLE, 66 UPSTREAM_FIXED, 31 DUPLICATE, 16 UNSUPPORTED and 17 BLOCKED; 1275 stayed `UNFIXED`. Note that this checkout is shallow (grafted at `777434cf`), so shards J and M downgraded every cited fix commit they could not prove an ancestor; the UPSTREAM_FIXED set above comes only from shards K and L, where ancestry was verified with `compare <sha>...master` or `git merge-base --is-ancestor`.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
