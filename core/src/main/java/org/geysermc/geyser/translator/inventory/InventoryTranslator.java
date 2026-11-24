@@ -34,7 +34,7 @@ import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.IntSortedSet;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.math.vector.Vector3i;
@@ -81,6 +81,7 @@ import org.geysermc.mcprotocollib.protocol.data.game.inventory.ContainerType;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes;
 import org.geysermc.mcprotocollib.protocol.data.game.recipe.display.slot.EmptySlotDisplay;
 import org.geysermc.mcprotocollib.protocol.data.game.recipe.display.slot.SlotDisplay;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.inventory.ServerboundPlaceRecipePacket;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,7 +93,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.geysermc.geyser.translator.inventory.BundleInventoryTranslator.isBundle;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 public abstract class InventoryTranslator<Type extends Inventory> {
 
     public static final InventoryTranslator<PlayerInventory> PLAYER_INVENTORY_TRANSLATOR = new PlayerInventoryTranslator();
@@ -137,6 +138,7 @@ public abstract class InventoryTranslator<Type extends Inventory> {
     public static final int PLAYER_INVENTORY_OFFSET = 9;
 
     public final int size;
+    protected boolean refreshPending;
 
     // Whether the inventory open should be delayed.
     public boolean requiresOpeningDelay(GeyserSession session, Type inventory) {
@@ -257,7 +259,7 @@ public abstract class InventoryTranslator<Type extends Inventory> {
     }
 
     private void translateRequests(GeyserSession session, Type inventory, List<ItemStackRequest> requests, boolean firstTime) {
-        boolean refresh = false;
+        this.refreshPending = false;
 
         // If we get another request, we're not closing the inventory and should run the queued request asap
         // to "not fall behind" on transactions
@@ -331,14 +333,14 @@ public abstract class InventoryTranslator<Type extends Inventory> {
 
             if (response.getResult() != ItemStackResponseStatus.OK) {
                 // Sync our copy of the inventory with Bedrock's to prevent desyncs
-                refresh = true;
+                this.refreshPending = true;
             }
 
             responsePacket.getEntries().add(response);
         }
         session.sendUpstreamPacket(responsePacket);
 
-        if (refresh) {
+        if (this.refreshPending) {
             InventoryUtils.updateCursor(session);
             updateInventory(session, inventory);
         }
@@ -811,22 +813,23 @@ public abstract class InventoryTranslator<Type extends Inventory> {
         }
         int gridDimensions = gridSize == 4 ? 2 : 3;
 
+        GeyserRecipe<?> recipe = null;
         List<SlotDisplay> ingredients = Collections.emptyList();
-        SlotDisplay output = null;
         int recipeWidth = 0;
         int ingRemaining = 0;
         int ingredientIndex = -1;
 
         Int2IntMap consumedSlots = new Int2IntOpenHashMap();
         int prioritySlot = -1;
-        int tempSlot;
 
-        int resultSize;
         int timesCrafted = 0;
         Int2ObjectMap<Int2IntMap> ingredientMap = new Int2ObjectOpenHashMap<>();
         CraftState craftState = CraftState.START;
 
-        ClickPlan plan = new ClickPlan(session, this, inventory);
+        // Fills the crafting grid the way Bedrock predicted from its CONSUME actions. For recipes with a Java recipe ID
+        // this is only applied locally, so our response matches Bedrock's prediction; for recipes Geyser created
+        // itself, the clicks are sent to the server.
+        ClickPlan fillPlan = new ClickPlan(session, this, inventory);
         requestLoop:
         for (ItemStackRequestAction action : request.getActions()) {
             switch (action.getType()) {
@@ -839,11 +842,11 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                     craftState = CraftState.RECIPE_ID;
 
                     int recipeId = autoCraftAction.getRecipeNetworkId();
-                    GeyserRecipe recipe = session.getCraftingRecipes().get(recipeId);
+                    recipe = session.getCraftingRecipes().get(recipeId);
                     if (recipe == null) {
                         return rejectRequest(request);
                     }
-                    if (!plan.getCursor().isEmpty()) {
+                    if (!fillPlan.getCursor().isEmpty()) {
                         return rejectRequest(request);
                     }
                     //reject if crafting grid is not clear
@@ -857,7 +860,6 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                         GeyserShapedRecipe shapedRecipe = (GeyserShapedRecipe) recipe;
                         ingredients = shapedRecipe.ingredients();
                         recipeWidth = shapedRecipe.width();
-                        output = shapedRecipe.result();
                         if (recipeWidth > gridDimensions || shapedRecipe.height() > gridDimensions) {
                             return rejectRequest(request);
                         }
@@ -865,7 +867,6 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                         GeyserShapelessRecipe shapelessRecipe = (GeyserShapelessRecipe) recipe;
                         ingredients = shapelessRecipe.ingredients();
                         recipeWidth = gridDimensions;
-                        output = shapelessRecipe.result();
                         if (ingredients.size() > gridSize) {
                             return rejectRequest(request);
                         }
@@ -882,7 +883,7 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                     if (deprecatedCraftAction.getResultItems().length != 1) {
                         return rejectRequest(request);
                     }
-                    resultSize = deprecatedCraftAction.getResultItems()[0].getCount();
+                    int resultSize = deprecatedCraftAction.getResultItems()[0].getCount();
                     timesCrafted = deprecatedCraftAction.getTimesCrafted();
                     if (resultSize <= 0 || timesCrafted <= 0) {
                         return rejectRequest(request);
@@ -914,7 +915,7 @@ public abstract class InventoryTranslator<Type extends Inventory> {
 
                     int gridSlot = 1 + ingredientIndex + ((ingredientIndex / recipeWidth) * (gridDimensions - recipeWidth));
                     Int2IntMap sources = ingredientMap.computeIfAbsent(gridSlot, k -> new Int2IntOpenHashMap());
-                    sources.put(javaSlot, consumeAction.getCount());
+                    sources.merge(javaSlot, consumeAction.getCount(), Integer::sum);
                     break;
                 }
                 case TAKE:
@@ -932,18 +933,15 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                         return rejectRequest(request);
                     }
 
-                    int javaSlot = bedrockSlotToJava(transferAction.getDestination());
-                    if (isCursor(transferAction.getDestination())) { //TODO
-                        if (timesCrafted > 1) {
-                            tempSlot = findTempSlot(plan, GeyserItemStack.from(session, output), true);
-                            if (tempSlot == -1) {
-                                return rejectRequest(request);
-                            }
+                    // If the result goes into a slot this craft empties, take ingredients from that slot first
+                    if (isCursor(transferAction.getDestination())) {
+                        break requestLoop;
+                    } else {
+                        int javaSlot = bedrockSlotToJava(transferAction.getDestination());
+                        if (inventory.getItem(javaSlot).getAmount() == consumedSlots.get(javaSlot)) {
+                            prioritySlot = javaSlot;
+                            break requestLoop;
                         }
-                        break requestLoop;
-                    } else if (inventory.getItem(javaSlot).getAmount() == consumedSlots.get(javaSlot)) {
-                        prioritySlot = bedrockSlotToJava(transferAction.getDestination());
-                        break requestLoop;
                     }
                     break;
                 }
@@ -952,40 +950,55 @@ public abstract class InventoryTranslator<Type extends Inventory> {
             }
         }
 
-        final int maxLoops = Math.min(64, timesCrafted);
-        for (int loops = 0; loops < maxLoops; loops++) {
-            boolean done = true;
-            for (Int2ObjectMap.Entry<Int2IntMap> entry : ingredientMap.int2ObjectEntrySet()) {
-                Int2IntMap sources = entry.getValue();
-                if (sources.isEmpty())
-                    continue;
+        if (recipe == null || timesCrafted <= 0) {
+            return rejectRequest(request);
+        }
 
-                done = false;
-                int gridSlot = entry.getIntKey();
-                if (!plan.getItem(gridSlot).isEmpty())
-                    continue;
-
-                int sourceSlot;
-                if (loops == 0 && sources.containsKey(prioritySlot)) {
-                    sourceSlot = prioritySlot;
-                } else {
-                    sourceSlot = sources.keySet().iterator().nextInt();
-                }
-                int transferAmount = sources.remove(sourceSlot);
-                transferSlot(plan, sourceSlot, gridSlot, transferAmount);
+        for (Int2ObjectMap.Entry<Int2IntMap> entry : ingredientMap.int2ObjectEntrySet()) {
+            Int2IntMap sources = entry.getValue();
+            if (sources.isEmpty()) {
+                continue;
             }
-
-            if (!done) {
-                //TODO: sometimes the server does not agree on this slot?
-                plan.add(Click.LEFT_SHIFT, 0, true);
-            } else {
-                break;
+            int gridSlot = entry.getIntKey();
+            // An ingredient can be pulled from more than one stack; move all of them, starting with Bedrock's preferred slot
+            if (sources.containsKey(prioritySlot)) {
+                transferSlot(fillPlan, prioritySlot, gridSlot, sources.get(prioritySlot));
+            }
+            for (Int2IntMap.Entry source : sources.int2IntEntrySet()) {
+                if (source.getIntKey() != prioritySlot) {
+                    transferSlot(fillPlan, source.getIntKey(), gridSlot, source.getIntValue());
+                }
             }
         }
 
-        inventory.setItem(0, GeyserItemStack.from(session, output), session);
-        plan.execute(true);
-        return acceptRequest(request, makeContainerEntries(session, inventory, plan.getAffectedSlots()));
+        if (recipe.hasJavaId()) {
+            // Apply the predicted fill to our copy of the inventory without sending any clicks. The server fills the
+            // grid itself from the packet below and may choose different source slots; its container sync corrects
+            // our copy if so.
+            for (int slot : fillPlan.getAffectedSlots()) {
+                inventory.setItem(slot, fillPlan.getItem(slot), session);
+            }
+            session.getPlayerInventory().setCursor(fillPlan.getCursor(), session);
+
+            // The same packet a Java client sends when clicking a recipe in its recipe book; useMaxItems is what a
+            // shift-click on the recipe sends.
+            session.sendDownstreamGamePacket(new ServerboundPlaceRecipePacket(inventory.getJavaId(), recipe.id(), timesCrafted > 1));
+        } else {
+            // Recipes Geyser created itself (e.g. dynamic recipes like firework rockets) have no Java recipe ID and
+            // aren't in the Java recipe book, so a Java player fills the grid by hand. Send the fill as clicks instead.
+            fillPlan.execute(false);
+        }
+
+        // Shift-click the result, as a player does after filling the grid
+
+        inventory.setItem(0, GeyserItemStack.from(session, recipe.result()), session);
+        ClickPlan collectPlan = new ClickPlan(session, this, inventory);
+        collectPlan.add(Click.LEFT_SHIFT, 0, true);
+        collectPlan.execute(true);
+
+        IntSet affectedSlots = new IntOpenHashSet(fillPlan.getAffectedSlots());
+        affectedSlots.addAll(collectPlan.getAffectedSlots());
+        return acceptRequest(request, makeContainerEntries(session, inventory, affectedSlots));
     }
 
     /**
