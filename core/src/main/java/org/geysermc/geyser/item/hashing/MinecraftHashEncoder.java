@@ -31,7 +31,7 @@ import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import org.cloudburstmc.nbt.NbtList;
 import org.cloudburstmc.nbt.NbtMap;
-import org.cloudburstmc.nbt.NbtType;
+import org.geysermc.adventure.text.serializer.nbt.HeterogeneousNbtList;
 import org.geysermc.geyser.registry.java.JavaRegistryProvider;
 
 import java.util.ArrayList;
@@ -144,21 +144,8 @@ public class MinecraftHashEncoder {
 
     public HashCode nbtMap(NbtMap map) {
         Map<HashCode, HashCode> hashed = new HashMap<>(map.size());
-        for (String key : map.keySet()) {
-            HashCode hashedKey = string(key);
-            Object value = map.get(key);
-            if (value instanceof NbtList<?> list) {
-                hashed.put(hashedKey, nbtList(list));
-            } else {
-                map.listenForNumber(key, n -> hashed.put(hashedKey, number(n)));
-                map.listenForString(key, s -> hashed.put(hashedKey, string(s)));
-                map.listenForCompound(key, compound -> hashed.put(hashedKey, nbtMap(compound)));
-
-                map.listenForByteArray(key, bytes -> hashed.put(hashedKey, byteArray(bytes)));
-                map.listenForIntArray(key, ints -> hashed.put(hashedKey, intArray(ints)));
-                map.listenForLongArray(key, longs -> hashed.put(hashedKey, longArray(longs)));
-            }
-        }
+        map.forEach((key, value) ->
+            hashed.put(string(key), nbtValue(value)));
         return map(hashed);
     }
 
@@ -172,50 +159,8 @@ public class MinecraftHashEncoder {
         return listHasher.hash();
     }
 
-    @SuppressWarnings("unchecked")
-    public HashCode nbtList(NbtList<?> nbtList) {
-        NbtType<?> type = nbtList.getType();
-        List<HashCode> hashed = new ArrayList<>(nbtList.size());
-
-        if (type == NbtType.BYTE) {
-            for (Byte b : (List<Byte>) nbtList) {
-                hashed.add(number(b));
-            }
-        } else if (type == NbtType.SHORT) {
-            for (Short s : (List<Short>) nbtList) {
-                hashed.add(number(s));
-            }
-        } else if (type == NbtType.INT) {
-            for (Integer i : (List<Integer>) nbtList) {
-                hashed.add(number(i));
-            }
-        } else if (type == NbtType.LONG) {
-            for (Long l : (List<Long>) nbtList) {
-                hashed.add(number(l));
-            }
-        } else if (type == NbtType.FLOAT) {
-            for (Float f : (List<Float>) nbtList) {
-                hashed.add(number(f));
-            }
-        } else if (type == NbtType.DOUBLE) {
-            for (Double d : (List<Double>) nbtList) {
-                hashed.add(number(d));
-            }
-        } else if (type == NbtType.STRING) {
-            for (String s : (List<String>) nbtList) {
-                hashed.add(string(s));
-            }
-        } else if (type == NbtType.LIST) {
-            for (NbtList<?> list : (List<NbtList<?>>) nbtList) {
-                hashed.add(nbtList(list));
-            }
-        } else if (type == NbtType.COMPOUND) {
-            for (NbtMap compound : (List<NbtMap>) nbtList) {
-                hashed.add(nbtMap(compound));
-            }
-        }
-
-        return list(hashed);
+    public HashCode nbtList(NbtList<?> list) {
+        return list(HeterogeneousNbtList.tryUnwrap(list).stream().map(this::nbtValue).toList());
     }
 
     public HashCode byteArray(byte[] bytes) {
@@ -244,5 +189,20 @@ public class MinecraftHashEncoder {
         }
         arrayHasher.putByte(TAG_LONG_ARRAY_END);
         return arrayHasher.hash();
+    }
+
+    private HashCode nbtValue(Object value) {
+        return switch (value) {
+            case Number number -> number(number);
+            case String string -> string(string);
+            case NbtMap map -> nbtMap(map);
+            case NbtList<?> list -> nbtList(list);
+            case byte[] bytes -> byteArray(bytes);
+            case int[] ints -> intArray(ints);
+            case long[] longs -> longArray(longs);
+            default -> throw new IllegalArgumentException(
+                "Unsupported NBT value: " + value
+            );
+        };
     }
 }
