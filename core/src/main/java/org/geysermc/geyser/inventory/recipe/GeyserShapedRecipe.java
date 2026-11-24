@@ -57,7 +57,8 @@ public record GeyserShapedRecipe(int id,
 
     @Override
     public List<ShapedRecipeData> asRecipeData(GeyserSession session) {
-        var bedrockRecipes = RecipeUtil.combinations(session, result, ingredients);
+        var bedrockRecipes = RecipeUtil.combinations(session, result, ingredients,
+                session.getGeyser().getLogger().isDebug() ? "id=" + id + ", type=shaped" : null);
         if (bedrockRecipes == null) {
             return List.of();
         }
