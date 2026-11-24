@@ -37,14 +37,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3308 |
+| `UNFIXED` | 3301 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 58 |
-| `UPSTREAM_FIXED` | 2340 |
-| `DUPLICATE` | 385 |
-| `BLOCKED` | 9 |
-| `UNSUPPORTED` | 293 |
-| `NOT_APPLICABLE` | 424 |
+| `FIXED` | 59 |
+| `UPSTREAM_FIXED` | 2341 |
+| `DUPLICATE` | 386 |
+| `BLOCKED` | 10 |
+| `UNSUPPORTED` | 295 |
+| `NOT_APPLICABLE` | 425 |
 
 ## Mass audit (two passes)
 
@@ -158,6 +158,25 @@ This batch was recorded against `integration/final-release` HEAD `b50035b2c47212
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3312 → 3308, FIXED 57 → 58, BLOCKED 8 → 9, UNSUPPORTED 292 → 293, NOT_APPLICABLE 423 → 424); every status is in the documented enum and all 6817 IDs remain unique.
 
+### Wave 4 audit — verified dispositions (commit `ef6ca6736`)
+
+This pass was recorded against `integration/final-release` HEAD `ef6ca6736238f9228d951076748a34566c713306`. #6443 is `FIXED` at that commit (dialogs no longer close the currently open Java-side inventory); the single-thread 8G CI build started after integration was still running when this update was written, so no build result is claimed. The other nine records received static dispositions with no new integration commit. **No runtime or gameplay verification was performed.** Reference: https://github.com/GeyserMC/Geyser/issues/6903.
+
+| ID | Disposition | Evidence / reference |
+| ---: | --- | --- |
+| #6443 | `FIXED` | Integrated at `ef6ca6736238f9228d951076748a34566c713306` (dialogs no longer close the currently open Java-side inventory); CI single-thread 8G build running after integration, no result claimed — https://github.com/GeyserMC/Geyser/issues/6443 |
+| #6398 | `UNFIXED` | Open upstream, no fix, PR or established root cause; floating-item desync during crafting is device-specific client rendering — https://github.com/GeyserMC/Geyser/issues/6398 |
+| #6397 | `UNSUPPORTED` | Maintainer-confirmed Bedrock client-side chest visual/pairing bug, not a Geyser defect — https://github.com/GeyserMC/Geyser/issues/6397 |
+| #6466 | `BLOCKED` | PS5 connection timeout produced no Geyser logs; root cause lies outside Geyser — https://github.com/GeyserMC/Geyser/issues/6466 |
+| #6454 | `UNFIXED` | Ridden-mount velocity desync needs invasive client-prediction changes; PR #6551 excludes living entities — https://github.com/GeyserMC/Geyser/issues/6454 |
+| #6420 | `DUPLICATE` | Of open #6246 / #6563 auto-crafting failures; unresolved TODOs, no minimal fix — https://github.com/GeyserMC/Geyser/issues/6420 |
+| #6495 | `UNFIXED` | Unconfirmed upstream, maintainer cannot reproduce; mapping identical to upstream, third-party resource packs — https://github.com/GeyserMC/Geyser/issues/6495 |
+| #6458 | `UPSTREAM_FIXED` | Furnace-recipe client crash #6351 / #6353 already addressed via recipe translation and newer protocol library in base — https://github.com/GeyserMC/Geyser/issues/6458 |
+| #6408 | `NOT_APPLICABLE` | Armor rendering matches protocol; dismount issue belongs to unfixed #6283 — https://github.com/GeyserMC/Geyser/issues/6408 |
+| #6485 | `UNSUPPORTED` | Minecart visual interpolation inherent; Bedrock has no equivalent packet, same as #1578 — https://github.com/GeyserMC/Geyser/issues/6485 |
+
+`status_counts` was recomputed from all 6817 records (UNFIXED 3308 → 3301, FIXED 58 → 59, UPSTREAM_FIXED 2340 → 2341, DUPLICATE 385 → 386, BLOCKED 9 → 10, UNSUPPORTED 293 → 295, NOT_APPLICABLE 424 → 425); every status is in the documented enum and all 6817 IDs remain unique. No build or test run was performed for this documentation pass.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -258,18 +277,18 @@ _(291 records)_
 | 4819367010 | Bedrock Worlds tab server entry disappears or connects to wrong port behind NAT port remapping | https://github.com/GeyserMC/Geyser/issues/6508 | `UNFIXED` |
 | 4787423496 | Dialog buttons with object atlas sprite labels should map to FormImage.Type.PATH on Bedrock, but currently error with Expected tag to be a literal string... and render blank. | https://github.com/GeyserMC/Geyser/issues/6499 | `UNSUPPORTED` |
 | 4776889765 | Failed to correctly map the zombie villager's profession | https://github.com/GeyserMC/Geyser/issues/6495 | `UNFIXED` |
-| 4756478294 | Minecart Visual Lag/desync | https://github.com/GeyserMC/Geyser/issues/6485 | `UNFIXED` |
+| 4756478294 | Minecart Visual Lag/desync | https://github.com/GeyserMC/Geyser/issues/6485 | `UNSUPPORTED` |
 | 4737289181 | [ViaProxy] Client is having trouble establishing the connection | https://github.com/GeyserMC/Geyser/issues/6478 | `UNSUPPORTED` |
-| 4695749715 | PS5 Connection timeout after latest MC update | https://github.com/GeyserMC/Geyser/issues/6466 | `UNFIXED` |
-| 4684297026 | Stuck in furnace GUI, can't back out. | https://github.com/GeyserMC/Geyser/issues/6458 | `UNFIXED` |
+| 4695749715 | PS5 Connection timeout after latest MC update | https://github.com/GeyserMC/Geyser/issues/6466 | `BLOCKED` |
+| 4684297026 | Stuck in furnace GUI, can't back out. | https://github.com/GeyserMC/Geyser/issues/6458 | `UPSTREAM_FIXED` |
 | 4677471227 | Bedrock player's POV does not update when controlling mounted mobs (ALL ENTITIES) | https://github.com/GeyserMC/Geyser/issues/6454 | `UNFIXED` |
 | 4613680562 | Bedrock player sees water but java dont | https://github.com/GeyserMC/Geyser/issues/6446 | `FIXED` |
-| 4592672702 | The dialog box is closing the currently open inventory on the server-side | https://github.com/GeyserMC/Geyser/issues/6443 | `UNFIXED` |
-| 4479609325 | Crafting issue PLEASE HELP | https://github.com/GeyserMC/Geyser/issues/6420 | `UNFIXED` |
-| 4444025051 | Horses broken | https://github.com/GeyserMC/Geyser/issues/6408 | `UNFIXED` |
+| 4592672702 | The dialog box is closing the currently open inventory on the server-side | https://github.com/GeyserMC/Geyser/issues/6443 | `FIXED` |
+| 4479609325 | Crafting issue PLEASE HELP | https://github.com/GeyserMC/Geyser/issues/6420 | `DUPLICATE` |
+| 4444025051 | Horses broken | https://github.com/GeyserMC/Geyser/issues/6408 | `NOT_APPLICABLE` |
 | 4428303756 | Bucket misalignment/ghosting | https://github.com/GeyserMC/Geyser/issues/6399 | `BLOCKED` |
 | 4427799377 | Floating Items during Crafting for  some BEDROCK PLAYERS | https://github.com/GeyserMC/Geyser/issues/6398 | `UNFIXED` |
-| 4426982552 | Chests visual bug | https://github.com/GeyserMC/Geyser/issues/6397 | `UNFIXED` |
+| 4426982552 | Chests visual bug | https://github.com/GeyserMC/Geyser/issues/6397 | `UNSUPPORTED` |
 | 4424154581 | Bedrock users spawn facing wrong direction | https://github.com/GeyserMC/Geyser/issues/6395 | `DUPLICATE` |
 | 4411316441 | BEDROCK INVENTORY BUG | https://github.com/GeyserMC/Geyser/issues/6373 | `UNFIXED` |
 | 4402991483 | Globally linked Java skin does not show on Bedrock | https://github.com/GeyserMC/Geyser/issues/6368 | `UNFIXED` |
