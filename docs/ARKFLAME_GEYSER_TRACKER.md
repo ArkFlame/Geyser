@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T23:45:00Z_
+_Generated at: 2026-11-24T23:53:59Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,11 +38,11 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 142 |
+| `UNFIXED` | 138 |
 | `IN_PROGRESS` | 0 |
 | `FIXED` | 137 |
-| `UPSTREAM_FIXED` | 3009 |
-| `DUPLICATE` | 603 |
+| `UPSTREAM_FIXED` | 3010 |
+| `DUPLICATE` | 606 |
 | `BLOCKED` | 70 |
 | `UNSUPPORTED` | 656 |
 | `NOT_APPLICABLE` | 2199 |
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-25 — open PR adoption and open issue fixes
+## Waves 8-26 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -476,6 +476,16 @@ Three workers ran with ~328 GitHub API requests left; upstream was still 0 commi
 The remaining issues were dispositioned rather than changed: 11 to BLOCKED (no clean repro, third-party/ViaVersion incompatibility, missing implementation, or device-only crashes) and 8 to NOT_APPLICABLE (feature requests or upstream-verified translations). Each carries the specific reason in the tracker.
 
 **Backlog audit AH/AI.** Two read-only auditors produced **32 evidence-backed dispositions** from 124 records: 25 UPSTREAM_FIXED and 7 NOT_APPLICABLE; 92 stayed `UNFIXED`. Each UPSTREAM_FIXED claim was tied to a commit verified as an ancestor of HEAD with a fork `file:line` — e.g. #5463 → `59b0be89`, #2444 → `39716508`, #2408 → `7ae91a40`, #5182 → `ba5b4224`, #1002 → `7df47618`, #261 → `77a7b55f`, plus the 12 verified ids from shard AI (#5748, #2111, #1950, #1770, #1716, #1569, #1474, #1041, #878, #351, #313, #1070). Vague "fixed in latest" notes without an ancestor plus `file:line` were deliberately left UNFIXED.
+
+### Wave 26 — final confirmed-bug pass and closed-record settlement
+
+Two final workers closed out the actionable surface. `git fetch upstream` still showed 0 new upstream commits.
+
+**16 Confirmed Bugs.** Each was re-examined with full API access and per-issue source tracing. No further compile-safe fix was possible; the exact missing evidence for each is recorded in `audit/wave26-confirmed-outcomes.md` (commit `3df5dba`). The blockers are concrete, not generic: #5755 needs a teleport-id trace through anti-xray batching; #5584 is a Bedrock client field behind an NDA plugin with a withheld dump; #3937 hits the deliberate 110 ms `SIMULATION_TICK` throttle introduced for #6901; #2787's sub-issue #2769 is already fixed at `BedrockInventoryTransactionTranslator.java:198-215` and only the placement-diagnostics remainder is outstanding; #3580 is a ViaVersion/ProtocolLib NBT mutation; #4102's claimed prior PR could not be found. No speculative edits were made.
+
+**92 closed leftovers.** A final audit produced 4 evidence-backed dispositions: #754 UPSTREAM_FIXED (maintainer's "fixed in latest", confirmed by ancestor commit `6638c5302` at `BedrockCommandBlockUpdateTranslator.java:40`), and #914 (duplicate of #754), #801 (duplicate of #776, commit `61bfd46a15`), #401 (duplicate of #204, PR #419) as DUPLICATE. The other 88 stay UNFIXED with a specific reason each: "fixed in latest" comments without an ancestor-verified commit plus `file:line`, duplicate targets that are themselves unresolved, or dismissal comments from non-members. #6295 is a notable case — `state_reason=duplicate` but its only target (#1095) is BLOCKED, so no disposition was asserted.
+
+This is the evidence-limited end of the campaign: the remaining UNFIXED records require live reproduction data, client hardware, or upstream dependency changes that are outside this repository.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
