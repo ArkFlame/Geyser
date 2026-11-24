@@ -67,6 +67,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Loads {@link ResourcePack}s within a {@link Path} directory, firing the {@link GeyserDefineResourcePacksEventImpl}.
@@ -102,7 +103,7 @@ public class ResourcePackLoader implements RegistryLoader<Path, Map<UUID, Resour
 
         List<Path> resourcePacks;
         try (Stream<Path> stream = Files.list(directory)) {
-            resourcePacks = stream.filter(PACK_MATCHER::matches)
+            resourcePacks = stream.filter(path -> PACK_MATCHER.matches(path) || isUnzippedPack(path))
                     .collect(Collectors.toCollection(ArrayList::new)); // toList() does not guarantee mutability
         } catch (Exception e) {
             GeyserImpl.getInstance().getLogger().error("Could not list packs directory", e);
@@ -143,15 +144,106 @@ public class ResourcePackLoader implements RegistryLoader<Path, Map<UUID, Resour
         return defineEvent.getPacks();
     }
 
+    private static Path asArchiveOrException(Path path) {
+        if (!Files.isDirectory(path)) {
+            return path;
+        }
+        try {
+            return asArchive(path);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not pack resource pack directory " + path.getFileName(), e);
+        }
+    }
+
+    /**
+     * Whether this path is an unzipped resource pack, i.e. a directory with a manifest at its root, or a directory
+     * containing exactly one folder with the manifest (which is how zipped Bedrock packs are often laid out). Vanilla
+     * clients accept these, so we treat them like the equivalent archive.
+     */
+    static boolean isUnzippedPack(Path path) {
+        if (!Files.isDirectory(path)) {
+            return false;
+        }
+        if (hasManifest(path)) {
+            return true;
+        }
+        try (Stream<Path> stream = Files.list(path)) {
+            List<Path> children = stream.filter(child -> !isMetadataFile(child)).toList();
+            if (children.size() != 1) {
+                return false;
+            }
+            Path onlyChild = children.get(0);
+            return Files.isDirectory(onlyChild) && hasManifest(onlyChild);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static boolean isMetadataFile(Path path) {
+        String name = path.getFileName().toString();
+        return name.equals(".DS_Store") || name.startsWith("._");
+    }
+
+    private static boolean hasManifest(Path directory) {
+        return Files.isRegularFile(directory.resolve("manifest.json")) || Files.isRegularFile(directory.resolve("pack_manifest.json"));
+    }
+
+    /**
+     * Bedrock clients can only download a resource pack as an archive, so an unzipped pack is packed into a cached
+     * .mcpack before it is read. The archive is rebuilt whenever a file inside the directory changed.
+     */
+    private static Path asArchive(Path path) throws IOException {
+        if (!Files.isDirectory(path)) {
+            return path;
+        }
+
+        Path cacheDirectory = GeyserImpl.getInstance().getBootstrap().getConfigFolder().resolve("cache").resolve("directory_packs");
+        Files.createDirectories(cacheDirectory);
+
+        Path archive = cacheDirectory.resolve(path.getFileName().toString() + ".mcpack");
+
+        long newest = 0;
+        try (Stream<Path> stream = Files.walk(path)) {
+            for (Path file : (Iterable<Path>) stream::iterator) {
+                newest = Math.max(newest, Files.getLastModifiedTime(file).toMillis());
+            }
+        }
+
+        if (Files.exists(archive) && Files.getLastModifiedTime(archive).toMillis() >= newest) {
+            return archive;
+        }
+
+        try (ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(archive));
+             Stream<Path> stream = Files.walk(path)) {
+            for (Path file : (Iterable<Path>) stream::iterator) {
+                if (Files.isDirectory(file)) {
+                    continue;
+                }
+                String name = path.relativize(file).toString().replace(File.separatorChar, '/');
+                // Archiving tools on macOS add metadata that would otherwise break the pack layout.
+                if (name.startsWith("__MACOSX/") || name.equals(".DS_Store") || file.getFileName().toString().startsWith("._")) {
+                    continue;
+                }
+                zip.putNextEntry(new ZipEntry(name));
+                Files.copy(file, zip);
+                zip.closeEntry();
+            }
+        }
+        GeyserImpl.getInstance().getLogger().debug("Packed unzipped resource pack " + path.getFileName() + " into " + archive);
+        return archive;
+    }
+
     /**
      * Reads a resource pack builder at the given file. Also searches for a file in the same directory, with the same name
      * but suffixed by ".key", containing the content key. If such file does not exist, no content key is stored.
+     * If the path is a directory, it is first packed into a cached archive, see {@link #asArchive(Path)}.
      *
      * @param path the file to read from, in ZIP format
      * @return a {@link ResourcePack.Builder} representation
      * @throws IllegalArgumentException if the pack manifest was invalid or there was any processing exception
      */
     public static GeyserResourcePack.Builder readPack(Path path) throws IllegalArgumentException {
+        path = asArchiveOrException(path);
         if (!PACK_MATCHER.matches(path)) {
             throw new IllegalArgumentException("Resource pack " + path.getFileName() + " must be a .zip or .mcpack file!");
         }

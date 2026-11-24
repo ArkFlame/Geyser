@@ -14,7 +14,7 @@
                     "rotation": [0, ${y_rotation}, 0],
                     "cubes": [
                         {
-                            "origin": [-4, 0.5, -4],
+                            "origin": [-4, 0, -4],
                             "size": [8, 8, 8],
                             "uv": {
                                 "north": {"uv": [8, 0], "uv_size": [8, 8]},
@@ -33,7 +33,7 @@
                     "pivot": [0, 24, 0],
                     "cubes": [
                         {
-                            "origin": [-4, 0.5, -4],
+                            "origin": [-4, 0, -4],
                             "size": [8, 8, 8],
                             "inflate": 0.5,
                             "uv": {
