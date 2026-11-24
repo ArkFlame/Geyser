@@ -82,11 +82,29 @@ public interface MaterialInstance {
     float ambientOcclusionExponent();
 
     /**
-     * Gets if the block is isotropic
+     * Gets if the block is isotropic, meaning the UVs of its faces are randomly rotated based on the block's position.
      *
-     * @return If the block is isotropic.
+     * @return if the block is isotropic
      */
     boolean isotropic();
+
+    /**
+     * Gets if the block's texture can use texture variations.
+     *
+     * @return if the block's texture can use texture variations
+     */
+    default boolean textureVariation() {
+        return false;
+    }
+
+    /**
+     * Gets if the block's tint is masked by its texture's alpha.
+     *
+     * @return if the block's tint is masked by its texture's alpha
+     */
+    default boolean alphaMaskedTint() {
+        return false;
+    }
 
     /**
      * Creates a builder for MaterialInstance.
@@ -123,6 +141,26 @@ public interface MaterialInstance {
         Builder ambientOcclusionExponent(float ambientOcclusionExponent);
 
         Builder isotropic(boolean isotropic);
+
+        /**
+         * Sets if the block's texture can use texture variations.
+         *
+         * @param textureVariation if the block's texture can use texture variations
+         * @return this builder
+         */
+        default Builder textureVariation(boolean textureVariation) {
+            throw new UnsupportedOperationException("Texture variation is not supported by this builder implementation");
+        }
+
+        /**
+         * Sets if the block's tint is masked by its texture's alpha.
+         *
+         * @param alphaMaskedTint if the block's tint is masked by its texture's alpha
+         * @return this builder
+         */
+        default Builder alphaMaskedTint(boolean alphaMaskedTint) {
+            throw new UnsupportedOperationException("Alpha-masked tint is not supported by this builder implementation");
+        }
 
         MaterialInstance build();
     }
