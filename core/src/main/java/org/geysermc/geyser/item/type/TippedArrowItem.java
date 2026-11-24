@@ -28,6 +28,7 @@ package org.geysermc.geyser.item.type;
 import net.kyori.adventure.text.Component;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.geysermc.geyser.GeyserImpl;
+import org.geysermc.geyser.inventory.GeyserItemStack;
 import org.geysermc.geyser.inventory.item.Potion;
 import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.registry.type.ItemMappings;
@@ -44,6 +45,8 @@ public class TippedArrowItem extends ArrowItem {
     @Override
     public Component getName(DataComponents components) {
         return PotionItem.getName(components, translationKey(), super::getName);
+    public Component getName(GeyserItemStack stack) {
+        return PotionItem.getName(stack, translationKey(), super::getName);
     }
 
     @Override

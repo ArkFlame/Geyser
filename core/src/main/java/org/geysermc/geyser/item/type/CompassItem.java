@@ -51,6 +51,8 @@ public class CompassItem extends Item {
         return components != null && components.get(DataComponentTypes.LODESTONE_TRACKER) != null
             ? LODESTONE_NAME
             : super.getName(components);
+    public Component getName(GeyserItemStack stack) {
+        return stack.has(DataComponentTypes.LODESTONE_TRACKER) ? LODESTONE_NAME : super.getName(stack);
     }
 
     @Override

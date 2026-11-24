@@ -41,6 +41,7 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponen
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.PotionContents;
 
 import java.util.Locale;
+
 import java.util.function.Function;
 
 public class PotionItem extends Item {
@@ -78,6 +79,9 @@ public class PotionItem extends Item {
             }
         }
         return Component.translatable(baseTranslation + name);
+
+    public Component getName(DataComponents components) {
+        return getName(components, translationKey(), super::getName);
     }
 
     @Override
@@ -118,4 +122,10 @@ public class PotionItem extends Item {
     public boolean ignoreDamage() {
         return true;
     }
+
+    public static Component getName(GeyserItemStack stack, String translationKey, Function<GeyserItemStack, Component> fallback) {
+        PotionContents contents = stack.getComponent(DataComponentTypes.POTION_CONTENTS);
+        return contents != null ? potionName(contents, translationKey + ".effect.") : fallback.apply(stack);
+    }
+
 }

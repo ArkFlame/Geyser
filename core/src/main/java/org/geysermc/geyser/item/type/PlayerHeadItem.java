@@ -27,6 +27,7 @@ package org.geysermc.geyser.item.type;
 
 import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.geysermc.geyser.inventory.GeyserItemStack;
 import org.geysermc.geyser.item.TooltipOptions;
 import org.geysermc.geyser.item.components.Rarity;
 import org.geysermc.geyser.level.block.type.Block;
@@ -51,6 +52,12 @@ public class PlayerHeadItem extends BlockItem {
         return profile != null && profile.getProfile().getName() != null
             ? Component.translatable(translationKey() + ".named", profile.getProfile().getName())
             : super.getName(components);
+    public Component getName(GeyserItemStack stack) {
+        ResolvableProfile profile = stack.getComponent(DataComponentTypes.PROFILE);
+        GameProfile resolved = profile == null ? null : SkinManager.resolveProfile(profile).getNow(null);
+        return resolved != null && resolved.getName() != null
+            ? Component.translatable(translationKey() + ".named", resolved.getName())
+            : super.getName(stack);
     }
 
     @Override
