@@ -129679,7 +129679,7 @@
       "branch": null,
       "status": "FIXED",
       "sha": "8e90a388cca4d93c4f3ba5894de4227d31b2f2bb",
-      "evidence": "Wave-7: integrated into integration/final-release @ 8e90a388cca4d93c4f3ba5894de4227d31b2f2bb (fix: use soft enums for mixed-case command literals, porting upstream #6619). PR #6857 ('Sync 6619') was closed by its author as a mistake, so the fix never landed through the PR. CI build at 8e90a388 was still running when recorded: no build result claimed and no runtime/gameplay verification. Refs: https://github.com/GeyserMC/Geyser/pull/6857 , https://github.com/GeyserMC/Geyser/pull/6619",
+      "evidence": "Wave-7: integrated into integration/final-release @ 8e90a388cca4d93c4f3ba5894de4227d31b2f2bb (fix: use soft enums for mixed-case command literals, porting upstream #6619). PR #6857 ('Sync 6619') was closed by its author as a mistake, so the fix never landed through the PR. final single-thread 8G CI at 8e90a388 finished BUILD SUCCESSFUL in 7m 59s (exit 0), compile/test only, verified via wave-7 tracker commit ac29656e11d4a0a6c5972f36308ec012ac5c9ef0; promoted to master in merge 4de63e5876b5c3ee438422d385c4dc31f72c4f02. No runtime/gameplay verification claimed. Refs: https://github.com/GeyserMC/Geyser/pull/6857 , https://github.com/GeyserMC/Geyser/pull/6619",
       "gap": null,
       "timestamp": "2026-11-24T02:00:00Z",
       "number": 6857,
