@@ -48,6 +48,9 @@ public class JavaRespawnTranslator extends PacketTranslator<ClientboundRespawnPa
 
     @Override
     public void translate(GeyserSession session, ClientboundRespawnPacket packet) {
+        // The command tree the cached suggestions belong to may be replaced or invalid after the respawn
+        session.getServerSuggestionCache().clear();
+
         SessionPlayerEntity entity = session.getPlayerEntity();
         PlayerSpawnInfo spawnInfo = packet.getCommonPlayerSpawnInfo();
 

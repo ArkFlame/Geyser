@@ -53,11 +53,17 @@ public class JavaCommandsTranslator extends PacketTranslator<ClientboundCommands
 
         // Add our commands to the AvailableCommandsPacket for the bedrock client
         AvailableCommandsPacket availableCommandsPacket = new AvailableCommandsPacket();
-        availableCommandsPacket.getCommands().addAll(CommandTranslator.translate(data));
+        var commands = CommandTranslator.translate(data);
+        availableCommandsPacket.getCommands().addAll(commands);
 
         session.getGeyser().getLogger().debug("Sending command packet of " + availableCommandsPacket.getCommands().size() + " commands");
 
         // Finally, send the commands to the client
         session.sendUpstreamPacket(availableCommandsPacket);
+
+        if (!commands.isEmpty()) {
+            // Ask the Java server for the arguments it suggests itself, then resend the commands with the answers
+            data.updateServerSuggestionRequests(() -> translate(session, packet));
+        }
     }
 }

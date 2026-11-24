@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public final class CommandTranslator {
@@ -116,16 +117,18 @@ public final class CommandTranslator {
 
             // Build the completed command and add it to the final list
             CommandData bedrockCommand = new CommandData(commandName, description, flags, CommandPermission.ANY, aliases, Collections.emptyList(), commandInfo.paramData());
-            bedrockCommands.add(bedrockCommand);
-
             if (commandName.equals("help")) {
+                // Help goes first: the Bedrock client drops the parameters of every command sent before it
+                bedrockCommands.add(0, bedrockCommand);
                 helpAdded = true;
+            } else {
+                bedrockCommands.add(bedrockCommand);
             }
         }
 
         if (!helpAdded) {
             // https://github.com/GeyserMC/Geyser/issues/2573 if Brigadier does not send the help command.
-            bedrockCommands.add(createFakeHelpCommand());
+            bedrockCommands.add(0, createFakeHelpCommand());
         }
 
         data.updateKnownCommands(bedrockData.knownCommands, bedrockData.restrictedCommands);
@@ -184,7 +187,7 @@ public final class CommandTranslator {
         // This command has children -> extra args can be given
         if (command.getChildIndices().length > 0) {
             // Create the root param node and build all the children (args)
-            CommandParamInfo rootParam = new CommandParamInfo(command);
+            CommandParamInfo rootParam = new CommandParamInfo(command, "/" + Objects.requireNonNull(command.getName()).toLowerCase(Locale.ROOT));
             rootParam.buildChildren(data);
 
             return rootParam.getTree().toArray(new CommandOverloadData[0]);

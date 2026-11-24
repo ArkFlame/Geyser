@@ -33,29 +33,33 @@ import org.cloudburstmc.protocol.bedrock.data.command.CommandParam;
 import org.cloudburstmc.protocol.bedrock.data.command.CommandParamData;
 import org.geysermc.geyser.translator.data.CommandTranslationData;
 import org.geysermc.mcprotocollib.protocol.data.game.command.CommandNode;
+import org.geysermc.mcprotocollib.protocol.data.game.command.SuggestionType;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-record CommandParamInfo(String originName, CommandNode paramNode, @Nullable CommandParamData paramData, List<CommandParamInfo> children) {
+record CommandParamInfo(String originName, CommandNode paramNode, @Nullable CommandParamData paramData,
+                       List<CommandParamInfo> children, @Nullable String typed) {
 
     /**
      * Create a new parameter info object
      *
      * @param paramNode CommandNode the parameter is for
      * @param paramData The existing parameters for the command
+     * @param typed the command typed up to and including this node, or null if an argument comes before it
      */
-    private CommandParamInfo(String originName, CommandNode paramNode, @Nullable CommandParamData paramData) {
-        this(originName, paramNode, paramData, new ArrayList<>());
+    private CommandParamInfo(String originName, CommandNode paramNode, @Nullable CommandParamData paramData, @Nullable String typed) {
+        this(originName, paramNode, paramData, new ArrayList<>(), typed);
     }
 
-    CommandParamInfo(CommandNode origin) {
-        this(Objects.requireNonNull(origin.getName()).toLowerCase(Locale.ROOT), origin, null);
+    CommandParamInfo(CommandNode origin, String typed) {
+        this(Objects.requireNonNull(origin.getName()).toLowerCase(Locale.ROOT), origin, null, typed);
     }
 
     /**
@@ -106,9 +110,10 @@ record CommandParamInfo(String originName, CommandNode paramNode, @Nullable Comm
                 Map<String, Set<CommandEnumConstraint>> newConstraints = new Object2ObjectLinkedOpenHashMap<>(otherEnumData.getValues());
                 newConstraints.put(childNode.getName(), Set.of());
 
+                // The merged literals share one subtree, so it is unknown which of them was typed
                 children.set(i, new CommandParamInfo(originName, otherChild.paramNode(),
                     createEnumParamData(data, otherParamData.getName(), newConstraints,
-                        paramNode.isExecutable())));
+                        paramNode.isExecutable()), null));
                 break;
             }
         }
@@ -119,13 +124,20 @@ record CommandParamInfo(String originName, CommandNode paramNode, @Nullable Comm
             constraints.put(childNode.getName(), Set.of());
 
             children.add(new CommandParamInfo(originName, childNode,
-                createEnumParamData(data, childNode.getName(), constraints, paramNode.isExecutable())));
+                createEnumParamData(data, childNode.getName(), constraints, paramNode.isExecutable()),
+                typed == null ? null : typed + " " + childNode.getName()));
         }
     }
 
     private void mapArgumentChild(CommandTranslationData data, CommandNode childNode) {
         // We have to try map the argument/parser to bedrock best as we can, guessing the suggestions
         Object mappedType = CommandParserTranslator.mapCommandType(data, childNode);
+        // Namespaced labels ("plugin:command") repeat the plain ones, so they are not worth a request each
+        if (mappedType == CommandParam.STRING && typed != null && typed.indexOf(':') < 0
+            && SuggestionType.ASK_SERVER.getResourceLocation().equals(childNode.getSuggestionType())
+            && addServerSuggestions(data, childNode)) {
+            return;
+        }
 
         CommandEnumData enumData = null;
         CommandParam type = null;
@@ -169,7 +181,106 @@ record CommandParamInfo(String originName, CommandNode paramNode, @Nullable Comm
         commandParamData.setEnumData(enumData);
         commandParamData.setType(type);
 
-        children.add(new CommandParamInfo(originName, childNode, commandParamData));
+        children.add(new CommandParamInfo(originName, childNode, commandParamData, null));
+    }
+
+    /**
+     * Adds an argument the Java server suggests itself. When Java takes the rest of the command as one string
+     * (most plugin commands), what the server suggests after each value becomes the next argument.
+     *
+     * @return false until the server has answered; the argument then stays a plain string
+     */
+    private boolean addServerSuggestions(CommandTranslationData data, CommandNode node) {
+        String name = data.registerServerRequest(typed, Objects.requireNonNull(node.getName()));
+        String text = typed + " ";
+        List<CommandParamInfo> params = serverArgument(data, node, node.getName(), name, text,
+            data.suggestions(text), paramNode.isExecutable(), node.getChildIndices().length == 0);
+        children.addAll(params);
+        return !params.isEmpty();
+    }
+
+    /**
+     * One argument suggested by the server, as overloads: values followed by more suggestions get their own,
+     * values followed by a player share one, and the rest share another. Each value is in a single overload,
+     * or Bedrock would list it more than once.
+     *
+     * @param following false when Java has its own nodes after this argument
+     */
+    private List<CommandParamInfo> serverArgument(CommandTranslationData data, CommandNode node, String paramName,
+                                                  String enumName, String text, Set<String> values,
+                                                  boolean optional, boolean following) {
+        List<CommandParamInfo> params = new ArrayList<>();
+        if (data.onlyPlayers(values)) {
+            // Bedrock does not complete player names for an optional target
+            params.add(new CommandParamInfo(originName, node, serverParam(paramName, false, CommandParam.TARGET), null));
+            return params;
+        }
+
+        Set<String> rest = new LinkedHashSet<>();
+        Set<String> beforePlayer = new LinkedHashSet<>();
+        for (String value : lowerCaseOnly(values)) {
+            Set<String> next = following ? data.suggestionsAfter(text, value) : Set.of();
+            if (data.onlyPlayers(next)) {
+                beforePlayer.add(value);
+                continue;
+            }
+            List<CommandParamInfo> after = serverArgument(data, node, value, enumName + "_" + value + "_args",
+                text + value + " ", next, true, true);
+            if (after.isEmpty()) {
+                rest.add(value);
+                continue;
+            }
+            CommandParamInfo literal = new CommandParamInfo(originName, node, serverParam(paramName, false,
+                serverEnum(data, data.uniqueServerEnumName(enumName + "_" + value), Set.of(value))), null);
+            literal.children.addAll(after);
+            params.add(literal);
+        }
+        if (!beforePlayer.isEmpty()) {
+            CommandParamInfo literal = new CommandParamInfo(originName, node, serverParam(paramName, false,
+                serverEnum(data, data.uniqueServerEnumName(enumName + "_player"), beforePlayer)), null);
+            literal.children.add(new CommandParamInfo(originName, node,
+                serverParam("player", false, CommandParam.TARGET), null));
+            params.add(literal);
+        }
+        if (!rest.isEmpty()) {
+            params.add(0, new CommandParamInfo(originName, node, serverParam(paramName, optional,
+                serverEnum(data, data.uniqueServerEnumName(enumName), rest)), null));
+        }
+        return params;
+    }
+
+    /**
+     * Bedrock refuses enum values with upper case letters ("Keywords in commands need to be lower case"), and
+     * lower casing them could send a value the server does not accept, so they are left out.
+     */
+    private static Set<String> lowerCaseOnly(Set<String> values) {
+        Set<String> keywords = new LinkedHashSet<>();
+        for (String value : values) {
+            if (value.equals(value.toLowerCase(Locale.ROOT))) {
+                keywords.add(value);
+            }
+        }
+        return keywords;
+    }
+
+    private static CommandParamData serverParam(String name, boolean optional, Object type) {
+        CommandParamData paramData = new CommandParamData();
+        paramData.setName(name);
+        paramData.setOptional(optional);
+        if (type instanceof CommandEnumData enumData) {
+            paramData.setEnumData(enumData);
+        } else {
+            paramData.setType((CommandParam) type);
+        }
+        return paramData;
+    }
+
+    private static CommandEnumData serverEnum(CommandTranslationData data, String name, Set<String> values) {
+        Map<String, Set<CommandEnumConstraint>> map = new Object2ObjectLinkedOpenHashMap<>();
+        for (String value : values) {
+            map.put(value, Set.of());
+        }
+        return data.constructServerEnum(name, map);
     }
 
     private CommandParamData createEnumParamData(CommandTranslationData data, String name, Map<String, Set<CommandEnumConstraint>> constraints,

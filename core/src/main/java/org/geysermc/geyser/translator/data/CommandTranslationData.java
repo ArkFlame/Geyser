@@ -38,6 +38,7 @@ import org.geysermc.geyser.command.CommandRegistry;
 import org.geysermc.geyser.command.GeyserCommandSource;
 import org.geysermc.geyser.registry.java.JavaRegistryKey;
 import org.geysermc.geyser.session.GeyserSession;
+import org.geysermc.geyser.session.cache.ServerSuggestionCache;
 import org.geysermc.geyser.session.cache.tags.Tag;
 import org.geysermc.geyser.translator.command.BuiltInCommandEnums;
 import org.geysermc.mcprotocollib.protocol.data.game.command.CommandNode;
@@ -65,6 +66,7 @@ public final class CommandTranslationData implements CommonTranslationData.Recor
     private final int firstNodeIndex;
 
     private final GeyserSession session;
+    private final ServerSuggestionCache suggestionCache;
 
     private final Map<JavaRegistryKey<?>, String[]> registryElements = new Reference2ObjectOpenHashMap<>();
     private final Map<JavaRegistryKey<?>, String[]> registryElementsAndTags = new Reference2ObjectOpenHashMap<>();
@@ -72,9 +74,14 @@ public final class CommandTranslationData implements CommonTranslationData.Recor
     private final Map<Map<String, Set<CommandEnumConstraint>>, CommandEnumData> enums = new Object2ObjectOpenHashMap<>();
     private final Set<String> softEnumNames = new ObjectOpenHashSet<>();
     private final Set<String> hardEnumNames = new ObjectOpenHashSet<>();
+    /**
+     * Command texts up to an argument the Java server suggests itself, e.g. "/home "
+     */
+    private final Set<String> serverRequests = new ObjectOpenHashSet<>();
 
     public CommandTranslationData(GeyserSession session, CommandNode[] nodes, int firstNodeIndex) {
         this.session = session;
+        this.suggestionCache = session.getServerSuggestionCache();
         this.commonData = new CommonTranslationData.Impl(session);
         this.commandSource = session;
         this.commandRegistry = session.getGeyser().commandRegistry();
@@ -146,6 +153,70 @@ public final class CommandTranslationData implements CommonTranslationData.Recor
             String safeName = findSafeEnumName(soft ? softEnumNames : hardEnumNames, commandName, proposedName);
             return new CommandEnumData(safeName, constraints, soft);
         });
+    }
+
+    /**
+     * Registers the command text an argument needs suggestions for, and returns a name for its enum.
+     *
+     * @param typed the command typed up to this argument, e.g. "/home"
+     * @param paramName the name of the argument node
+     */
+    public String registerServerRequest(String typed, String paramName) {
+        serverRequests.add(typed + " ");
+        String base = typed.startsWith("/") ? typed.substring(1) : typed;
+        return plainEnumName(base + "_" + paramName);
+    }
+
+    /**
+     * @return the suggestions the Java server sent for the given command text
+     */
+    public Set<String> suggestions(String text) {
+        return suggestionCache.suggestions(text);
+    }
+
+    /**
+     * @return the suggestions for the argument after {@code value}
+     */
+    public Set<String> suggestionsAfter(String text, String value) {
+        return suggestionCache.suggestionsAfter(text, value);
+    }
+
+    public boolean onlyPlayers(Set<String> values) {
+        return suggestionCache.onlyPlayers(values);
+    }
+
+    /**
+     * @return a hard enum name not used by any other enum in this packet
+     */
+    public String uniqueServerEnumName(String proposed) {
+        String plain = plainEnumName(proposed);
+        String unique = plain;
+        for (int i = 2; !hardEnumNames.add(unique); i++) {
+            unique = plain + i;
+        }
+        return unique;
+    }
+
+    /**
+     * Server-suggested values keep their case, so they cannot be a soft enum (Bedrock does not offer those in chat)
+     * and only lower case values are sent as enums by the caller.
+     */
+    public CommandEnumData constructServerEnum(String name, Map<String, Set<CommandEnumConstraint>> constraints) {
+        return new CommandEnumData(name, constraints, false);
+    }
+
+    /**
+     * Asks the server for the registered suggestions, and sends the commands again once they are in.
+     *
+     * @param resendCommands resends the command packet, building the packet again with the new suggestions
+     */
+    public void updateServerSuggestionRequests(Runnable resendCommands) {
+        suggestionCache.setRequests(Set.copyOf(serverRequests), resendCommands);
+    }
+
+    private static String plainEnumName(String proposed) {
+        // Bedrock shows the enum name in the command hint; keep it to plain characters
+        return proposed.replaceAll("[^A-Za-z0-9_]", "_");
     }
 
     private CommandEnumData constructSoftEnum(String proposedName, Map<String, Set<CommandEnumConstraint>> constraints) {
