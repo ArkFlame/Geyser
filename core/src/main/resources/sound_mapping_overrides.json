@@ -1,0 +1,9 @@
+{
+  "_comment": "Fork-owned overrides for mappings/sounds.json. These entries are intentionally kept out of the GeyserMC/mappings submodule so its pinned upstream commit stays clean. SoundRegistryLoader merges keys from this file over the parsed sound mappings.",
+  "entity.player.attack.knockback": {
+    "integrated_playsound_mapping": "geyseropt.entity.player.attack.knockback"
+  },
+  "entity.player.attack.sweep": {
+    "integrated_playsound_mapping": "geyseropt.entity.player.attack.sweep"
+  }
+}

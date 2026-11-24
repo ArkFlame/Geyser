@@ -41,6 +41,8 @@ import java.util.Map;
  * Loads sounds from the given input.
  */
 public class SoundRegistryLoader implements RegistryLoader<String, Map<String, SoundMapping>> {
+    private static final String OVERRIDES_RESOURCE = "sound_mapping_overrides.json";
+
     @Override
     public Map<String, SoundMapping> load(String input) {
         JsonObject soundsJson;
@@ -68,6 +70,59 @@ public class SoundRegistryLoader implements RegistryLoader<String, Map<String, S
                     )
             );
         }
+
+        applyOverrides(soundMappings);
         return soundMappings;
+    }
+
+    /**
+     * Merges fork-owned overrides over the mappings loaded from the GeyserMC/mappings submodule. The overrides live in
+     * their own resource so that the submodule can stay on its pinned upstream commit. Keys starting with an underscore
+     * are metadata and are ignored.
+     */
+    private static void applyOverrides(Map<String, SoundMapping> soundMappings) {
+        InputStream overrideStream = GeyserImpl.getInstance().getBootstrap().getResourceOrNull(OVERRIDES_RESOURCE);
+        if (overrideStream == null) {
+            return;
+        }
+
+        try (InputStream stream = overrideStream;
+             InputStreamReader isr = new InputStreamReader(stream)) {
+            //noinspection deprecation
+            JsonObject overrides = new JsonParser().parse(isr).getAsJsonObject();
+            int applied = 0;
+            for (Map.Entry<String, JsonElement> entry : overrides.entrySet()) {
+                if (entry.getKey().startsWith("_")) {
+                    continue;
+                }
+
+                SoundMapping base = soundMappings.get(entry.getKey());
+                if (base == null) {
+                    continue;
+                }
+
+                soundMappings.put(entry.getKey(), merge(base, entry.getValue().getAsJsonObject()));
+                applied++;
+            }
+
+            if (applied > 0) {
+                GeyserImpl.getInstance().getLogger().debug("Applied " + applied + " sound mapping override(s) from " + OVERRIDES_RESOURCE);
+            }
+        } catch (IOException e) {
+            throw new AssertionError("Unable to load sound mapping overrides", e);
+        }
+    }
+
+    private static SoundMapping merge(SoundMapping base, JsonObject override) {
+        return new SoundMapping(
+                base.java(),
+                override.has("bedrock_mapping") ? override.get("bedrock_mapping").getAsString() : base.bedrock(),
+                override.has("playsound_mapping") ? override.get("playsound_mapping").getAsString() : base.playsound(),
+                override.has("integrated_playsound_mapping") ? override.get("integrated_playsound_mapping").getAsString() : base.integratedPlaySound(),
+                override.has("extra_data") ? override.get("extra_data").getAsInt() : base.extraData(),
+                override.has("identifier") ? override.get("identifier").getAsString() : base.identifier(),
+                override.has("level_event") ? override.get("level_event").getAsBoolean() : base.levelEvent(),
+                override.has("pitch_adjust") ? override.get("pitch_adjust").getAsFloat() : base.pitchAdjust()
+        );
     }
 }
