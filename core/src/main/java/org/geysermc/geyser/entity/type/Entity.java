@@ -448,6 +448,18 @@ public class Entity implements GeyserEntity {
     }
 
     /**
+     * Whether absolute position updates for this entity should be sent to Bedrock as relative
+     * moves instead. Bedrock does not interpolate absolute moves, so an entity repositioned every
+     * tick (such as a display entity) visibly stutters unless its updates are sent as relative
+     * moves, which the client smooths.
+     */
+    public boolean interpolatesTeleports() {
+        return javaDefinition.is(EntityType.ITEM_DISPLAY)
+                || javaDefinition.is(EntityType.BLOCK_DISPLAY)
+                || javaDefinition.is(EntityType.TEXT_DISPLAY);
+    }
+
+    /**
      * Updates an entity's head position. Used in JavaRotateHeadTranslator.
      * @param headYaw The new head rotation of the entity.
      */

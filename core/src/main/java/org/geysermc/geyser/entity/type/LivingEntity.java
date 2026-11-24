@@ -113,6 +113,12 @@ public class LivingEntity extends Entity implements Tickable {
         this.lerpPosition = position;
     }
 
+    @Override
+    public boolean interpolatesTeleports() {
+        // Living entities already smooth absolute moves through their own movement lerp.
+        return true;
+    }
+
     public GeyserItemStack getItemInSlot(EquipmentSlot slot) {
         GeyserItemStack stack = equipment.get(slot);
         if (stack == null) {

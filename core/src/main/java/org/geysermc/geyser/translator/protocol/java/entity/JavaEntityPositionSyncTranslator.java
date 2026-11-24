@@ -28,6 +28,7 @@ package org.geysermc.geyser.translator.protocol.java.entity;
 import org.cloudburstmc.math.vector.Vector3d;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.geysermc.geyser.entity.type.Entity;
+import org.geysermc.geyser.entity.type.LivingEntity;
 import org.geysermc.geyser.entity.vehicle.ClientVehicle;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
@@ -60,6 +61,14 @@ public class JavaEntityPositionSyncTranslator extends PacketTranslator<Clientbou
                 return;
             }
             clientVehicle.getVehicleComponent().moveAbsolute(pos.getX(), pos.getY(), pos.getZ());
+        } else if (!(entity instanceof LivingEntity) && entity.interpolatesTeleports() && !teleported) {
+            // Bedrock does not interpolate absolute moves. Display entities have no movement lerp
+            // of their own, so send per-tick position syncs as relative moves to smooth them.
+            Vector3d currentPosition = entity.position().toDouble();
+            entity.moveRelative(pos.getX() - currentPosition.getX(), pos.getY() - currentPosition.getY(),
+                    pos.getZ() - currentPosition.getZ(), packet.getYRot(), packet.getXRot(), packet.getYRot(),
+                    packet.isOnGround());
+            return;
         }
 
         // As in Entity#teleport, the head yaw follows the yaw
