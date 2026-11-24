@@ -51,6 +51,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Defines {@link JavaRegistryReader}s for all networked {@link JavaRegistryKey}s. A "networked registry" is a Java registry that is synced with the client over network.
@@ -69,6 +70,26 @@ import java.util.Optional;
  */
 public final class JavaRegistryReaders {
     private static final Map<JavaRegistryKey<?>, KeyDependentJavaRegistryReader<?>> READERS = new HashMap<>();
+
+    /**
+     * Readers whose inline output depends only on the entry data, so the parsed value can be shared between sessions.
+     * Registries are deliberately opt-in: readers that consult other session registries must not be added here.
+     */
+    private static final Set<JavaRegistryKey<?>> SHAREABLE = Set.of(
+        JavaRegistries.INSTRUMENT,
+        JavaRegistries.JUKEBOX_SONG,
+        JavaRegistries.TRIM_MATERIAL,
+        JavaRegistries.TRIM_PATTERN,
+        JavaRegistries.DAMAGE_TYPE,
+        JavaRegistries.DECORATED_POT_PATTERN,
+        JavaRegistries.WORLD_CLOCK,
+        JavaRegistries.BLOCK_TRANSFORMER,
+        JavaRegistries.CAT_SOUND_VARIANT,
+        JavaRegistries.WOLF_SOUND_VARIANT,
+        JavaRegistries.PIG_SOUND_VARIANT,
+        JavaRegistries.COW_SOUND_VARIANT,
+        JavaRegistries.CHICKEN_SOUND_VARIANT
+    );
 
     static {
         register(JavaRegistries.CHAT_TYPE, ChatDecoration::readChatType);
@@ -132,6 +153,16 @@ public final class JavaRegistryReaders {
     public static <T> Optional<JavaRegistryReader<T>> getInlineSuitableReader(JavaRegistryKey<T> key) {
         return getReader(key)
             .flatMap(reader -> reader instanceof JavaRegistryReader<T> inlineSuitable ? Optional.of(inlineSuitable) : Optional.empty());
+    }
+
+    /**
+     * Returns true if the inline value read by this registry's reader can be safely shared between sessions.
+     *
+     * @param key the {@link JavaRegistryKey} to check
+     * @return true if parsed values for this registry are session-independent
+     */
+    public static boolean isShareable(JavaRegistryKey<?> key) {
+        return SHAREABLE.contains(key);
     }
 
     /**

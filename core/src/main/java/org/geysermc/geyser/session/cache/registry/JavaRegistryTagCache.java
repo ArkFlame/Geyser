@@ -26,17 +26,23 @@
 package org.geysermc.geyser.session.cache.registry;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
 import org.geysermc.geyser.registry.java.JavaRegistry;
 import org.geysermc.geyser.registry.java.JavaRegistryKey;
 import org.geysermc.geyser.registry.java.JavaRegistryProvider;
+import org.geysermc.geyser.registry.java.reader.JavaRegistryReaders;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.session.cache.tags.Tag;
+import org.geysermc.geyser.session.shared.SessionSharedCache;
+import org.geysermc.geyser.session.shared.SessionSharedCaches;
+import org.geysermc.geyser.session.shared.SessionSharedRegistries;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundUpdateTagsPacket;
 import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundRegistryDataPacket;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * A {@link JavaRegistryProvider} for a {@link GeyserSession}, accessed through {@link GeyserSession#javaRegistries()}.
@@ -46,10 +52,27 @@ import java.util.Optional;
 public final class JavaRegistryTagCache implements JavaRegistryProvider {
     private final RegistryCache registryCache;
     private final TagCache tagCache;
+    private final @Nullable SessionSharedRegistries sharedRegistries;
+    private final SessionSharedCache.@Nullable Handle<SessionSharedRegistries.RegistryDataKey<?>, Object> sharedRegistryHandle;
 
     public JavaRegistryTagCache() {
-        registryCache = new RegistryCache();
-        tagCache = new TagCache();
+        this(null, null);
+    }
+
+    public JavaRegistryTagCache(@Nullable SessionSharedCaches sharedCaches,
+                                SessionSharedCache.@Nullable Handle<SessionSharedRegistries.RegistryDataKey<?>, Object> sharedRegistryHandle) {
+        this.sharedRegistries = sharedCaches == null ? null : sharedCaches.registries();
+        this.sharedRegistryHandle = sharedRegistryHandle;
+        this.registryCache = new RegistryCache();
+        this.tagCache = new TagCache();
+    }
+
+    @Override
+    public <T> @Nullable T sharedRegistryValue(JavaRegistryKey<T> registry, Object data, Supplier<T> computer) {
+        if (sharedRegistries == null || sharedRegistryHandle == null || !JavaRegistryReaders.isShareable(registry)) {
+            return null;
+        }
+        return sharedRegistries.getOrCompute(sharedRegistryHandle, registry, data, computer);
     }
 
     @Override

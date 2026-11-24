@@ -197,6 +197,8 @@ import org.geysermc.geyser.session.cache.SkullCache;
 import org.geysermc.geyser.session.cache.StructureBlockCache;
 import org.geysermc.geyser.session.cache.TeleportCache;
 import org.geysermc.geyser.session.cache.WorldBorder;
+import org.geysermc.geyser.session.shared.SessionSharedCache;
+import org.geysermc.geyser.session.shared.SessionSharedRegistries;
 import org.geysermc.geyser.session.cache.WorldCache;
 import org.geysermc.geyser.session.cache.registry.JavaRegistryTagCache;
 import org.geysermc.geyser.session.cache.tags.DialogTag;
@@ -328,6 +330,11 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     private final PreferencesCache preferencesCache;
     @Accessors(fluent = true)
     private final JavaRegistryProvider javaRegistries;
+
+    /**
+     * This session's handle on the instance-wide immutable registry cache, released on disconnect.
+     */
+    private final SessionSharedCache.Handle<SessionSharedRegistries.RegistryDataKey<?>, Object> sharedRegistryHandle;
     private final ComponentCache componentCache;
     private final SkullCache skullCache;
     private final StructureBlockCache structureBlockCache;
@@ -949,7 +956,8 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         this.lodestoneCache = new LodestoneCache();
         this.pistonCache = new PistonCache(this);
         this.preferencesCache = new PreferencesCache(this);
-        this.javaRegistries = new JavaRegistryTagCache();
+        this.sharedRegistryHandle = geyser.sharedCaches().registries().newHandle();
+        this.javaRegistries = new JavaRegistryTagCache(geyser.sharedCaches(), sharedRegistryHandle);
         this.componentCache = new ComponentCache(this.javaRegistries);
         this.skullCache = new SkullCache(this);
         this.structureBlockCache = new StructureBlockCache();
@@ -1368,7 +1376,8 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
                 }
             }
 
-            // Remove from session manager
+            // Remove from session manager, and release any shared registry values held by this session
+            sharedRegistryHandle.releaseAll();
             geyser.getSessionManager().removeSession(this);
             if (playerEntity.uuid() != null) {
                 SkinProvider.removeBedrockSkin(playerEntity.uuid());
