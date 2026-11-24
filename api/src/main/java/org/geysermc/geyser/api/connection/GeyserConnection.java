@@ -33,6 +33,7 @@ import org.geysermc.geyser.api.command.CommandSource;
 import org.geysermc.geyser.api.entity.EntityData;
 import org.geysermc.geyser.api.entity.type.player.GeyserAvatarEntity;
 import org.geysermc.geyser.api.entity.type.player.GeyserPlayerEntity;
+import org.geysermc.geyser.api.network.Network;
 import org.geysermc.geyser.api.skin.SkinData;
 
 import java.util.NoSuchElementException;
@@ -117,6 +118,15 @@ public interface GeyserConnection extends Connection, CommandSource {
      * @since 2.8.0
      */
     void sendCommand(String command);
+
+    /**
+     * Gets the {@link Network} used for handling
+     * network channels and sending messages.
+     *
+     * @return the network
+     * @since 2.9.2
+     */
+    Network network();
 
     /**
      * Gets the hostname or ip address the player used to join this Geyser instance.

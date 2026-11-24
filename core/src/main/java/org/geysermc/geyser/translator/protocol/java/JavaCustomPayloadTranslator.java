@@ -42,6 +42,11 @@ import org.geysermc.floodgate.pluginmessage.PluginMessageChannels;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.GeyserLogger;
 import org.geysermc.geyser.api.network.AuthType;
+import org.geysermc.geyser.api.network.MessageDirection;
+import org.geysermc.geyser.api.network.NetworkChannel;
+import org.geysermc.geyser.api.network.message.Message;
+import org.geysermc.geyser.api.network.message.MessageBuffer;
+import org.geysermc.geyser.network.GeyserNetwork;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
@@ -49,6 +54,11 @@ import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.Clientbound
 import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundCustomPayloadPacket;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Translator(packet = ClientboundCustomPayloadPacket.class)
 public class JavaCustomPayloadTranslator extends PacketTranslator<ClientboundCustomPayloadPacket> {
@@ -59,6 +69,7 @@ public class JavaCustomPayloadTranslator extends PacketTranslator<ClientboundCus
     @Override
     public void translate(GeyserSession session, ClientboundCustomPayloadPacket packet) {
         if (session.getGeyser().config().java().authType() != AuthType.FLOODGATE) {
+            dispatchToNetworkChannels(session, packet, packet.getChannel());
             return;
         }
 
@@ -153,6 +164,40 @@ public class JavaCustomPayloadTranslator extends PacketTranslator<ClientboundCus
 
                 session.sendUpstreamPacket(toSend);
             });
+            default -> dispatchToNetworkChannels(session, packet, channel);
+        }
+    }
+
+    /**
+     * Delivers a custom payload to any extension-registered channels. With no channels registered this
+     * exits before allocating the channel name or a channel map, keeping the common path allocation-free.
+     */
+    private void dispatchToNetworkChannels(GeyserSession session, ClientboundCustomPayloadPacket packet, Key channel) {
+        GeyserNetwork network = session.getNetwork();
+        Set<NetworkChannel> channels = network.registeredChannels();
+        if (channels.isEmpty()) {
+            return;
+        }
+
+        String channelName = channel.asString();
+        Map<String, List<NetworkChannel>> channelMap = new HashMap<>();
+        for (NetworkChannel registeredChannel : channels) {
+            if (!registeredChannel.isPacket()) {
+                channelMap.computeIfAbsent(registeredChannel.identifier().toString(), k -> new ArrayList<>()).add(registeredChannel);
+            }
+        }
+
+        List<NetworkChannel> identifiedChannels = channelMap.get(channelName);
+        if (identifiedChannels == null || identifiedChannels.isEmpty()) {
+            this.logger.debug("Received a custom payload for an unregistered channel: " + channelName);
+            return;
+        }
+
+        for (NetworkChannel networkChannel : identifiedChannels) {
+            Message<MessageBuffer> message = network.createMessage(networkChannel, packet.getData(), MessageDirection.CLIENTBOUND);
+            if (message != null) {
+                network.handleMessages(networkChannel, List.of(message), MessageDirection.CLIENTBOUND);
+            }
         }
     }
 }

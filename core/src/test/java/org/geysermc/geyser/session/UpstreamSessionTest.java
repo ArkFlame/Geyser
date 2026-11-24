@@ -47,7 +47,7 @@ class UpstreamSessionTest {
         when(bedrockSession.isSubClient()).thenReturn(slot != 0);
         when(peer.isConnected()).thenReturn(true);
         when(peer.subClientIdOf(bedrockSession)).thenReturn(slot);
-        return new UpstreamSession(bedrockSession);
+        return new UpstreamSession(mock(GeyserSession.class), bedrockSession);
     }
 
     @Test

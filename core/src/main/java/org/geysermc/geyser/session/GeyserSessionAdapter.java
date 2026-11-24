@@ -30,6 +30,7 @@ import org.geysermc.floodgate.util.BedrockData;
 import org.geysermc.geyser.Constants;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.network.AuthType;
+import org.geysermc.geyser.api.network.MessageDirection;
 import org.geysermc.geyser.api.util.PlatformType;
 import org.geysermc.geyser.network.java.LocalSession;
 import org.geysermc.geyser.registry.Registries;
@@ -45,6 +46,7 @@ import org.geysermc.mcprotocollib.network.event.session.PacketErrorEvent;
 import org.geysermc.mcprotocollib.network.event.session.PacketSendingEvent;
 import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.protocol.codec.MinecraftPacket;
 import org.geysermc.mcprotocollib.protocol.data.UnexpectedEncryptionException;
 import org.geysermc.mcprotocollib.protocol.packet.handshake.serverbound.ClientIntentionPacket;
 
@@ -226,6 +228,10 @@ public class GeyserSessionAdapter extends SessionAdapter {
 
     @Override
     public void packetReceived(Session session, Packet packet) {
+        if (packet instanceof MinecraftPacket minecraftPacket
+                && !this.session.getNetwork().handleJavaPacket(minecraftPacket, MessageDirection.CLIENTBOUND)) {
+            return;
+        }
         Registries.JAVA_PACKET_TRANSLATORS.translate(packet.getClass(), packet, this.session, true);
     }
 

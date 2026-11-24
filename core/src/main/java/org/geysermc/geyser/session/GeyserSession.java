@@ -122,9 +122,11 @@ import org.geysermc.geyser.api.bedrock.camera.CameraShake;
 import org.geysermc.geyser.api.connection.GeyserConnection;
 import org.geysermc.geyser.api.entity.EntityData;
 import org.geysermc.geyser.api.entity.type.player.GeyserPlayerEntity;
+import org.geysermc.geyser.api.event.bedrock.SessionDefineNetworkChannelsEvent;
 import org.geysermc.geyser.api.event.bedrock.SessionDisconnectEvent;
 import org.geysermc.geyser.api.event.bedrock.SessionLoginEvent;
 import org.geysermc.geyser.api.network.AuthType;
+import org.geysermc.geyser.api.network.Network;
 import org.geysermc.geyser.api.network.RemoteServer;
 import org.geysermc.geyser.api.skin.SkinData;
 import org.geysermc.geyser.api.util.PlatformType;
@@ -167,6 +169,7 @@ import org.geysermc.geyser.level.BedrockDimension;
 import org.geysermc.geyser.level.JavaDimension;
 import org.geysermc.geyser.level.gamerule.GameRuleHandler;
 import org.geysermc.geyser.level.physics.CollisionManager;
+import org.geysermc.geyser.network.GeyserNetwork;
 import org.geysermc.geyser.network.java.LocalSession;
 import org.geysermc.geyser.pack.java.JavaPackStack;
 import org.geysermc.geyser.registry.Registries;
@@ -926,9 +929,11 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
 
     private boolean pendingSpectator = false;
 
+    private final GeyserNetwork network;
+
     public GeyserSession(GeyserImpl geyser, BedrockServerSession bedrockServerSession, EventLoop tickEventLoop) {
         this.geyser = geyser;
-        this.upstream = new UpstreamSession(bedrockServerSession);
+        this.upstream = new UpstreamSession(this, bedrockServerSession);
         this.tickEventLoop = tickEventLoop;
 
         this.erosionHandler = new GeyserboundHandshakePacketHandler(this);
@@ -973,6 +978,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         this.loggedIn = false;
 
         this.remoteServer = geyser.defaultRemoteServer();
+        this.network = new GeyserNetwork(this);
     }
 
     /**
@@ -1267,6 +1273,8 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         // Just imagine the chaos of using an integrated world manager for an external server :)
         this.remoteServer = this.geyser.platformType() == PlatformType.STANDALONE ? loginEvent.remoteServer() : remoteServer;
 
+        this.network.defineNetworkChannels(SessionDefineNetworkChannelsEvent.State.AUTHENTICATED);
+
         // Start ticking
         tickThread = tickEventLoop.scheduleAtFixedRate(this::tick, nanosecondsPerTick, nanosecondsPerTick, TimeUnit.NANOSECONDS);
 
@@ -1278,10 +1286,10 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
                 this.protocol, this.tickEventLoop);
             downstream.setFlag(MinecraftConstants.CLIENT_HOST, this.remoteServer.address());
             downstream.setFlag(MinecraftConstants.CLIENT_PORT, this.remoteServer.port());
-            this.downstream = new DownstreamSession(downstream);
+            this.downstream = new DownstreamSession(this, downstream);
         } else {
             downstream = new ClientNetworkSession(new InetSocketAddress(this.remoteServer.address(), this.remoteServer.port()), this.protocol, tickEventLoop, null, null);
-            this.downstream = new DownstreamSession(downstream);
+            this.downstream = new DownstreamSession(this, downstream);
 
             boolean resolveSrv = false;
             try {
@@ -2871,6 +2879,11 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     @Override
     public int protocolVersion() {
         return upstream.getProtocolVersion();
+    }
+
+    @Override
+    public Network network() {
+        return this.network;
     }
 
     @Override
