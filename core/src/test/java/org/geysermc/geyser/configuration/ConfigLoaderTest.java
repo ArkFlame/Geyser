@@ -87,6 +87,13 @@ public class ConfigLoaderTest {
     }
 
     @Test
+    void npcDialoguesAreDisabledByDefault() throws Exception {
+        var file = tempDirectory.resolve("npc-dialogues-default.yml").toFile();
+        GeyserConfig config = new ConfigLoader(file, PlatformType.STANDALONE).load0(GeyserRemoteConfig.class);
+        assertFalse(config.gameplay().enableNpcDialogues());
+    }
+
+    @Test
     void explicitLanConfigurationSurvivesReload() throws Exception {
         var file = tempDirectory.resolve("lan-enabled.yml");
         Files.writeString(file, """

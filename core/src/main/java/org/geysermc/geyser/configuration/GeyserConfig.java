@@ -491,6 +491,12 @@ public interface GeyserConfig {
         boolean emotesEnabled();
 
         @Comment("""
+            Whether Bedrock clients may interact with NPC dialogues. This is off by default so that
+            servers without NPC dialogue support keep their vanilla behaviour.""")
+        @DefaultBoolean(false)
+        boolean enableNpcDialogues();
+
+        @Comment("""
             Whether to remove legacy text formatting codes sent by Bedrock players.
             Unlike on Java Edition, typing section signs for legacy color codes is possible on Bedrock Edition.
             See https://minecraft.wiki/w/Formatting_codes for further information.

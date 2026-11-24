@@ -897,6 +897,12 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     @Setter
     private Map<String, byte[]> cookies = new Object2ObjectOpenHashMap<>();
 
+    /**
+     * The runtime entity ID of the entity whose NPC dialogue is currently open, used to close that dialogue again.
+     */
+    @Setter
+    private long npcId = -1L;
+
     private final GeyserCameraData cameraData;
 
     private final GeyserEntityData entityData;

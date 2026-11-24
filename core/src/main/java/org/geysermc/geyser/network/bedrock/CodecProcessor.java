@@ -69,7 +69,6 @@ import org.cloudburstmc.protocol.bedrock.packet.MobEquipmentPacket;
 import org.cloudburstmc.protocol.bedrock.packet.MoveEntityAbsolutePacket;
 import org.cloudburstmc.protocol.bedrock.packet.MovePlayerPacket;
 import org.cloudburstmc.protocol.bedrock.packet.MultiplayerSettingsPacket;
-import org.cloudburstmc.protocol.bedrock.packet.NpcRequestPacket;
 import org.cloudburstmc.protocol.bedrock.packet.PartyChangedPacket;
 import org.cloudburstmc.protocol.bedrock.packet.PhotoInfoRequestPacket;
 import org.cloudburstmc.protocol.bedrock.packet.PhotoTransferPacket;
@@ -262,7 +261,6 @@ public class CodecProcessor {
             .updateSerializer(LabTablePacket.class, ILLEGAL_SERIALIZER)
             .updateSerializer(CodeBuilderSourcePacket.class, ILLEGAL_SERIALIZER)
             .updateSerializer(CreatePhotoPacket.class, ILLEGAL_SERIALIZER)
-            .updateSerializer(NpcRequestPacket.class, ILLEGAL_SERIALIZER)
             .updateSerializer(PhotoInfoRequestPacket.class, ILLEGAL_SERIALIZER)
             // Illegal unused serverbound packets that are deprecated
             .updateSerializer(ClientCheatAbilityPacket.class, ILLEGAL_SERIALIZER)
