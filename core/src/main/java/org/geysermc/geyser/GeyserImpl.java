@@ -75,6 +75,7 @@ import org.geysermc.geyser.api.util.PlatformType;
 import org.geysermc.geyser.command.CommandRegistry;
 import org.geysermc.geyser.configuration.GeyserConfig;
 import org.geysermc.geyser.configuration.GeyserPluginConfig;
+import org.geysermc.geyser.debug.GeyserDebugSessionMap;
 import org.geysermc.geyser.erosion.UnixSocketClientListener;
 import org.geysermc.geyser.event.GeyserEventBus;
 import org.geysermc.geyser.event.type.SessionDisconnectEventImpl;
@@ -85,10 +86,13 @@ import org.geysermc.geyser.level.WorldManager;
 import org.geysermc.geyser.network.RaknetServer;
 import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.network.bedrock.nethernet.NetherNetServer;
+import org.geysermc.geyser.pack.SkullResourcePackManager;
 import org.geysermc.geyser.ping.GeyserLegacyPingPassthrough;
+import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.loader.ResourcePackLoader;
 import org.geysermc.geyser.registry.mappings.BuiltInMappings;
+import org.geysermc.geyser.registry.mappings.MappingsConfigReader;
 import org.geysermc.geyser.registry.provider.ProviderSupplier;
 import org.geysermc.geyser.scoreboard.ScoreboardUpdater;
 import org.geysermc.geyser.session.GeyserSession;
@@ -158,6 +162,8 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
     private static final Pattern IP_REGEX = Pattern.compile("\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b");
 
     private final SessionManager sessionManager = new SessionManager();
+    @Getter
+    private final GeyserDebugSessionMap debugSessionMap = new GeyserDebugSessionMap();
 
     private FloodgateCipher cipher;
     private @Nullable FloodgateSkinUploader skinUploader;
@@ -250,6 +256,7 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
         eventBus.subscribe(this, GeyserDefineCustomBlocksEvent.class, BuiltInMappings::registerBlocks);
         eventBus.subscribe(this, GeyserDefineCustomItemsEvent.class, BuiltInMappings::registerItems);
 
+        MappingsConfigReader.defineCustomMappings(this);
         Registries.load();
 
         /* Initialize translators */
@@ -301,6 +308,8 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
         if (isReloading) {
             // If we're reloading, the default locale in the config might have changed.
             GeyserLocale.finalizeDefaultLocale(this);
+            // The registries were reset on reload, so read all mappings again.
+            Registries.load();
         } else {
             CodeOfConductManager.load();
         }
@@ -747,6 +756,12 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
         isReloading = true;
         this.eventBus.fire(new GeyserPreReloadEvent(this.extensionManager, this.eventBus));
         bootstrap.onGeyserDisable();
+
+        // Drop the loaded mappings so they are read again by startInstance()
+        BlockRegistries.reset();
+        Registries.reset();
+        SkullResourcePackManager.SKULL_SKINS.clear();
+
         bootstrap.onGeyserEnable();
 
         isReloading = false;

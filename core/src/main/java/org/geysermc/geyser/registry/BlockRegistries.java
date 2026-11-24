@@ -146,4 +146,24 @@ public class BlockRegistries {
         BlockRegistryPopulator.populate(BlockRegistryPopulator.Stage.INIT_BEDROCK);
         BlockRegistryPopulator.populate(BlockRegistryPopulator.Stage.POST_INIT);
     }
+
+    /**
+     * Clears the block registries, so they can be populated again on a reload.
+     */
+    public static void reset() {
+        BLOCKS.clear();
+        BLOCK_STATES.clear();
+        COLLISIONS.clear();
+        SHAPES.clear();
+        JAVA_BLOCK_STATE_IDENTIFIER_TO_ID.clear();
+        NON_VANILLA_BLOCK_IDS.clear();
+        WATERLOGGED.clear();
+        INTERACTIVE.clear();
+        INTERACTIVE_MAY_BUILD.clear();
+        CUSTOM_BLOCKS.clear();
+        CUSTOM_BLOCK_STATE_OVERRIDES.clear();
+        NON_VANILLA_BLOCK_STATE_OVERRIDES.clear();
+        CUSTOM_BLOCK_ITEM_OVERRIDES.clear();
+        CUSTOM_SKULLS.clear();
+    }
 }

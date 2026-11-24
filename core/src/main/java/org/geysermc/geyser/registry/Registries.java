@@ -272,6 +272,18 @@ public final class Registries {
         }
     }
 
+    /**
+     * Clears the registries that are populated on load, so they can be loaded again on a reload.
+     * Deferred registries are reloaded by {@link #load()}, and registries holding built-in Java
+     * content are left alone: their bootstrap is a no-op after the first load.
+     */
+    public static void reset() {
+        loaded = false;
+
+        ITEMS.clear();
+        TAGS.clear();
+    }
+
     public static void populate() {
         // Both the block registries and the common registries depend on each other,
         // so maintaining this order is crucial for Geyser to load.
