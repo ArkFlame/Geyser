@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T22:37:23Z_
+_Generated at: 2026-11-24T22:57:14Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,15 +38,15 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 625 |
+| `UNFIXED` | 405 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 131 |
-| `UPSTREAM_FIXED` | 2905 |
-| `DUPLICATE` | 568 |
-| `BLOCKED` | 49 |
-| `UNSUPPORTED` | 611 |
-| `NOT_APPLICABLE` | 1928 |
-| `PARTIAL` | 1 |
+| `FIXED` | 132 |
+| `UPSTREAM_FIXED` | 2941 |
+| `DUPLICATE` | 586 |
+| `BLOCKED` | 55 |
+| `UNSUPPORTED` | 632 |
+| `NOT_APPLICABLE` | 2065 |
+| `PARTIAL` | 2 |
 
 ## Mass audit (two passes)
 
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-20 — open PR adoption and open issue fixes
+## Waves 8-21 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -433,6 +433,14 @@ The cached-data issue pass found no promotable records among the other 77 open U
 
 **Backlog audit V/W/X.** Three read-only auditors produced **32 evidence-backed dispositions** from 582 records: 20 UPSTREAM_FIXED, 7 NOT_APPLICABLE, 3 DUPLICATE, 1 UNSUPPORTED and 1 BLOCKED; 550 stayed `UNFIXED`. Every UPSTREAM_FIXED claim required `git merge-base --is-ancestor <sha> HEAD` plus a fork `file:line`. The set includes #6220 (this campaign's own `7598a5870` port), #5704 (`5a00fa417`), #3106 (`ea967a0b`), #2843 (`d147ee37`), #358 (`ec9f692418b`), #1455/#1724 (`120769c7f68c`), #3448 (`47fd148b7`), #2600/#6069 (`7b60de194`), #1007 (`6884a0f7db8`) and nine more verified by shard X. Weak signals such as build IDs and crash IDs in cached text were not treated as fix commits.
 
+### Wave 21 — fresh-API open issue pass and backlog Y/Z/AA
+
+With the GitHub core quota restored (`5000` requests) and the checkout unshallowed, one worker re-examined all 75 open UNFIXED issues using live issue timelines and merged-PR searches, and three auditors covered 550 closed UNFIXED records. `git fetch upstream` confirmed no new upstream commits — `upstream/master` is still an ancestor of fork HEAD — so there were no newly available fixes to adopt.
+
+**Open issues.** No issue had a merged upstream fix, so no code changed. Two dispositions were produced from fork evidence: #4090 is already implemented (`registerItemOverride` plus `ItemTranslator`/`CustomBlockItemTranslator`), and #6202 is PARTIAL (`SpawnerTooltip`/`JukeboxPlayableTooltip` cover most of it; the category line is missing). These are applied centrally rather than by the worker, so tracker edits cannot conflict.
+
+**Backlog audit Y/Z/AA.** Three read-only auditors produced **218 evidence-backed dispositions**: 137 NOT_APPLICABLE, 36 UPSTREAM_FIXED, 21 UNSUPPORTED, 18 DUPLICATE and 6 BLOCKED; 332 stayed `UNFIXED`. Every UPSTREAM_FIXED claim required `git merge-base --is-ancestor <sha> HEAD` plus a fork `file:line` (26 commits checked in shard Y alone). Notable verdicts: #4070/#1284/#227/#935 fixed by verified ancestor commits, #4794 via the mappings gitlink bump, #1597 as a duplicate of the already-fixed #1524, and #4366 BLOCKED on an external Cloudburst/Protocol fix. One important correction: #15 was downgraded to UNFIXED after `gh pr view 15` showed `merged=false` — the timeline commit belonged to another repository's PR #15. Tentative "should be fixed" remarks and duplicates of unfixed records were likewise left UNFIXED.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -562,7 +570,7 @@ _(291 records)_
 | 4041295810 | signing writable books if they have NBT does not work | https://github.com/GeyserMC/Geyser/issues/6224 | `FIXED` |
 | 4005465880 | PS5 Bedrock Edition Crashing consistently | https://github.com/GeyserMC/Geyser/issues/6213 | `UNSUPPORTED` |
 | 3997506286 | Players using Bedrock Edition on mobile devices are unable to enchant items or books. | https://github.com/GeyserMC/Geyser/issues/6210 | `UNFIXED` |
-| 3973938805 | Lore issue | https://github.com/GeyserMC/Geyser/issues/6202 | `UNFIXED` |
+| 3973938805 | Lore issue | https://github.com/GeyserMC/Geyser/issues/6202 | `PARTIAL` |
 | 3897906890 | [Towny] geyser bedrock players can attack by quickly breaking blocks and attacking in pvp disabled town | https://github.com/GeyserMC/Geyser/issues/6159 | `NOT_APPLICABLE` |
 | 3864556632 | Add an option for geyser to temporary solve "Not receiving chunk" | https://github.com/GeyserMC/Geyser/issues/6142 | `NOT_APPLICABLE` |
 | 3851074699 | Can't Bedrock GUI | https://github.com/GeyserMC/Geyser/issues/6134 | `FIXED` |
@@ -682,7 +690,7 @@ _(291 records)_
 | 1888639047 | Lectern signal strength inconsistent with Java edition | https://github.com/GeyserMC/Geyser/issues/4113 | `NOT_APPLICABLE` |
 | 1884438284 | Villager trading on mobile disregards which trade you select, and always gives you the first trade. | https://github.com/GeyserMC/Geyser/issues/4102 | `UNFIXED` |
 | 1873967017 | Trading doesn't seem to be working in the end only for geyser users. | https://github.com/GeyserMC/Geyser/issues/4092 | `UNFIXED` |
-| 1870724269 | Allow items to map to custom blocks | https://github.com/GeyserMC/Geyser/issues/4090 | `UNFIXED` |
+| 1870724269 | Allow items to map to custom blocks | https://github.com/GeyserMC/Geyser/issues/4090 | `FIXED` |
 | 1853575554 | Dismounting Fake Entity | https://github.com/GeyserMC/Geyser/issues/4058 | `FIXED` |
 | 1819258094 | FishHook on Lava with CustomFishing | https://github.com/GeyserMC/Geyser/issues/4012 | `UNSUPPORTED` |
 | 1806744583 | Client crashes when starting to type a command | https://github.com/GeyserMC/Geyser/issues/3990 | `UNSUPPORTED` |
