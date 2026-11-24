@@ -82,6 +82,7 @@ import org.geysermc.geyser.level.block.property.Properties;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
+import org.geysermc.geyser.registry.loader.ItemMappingOverrides;
 import org.geysermc.geyser.registry.populator.conversion.ItemRemapper;
 import org.geysermc.geyser.registry.populator.conversion.WildernessBoundConverter;
 import org.geysermc.geyser.registry.type.BlockMappings;
@@ -163,6 +164,8 @@ public class ItemRegistryPopulator {
         } catch (Exception e) {
             throw new AssertionError("Unable to load Java runtime item IDs", e);
         }
+        // Fork-owned fixes for upstream mapping data, applied before the per-version registries are built.
+        ItemMappingOverrides.apply(bootstrap, items);
 
         Multimap<Identifier, CustomItemDefinition> customItems = MultimapBuilder.hashKeys().arrayListValues().build();
         Multimap<Identifier, NonVanillaCustomItemDefinition> nonVanillaCustomItems = MultimapBuilder.hashKeys().arrayListValues().build();
