@@ -127,6 +127,14 @@ public class ChunkUtils {
     }
 
     /**
+     * The inverse of {@link #squareToCircle(int)}: the largest Java view distance whose chunks all fit in a
+     * Bedrock circle of the given radius.
+     */
+    public static int circleToSquare(int bedrockRadius) {
+        return Math.max(2, GenericMath.floor(bedrockRadius / MathUtils.SQRT_OF_TWO) - 1);
+    }
+
+    /**
      * Sends a block update to the Bedrock client. If the platform is not Spigot, this also
      * adds that block to the cache.
      * @param session the Bedrock session to send/register the block to

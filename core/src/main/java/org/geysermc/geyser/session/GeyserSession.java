@@ -2600,6 +2600,12 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     private int getRenderDistance() {
         if (clientRenderDistance != -1) {
             // The client has sent a render distance
+            if (serverRenderDistance != -1 && clientRenderDistance < ChunkUtils.squareToCircle(serverRenderDistance)) {
+                // The Bedrock client keeps only a circle of its own render distance, but Java sends a square and
+                // never re-sends chunks it considers loaded. Ask for the largest square that fits the client's
+                // circle so its corners are not dropped and left missing. See GeyserMC/Geyser#5386.
+                return ChunkUtils.circleToSquare(clientRenderDistance);
+            }
             return clientRenderDistance;
         } else if (serverRenderDistance != -1) {
             // only known once ClientboundLoginPacket is received
