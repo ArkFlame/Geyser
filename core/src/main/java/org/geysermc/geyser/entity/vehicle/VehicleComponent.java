@@ -51,6 +51,8 @@ import org.geysermc.geyser.level.physics.BoundingBox;
 import org.geysermc.geyser.level.physics.CollisionManager;
 import org.geysermc.geyser.level.physics.Direction;
 import org.geysermc.geyser.session.cache.tags.BlockTag;
+import org.geysermc.geyser.session.GeyserSession;
+import org.geysermc.geyser.session.cache.WorldBorder;
 import org.geysermc.geyser.translator.collision.BlockCollision;
 import org.geysermc.geyser.translator.collision.SolidCollision;
 import org.geysermc.geyser.util.BlockUtils;
@@ -772,6 +774,18 @@ public class VehicleComponent<T extends Entity & ClientVehicle> {
         Vector3f oldBedrockPos = vehicle.bedrockPosition();
         vehicle.setPosition(javaPos.toFloat());
         Vector3f newBedrockPos = vehicle.bedrockPosition();
+
+        // The border is a collidable entity that Bedrock normally repositions from the player's movement packet,
+        // which is not sent while riding. Track the ridden vehicle so a static border still blocks it (#6884).
+        if (!oldBedrockPos.equals(newBedrockPos)) {
+            GeyserSession session = vehicle.getSession();
+            if (session != null) {
+                WorldBorder worldBorder = session.getWorldBorder();
+                if (worldBorder != null) {
+                    worldBorder.spawnOrMoveBorderCollision(newBedrockPos);
+                }
+            }
+        }
 
         if (oldBedrockPos.getX() != newBedrockPos.getX()) {
             moveEntityDeltaPacket.getFlags().add(MoveEntityDeltaPacket.Flag.HAS_X);
