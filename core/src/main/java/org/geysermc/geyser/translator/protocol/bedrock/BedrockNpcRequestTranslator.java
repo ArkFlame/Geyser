@@ -39,7 +39,7 @@ public class BedrockNpcRequestTranslator extends PacketTranslator<NpcRequestPack
 
     @Override
     public void translate(GeyserSession session, NpcRequestPacket packet) {
-        if (!session.geyser().config().gameplay().enableNpcDialogues()) {
+        if (!session.getGeyser().config().gameplay().enableNpcDialogues()) {
             return;
         }
 

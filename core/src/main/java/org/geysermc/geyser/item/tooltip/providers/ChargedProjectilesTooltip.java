@@ -79,8 +79,9 @@ public class ChargedProjectilesTooltip implements ComponentTooltipProvider<List<
         if (components == null) {
             components = new DataComponents(new HashMap<>());
         }
+        final DataComponents resolvedComponents = components;
         BuiltInJavaRegistries.ITEM.get(stack.getId()).ifPresent(item ->
-            TooltipProviders.addTooltips(context.withItemComponents(item, components).withFlags(false, false),
+            TooltipProviders.addTooltips(context.withItemComponents(item, resolvedComponents).withFlags(false, false),
                 tooltip -> adder.accept(Component.space().append(tooltip).color(NamedTextColor.GRAY))));
     }
 }
