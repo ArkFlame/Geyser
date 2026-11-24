@@ -37,13 +37,13 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3316 |
+| `UNFIXED` | 3312 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 56 |
-| `UPSTREAM_FIXED` | 2339 |
+| `FIXED` | 57 |
+| `UPSTREAM_FIXED` | 2340 |
 | `DUPLICATE` | 385 |
-| `BLOCKED` | 7 |
-| `UNSUPPORTED` | 291 |
+| `BLOCKED` | 8 |
+| `UNSUPPORTED` | 292 |
 | `NOT_APPLICABLE` | 423 |
 
 ## Mass audit (two passes)
@@ -117,7 +117,7 @@ Seven fixes are recorded as `FIXED` with integrated commits verified as ancestor
 
 ### Wave 3 audit — verified dispositions
 
-Wave-3 audit dispositions were reconciled against upstream issue/PR state and the integrated source on `integration/final-release` @ `96a2e130095d4337c78cfc4ff69b5479446c6ad1`. No new integration commit is claimed and no new SHA is recorded: #6248 is marked `FIXED` only because the implementation is already present in the integrated source at the file/line references below. No runtime or gameplay verification was performed; these are static dispositions. Reference: https://github.com/GeyserMC/Geyser/issues/6903.
+Wave-3 audit dispositions were reconciled against upstream issue/PR state and the integrated source on `integration/final-release` @ `96a2e130095d4337c78cfc4ff69b5479446c6ad1`. For this batch of dispositions no new integration commit is claimed and no new SHA is recorded: #6248 is marked `FIXED` only because the implementation is already present in the integrated source at the file/line references below. No runtime or gameplay verification was performed; these are static dispositions. Reference: https://github.com/GeyserMC/Geyser/issues/6903.
 
 | ID | Disposition | Evidence / reference |
 | ---: | --- | --- |
@@ -130,6 +130,20 @@ Wave-3 audit dispositions were reconciled against upstream issue/PR state and th
 | #6489 | `NOT_APPLICABLE` | Open draft WIP scoreboard-allocation performance PR; conflicting and unreviewed — https://github.com/GeyserMC/Geyser/pull/6489 |
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3321 → 3316, FIXED 55 → 56, UNSUPPORTED 290 → 291, NOT_APPLICABLE 420 → 423); every status is in the documented enum and all 6817 IDs remain unique. No build or test run was performed for this documentation pass.
+
+#### Final wave-3 results (post-integration)
+
+The final wave-3 audit was recorded against `integration/final-release` HEAD `239df55079f95eeeaa1c4225d23199cabec6413a`. #6248 remains `FIXED` as recorded above, with no change to its evidence. The single-thread 8G CI build started after the #6535 integration was still running when this update was written; no build result is claimed and no runtime or gameplay verification was performed for any disposition below. Reference: https://github.com/GeyserMC/Geyser/issues/6903.
+
+| ID | Disposition | Evidence / reference |
+| ---: | --- | --- |
+| #6535 | `FIXED` | Integrated at `239df55079f95eeeaa1c4225d23199cabec6413a` (fix: accept custom Bedrock armor IDs in mount GUI); `core/src/main/java/org/geysermc/geyser/translator/protocol/java/inventory/JavaMountScreenOpenTranslator.java` now extends each mount slot's `acceptedItems` with Bedrock identifiers of custom items registered for its accepted Java items; CI single-thread 8G build running after integration, no result claimed — https://github.com/GeyserMC/Geyser/issues/6535 |
+| #6558 | `UPSTREAM_FIXED` | Already fixed in base via upstream PR #6725; commit `777434cf9c287d459552ee9e0556821eb088608d` is an ancestor of HEAD. `core/src/main/java/org/geysermc/geyser/skin/SkinManager.java:117-135` (`sendSkinPacket`) routes through the player list (`PlayerListUtils.buildEntryManually` / `sendSkinUsingPlayerList`) instead of a `PlayerSkinPacket`; protocol grounding in `.vendor changelog_2168_07_07_26.md` — https://github.com/GeyserMC/Geyser/issues/6558 |
+| #6532 | `UNSUPPORTED` | Kicks were caused by a third-party GrimAC anti-cheat; reporter confirmed the cause, so this is not a Geyser defect — https://github.com/GeyserMC/Geyser/issues/6532 |
+| #6527 | `UNFIXED` | Enchanting translation matches upstream byte-for-byte in the integrated source, so there is no fork-specific divergence to correct; reporter runs a ViaVersion stack and the maintainer-contributor could not reproduce — https://github.com/GeyserMC/Geyser/issues/6527 |
+| #6557 | `BLOCKED` | NSL FIFO queue-desync is plausible but unverified and requires runtime testing; upstream issue remains open with no linked PR — https://github.com/GeyserMC/Geyser/issues/6557 |
+
+`status_counts` was recomputed from all 6817 records (UNFIXED 3316 → 3312, FIXED 56 → 57, UPSTREAM_FIXED 2339 → 2340, BLOCKED 7 → 8, UNSUPPORTED 291 → 292); every status is in the documented enum and all 6817 IDs remain unique. No build or test run was performed for this documentation pass.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
@@ -220,13 +234,13 @@ _(291 records)_
 | 4969896275 | Bedrock Players left incapacitated by ImageFrame maps | https://github.com/GeyserMC/Geyser/issues/6569 | `UNFIXED` |
 | 4953133141 | ViaProxy: first join via NetherNet relay times out at ~19s (rejoin works); unguarded getLocalAddress() NPE in GeyserViaProxyPlugin channel-init | https://github.com/GeyserMC/Geyser/issues/6567 | `FIXED` |
 | 4934805024 | Recipe book auto-craft reverts inventory / returns ingredients instead of crafted item | https://github.com/GeyserMC/Geyser/issues/6563 | `DUPLICATE` |
-| 4915679666 | Cant see Skins | https://github.com/GeyserMC/Geyser/issues/6558 | `UNFIXED` |
-| 4915592951 | Possible regression with "forward-player-ping" causing Bedrock timeouts after long teleports | https://github.com/GeyserMC/Geyser/issues/6557 | `UNFIXED` |
+| 4915679666 | Cant see Skins | https://github.com/GeyserMC/Geyser/issues/6558 | `UPSTREAM_FIXED` |
+| 4915592951 | Possible regression with "forward-player-ping" causing Bedrock timeouts after long teleports | https://github.com/GeyserMC/Geyser/issues/6557 | `BLOCKED` |
 | 4915065150 | Unable to wear armor after crafting | https://github.com/GeyserMC/Geyser/issues/6556 | `UNFIXED` |
 | 4902059744 | Movement of non-living entities (Display entities) isn't interpolated, causing visible drag for anything riding one | https://github.com/GeyserMC/Geyser/issues/6551 | `UNFIXED` |
 | 4889086403 | Update bedrock limiations to include attributes | https://github.com/GeyserMC/Geyser/issues/6544 | `NOT_APPLICABLE` |
-| 4868140574 | Allow custom Bedrock item identifiers in horse armor GUI acceptedItems | https://github.com/GeyserMC/Geyser/issues/6535 | `UNFIXED` |
-| 4866786667 | Players kicked while right-click on block | https://github.com/GeyserMC/Geyser/issues/6532 | `UNFIXED` |
+| 4868140574 | Allow custom Bedrock item identifiers in horse armor GUI acceptedItems | https://github.com/GeyserMC/Geyser/issues/6535 | `FIXED` |
+| 4866786667 | Players kicked while right-click on block | https://github.com/GeyserMC/Geyser/issues/6532 | `UNSUPPORTED` |
 | 4859485425 | enchant table cannot be used | https://github.com/GeyserMC/Geyser/issues/6527 | `UNFIXED` |
 | 4819367010 | Bedrock Worlds tab server entry disappears or connects to wrong port behind NAT port remapping | https://github.com/GeyserMC/Geyser/issues/6508 | `UNFIXED` |
 | 4787423496 | Dialog buttons with object atlas sprite labels should map to FormImage.Type.PATH on Bedrock, but currently error with Expected tag to be a literal string... and render blank. | https://github.com/GeyserMC/Geyser/issues/6499 | `UNFIXED` |
