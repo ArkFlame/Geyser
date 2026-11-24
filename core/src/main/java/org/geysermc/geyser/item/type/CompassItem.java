@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser.item.type;
 
+import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
@@ -39,8 +40,17 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponen
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.LodestoneTracker;
 
 public class CompassItem extends Item {
+    private static final Component LODESTONE_NAME = Component.translatable("item.minecraft.lodestone_compass");
+
     public CompassItem(String javaIdentifier, Builder builder) {
         super(javaIdentifier, builder);
+    }
+
+    @Override
+    public Component getName(DataComponents components) {
+        return components != null && components.get(DataComponentTypes.LODESTONE_TRACKER) != null
+            ? LODESTONE_NAME
+            : super.getName(components);
     }
 
     @Override

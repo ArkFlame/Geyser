@@ -30,6 +30,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
@@ -54,6 +55,7 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponen
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponents;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.HolderSet;
+import org.geysermc.mcprotocollib.protocol.data.game.item.component.WrittenBookContent;
 import org.geysermc.mcprotocollib.protocol.data.game.recipe.display.slot.CompositeSlotDisplay;
 import org.geysermc.mcprotocollib.protocol.data.game.recipe.display.slot.DyedSlotDisplay;
 import org.geysermc.mcprotocollib.protocol.data.game.recipe.display.slot.EmptySlotDisplay;
@@ -250,6 +252,20 @@ public class GeyserItemStack {
     public <T> T getComponentElseGet(@NonNull DataComponentType<T> type, Supplier<T> supplier) {
         T value = getComponent(type);
         return value == null ? supplier.get() : value;
+    }
+
+    /**
+     * Returns the hover name of this stack as Java Edition shows it: custom name, written book title,
+     * or the item's own name. Ported from GeyserMC/Geyser#5692.
+     */
+    public Component getName() {
+        return getComponentElseGet(DataComponentTypes.CUSTOM_NAME, () -> {
+            WrittenBookContent book = getComponent(DataComponentTypes.WRITTEN_BOOK_CONTENT);
+            if (book != null) {
+                return Component.text(book.getTitle().getRaw());
+            }
+            return asItem().getName(this);
+        });
     }
 
     public int getNetId() {

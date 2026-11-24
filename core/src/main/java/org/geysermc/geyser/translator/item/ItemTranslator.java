@@ -671,6 +671,13 @@ public final class ItemTranslator {
                     // behavior as of 1.21
                     return ChatColor.RESET + ChatColor.ESCAPE + translationColor + MessageTranslator.convertMessageRaw(customName, session.locale());
                 }
+
+                // Java names some items after their components (lodestone compass, dyed shield, named player head).
+                // Ported from GeyserMC/Geyser#5692. Uses the existing components, so no stack is allocated per tooltip.
+                Component javaName = mapping.getJavaItem().getName(components);
+                if (javaName != null && !javaName.equals(Component.empty())) {
+                    return ChatColor.RESET + ChatColor.ESCAPE + translationColor + MessageTranslator.convertMessageRaw(javaName, session.locale());
+                }
             }
         }
 

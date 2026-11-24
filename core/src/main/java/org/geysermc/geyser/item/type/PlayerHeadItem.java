@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser.item.type;
 
+import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.geysermc.geyser.item.TooltipOptions;
 import org.geysermc.geyser.item.components.Rarity;
@@ -42,6 +43,14 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponen
 public class PlayerHeadItem extends BlockItem {
     public PlayerHeadItem(Builder builder, Block block, Block... otherBlocks) {
         super(builder, block, otherBlocks);
+    }
+
+    @Override
+    public Component getName(DataComponents components) {
+        ResolvableProfile profile = components == null ? null : components.get(DataComponentTypes.PROFILE);
+        return profile != null && profile.getProfile().getName() != null
+            ? Component.translatable(translationKey() + ".named", profile.getProfile().getName())
+            : super.getName(components);
     }
 
     @Override

@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser.item.type;
 
+import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
@@ -39,9 +40,44 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponen
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponents;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.PotionContents;
 
+import java.util.Locale;
+import java.util.function.Function;
+
 public class PotionItem extends Item {
     public PotionItem(String javaIdentifier, Builder builder) {
         super(javaIdentifier, builder);
+    }
+
+    @Override
+    public Component getName(DataComponents components) {
+        return getName(components, translationKey(), super::getName);
+    }
+
+    /**
+     * Java names potions and tipped arrows after their contents. Ported from GeyserMC/Geyser#5692.
+     */
+    public static Component getName(DataComponents components, String translationKey, Function<DataComponents, Component> fallback) {
+        PotionContents contents = components == null ? null : components.get(DataComponentTypes.POTION_CONTENTS);
+        return contents != null ? potionName(contents, translationKey + ".effect.") : fallback.apply(components);
+    }
+
+    private static Component potionName(PotionContents contents, String baseTranslation) {
+        String name;
+        if (contents.getCustomName() != null) {
+            name = contents.getCustomName();
+        } else if (contents.getPotionId() == -1) {
+            name = "empty";
+        } else {
+            Potion potion = Potion.getByJavaId(contents.getPotionId());
+            name = potion == null ? "empty" : potion.getJavaIdentifier().toLowerCase(Locale.ROOT);
+            // Keep the fork's existing prefix fix from #6868: Java uses the base effect name here.
+            if (name.startsWith("strong_")) {
+                name = name.substring(7);
+            } else if (name.startsWith("long_")) {
+                name = name.substring(5);
+            }
+        }
+        return Component.translatable(baseTranslation + name);
     }
 
     @Override
