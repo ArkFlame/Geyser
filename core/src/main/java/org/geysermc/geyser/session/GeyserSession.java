@@ -847,16 +847,32 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     private ScheduledFuture<?> mountVehicleScheduledFuture = null;
 
     /**
+     * How many unanswered latency pings are kept. A client that stops echoing them, for example while it loads a new
+     * backend, would otherwise grow this cache for as long as the connection lives.
+     */
+    private static final int MAX_LATENCY_PINGS = 512;
+
+    /**
      * A cache of IDs from ClientboundKeepAlivePackets or ClientboundPingPacket that have been sent to the Bedrock client, but haven't been returned to the server.
      * Only used if {@link GeyserConfig.GameplayConfig#forwardPlayerPing()} is enabled.
      */
-    private final Queue<Runnable> latencyPingCache = new ConcurrentLinkedQueue<>();
+    private final Queue<LatencyPing> latencyPingCache = new ConcurrentLinkedQueue<>();
+
+    /**
+     * A latency ping sent to the Bedrock client together with what to answer the Java server with once it comes back.
+     *
+     * @param timestamp the timestamp sent with the ping, which the client echoes back
+     * @param action what sends the Java server's reply
+     */
+    public record LatencyPing(long timestamp, Runnable action) {
+    }
 
     /**
      * Counter for server switches (incremented in {@link org.geysermc.geyser.translator.protocol.java.JavaStartConfigurationTranslator})
      * Used for latency ping stack callbacks, so they can return early if a packet was intended for the previous server...
      * <p>
-     * We can't just nuke {@link #latencyPingCache} after all sadly, as the ordering in there matters... :(
+     * We can't just nuke {@link #latencyPingCache} after all sadly, as the replies queued in there still have to reach
+     * the Java server... :(
      */
     @Setter
     private int reconfigCount;
@@ -2891,11 +2907,39 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         latencyPacket.setFromServer(true);
         latencyPacket.setTimestamp(timestamp);
         if (ensureEventLoop) {
-            latencyPingCache.add(() -> ensureInEventLoop(runnable));
+            latencyPingCache.add(new LatencyPing(timestamp, () -> ensureInEventLoop(runnable)));
         } else {
-            latencyPingCache.add(runnable);
+            latencyPingCache.add(new LatencyPing(timestamp, runnable));
+        }
+        while (latencyPingCache.size() > MAX_LATENCY_PINGS) {
+            LatencyPing dropped = latencyPingCache.poll();
+            if (dropped == null) {
+                break;
+            }
+            geyser.getLogger().debug("Dropping unanswered latency ping " + dropped.timestamp() + ": the Bedrock client is not answering them");
         }
         sendUpstreamPacket(latencyPacket);
+    }
+
+    /**
+     * Answers the echo of a latency ping, running the entry that was sent with the same timestamp.
+     * <p>
+     * Entries are matched by timestamp instead of taken in order. A Bedrock client can drop or fall behind on a single
+     * echo, for example while it loads a new backend or after a long teleport, and answering by position then replays
+     * every later keepalive with the previous one's id, which times the Java connection out.
+     *
+     * @param timestamp the timestamp the Bedrock client echoed back
+     */
+    public void runLatencyPing(long timestamp) {
+        for (Iterator<LatencyPing> iterator = latencyPingCache.iterator(); iterator.hasNext(); ) {
+            LatencyPing latencyPing = iterator.next();
+            if (latencyPing.timestamp() == timestamp) {
+                iterator.remove();
+                latencyPing.action().run();
+                return;
+            }
+        }
+        geyser.getLogger().debug("Received a latency packet that we don't have a ping for: " + timestamp);
     }
 
     @Override

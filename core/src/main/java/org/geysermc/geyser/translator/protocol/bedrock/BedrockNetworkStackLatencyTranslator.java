@@ -38,14 +38,7 @@ public class BedrockNetworkStackLatencyTranslator extends PacketTranslator<Netwo
 
     @Override
     public void translate(GeyserSession session, NetworkStackLatencyPacket packet) {
-        // We should receive these packets in the same order they were sent
-        final Runnable latencyPing = session.getLatencyPingCache().poll();
-        if (latencyPing == null) {
-            session.getGeyser().getLogger().debug("Received a latency packet that we don't have a ping for: " + packet);
-            return;
-        }
-
-        latencyPing.run();
+        session.runLatencyPing(packet.getTimestamp());
     }
 
     @Override
