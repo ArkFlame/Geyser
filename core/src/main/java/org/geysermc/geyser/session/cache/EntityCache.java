@@ -41,8 +41,10 @@ import org.geysermc.geyser.entity.type.Tickable;
 import org.geysermc.geyser.entity.type.player.PlayerEntity;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.session.cache.waypoint.GeyserWaypoint;
+import org.geysermc.geyser.translator.protocol.java.entity.JavaSetEntityLinkTranslator;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,6 +82,12 @@ public class EntityCache {
     private final List<Tickable> tickableEntities = new ObjectArrayList<>();
     private final Int2LongMap entityIdTranslations = new Int2LongOpenHashMap();
     private final Object2LongMap<UUID> entityUuidTranslations = new Object2LongOpenHashMap<>();
+    /**
+     * Leash links that arrived before one of the two involved entities was tracked. Keyed by the leashed entity's
+     * Java id, valued by the Java id of the entity holding the lead. Resolved in {@link #resolvePendingLeash}.
+     * Only touched on the session's event loop thread.
+     */
+    private final Map<Integer, Integer> pendingLeashLinks = new Object2ObjectOpenHashMap<>();
     private final Map<UUID, PlayerEntity> playerEntities = new Object2ObjectOpenHashMap<>();
     private final Map<UUID, BossBar> bossBars = new Object2ObjectOpenHashMap<>();
     @Getter
@@ -168,8 +176,54 @@ public class EntityCache {
             }
 
             session.getWaypointCache().addEntity(entity);
+
+            resolvePendingLeash(entity);
         }
     }
+
+    /**
+     * A leash link can reach us before the entity on either end of it is spawned. Store it so it can be applied once
+     * the missing entity appears; see {@code JavaSetEntityLinkTranslator}.
+     */
+    public void cachePendingLeash(int leashedJavaId, int holderJavaId) {
+        if (leashedJavaId == holderJavaId) {
+            return;
+        }
+        pendingLeashLinks.put(leashedJavaId, holderJavaId);
+    }
+
+    private void resolvePendingLeash(Entity spawned) {
+        if (pendingLeashLinks.isEmpty()) {
+            return;
+        }
+        int javaId = spawned.getEntityId();
+
+        // The spawned entity is the leashed one
+        Integer holderJavaId = pendingLeashLinks.get(javaId);
+        if (holderJavaId != null) {
+            Entity holder = getEntityByJavaId(holderJavaId);
+            if (holder != null) {
+                pendingLeashLinks.remove(javaId);
+                JavaSetEntityLinkTranslator.applyLeash(spawned, holder);
+            }
+        }
+
+        // The spawned entity is the one holding the leash
+        Iterator<Map.Entry<Integer, Integer>> iterator = pendingLeashLinks.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Integer, Integer> entry = iterator.next();
+            if (entry.getValue() != javaId) {
+                continue;
+            }
+            Entity leashed = getEntityByJavaId(entry.getKey());
+            if (leashed == null) {
+                continue;
+            }
+            iterator.remove();
+            JavaSetEntityLinkTranslator.applyLeash(leashed, spawned);
+        }
+    }
+
 
     public boolean cacheEntity(Entity entity) {
         lock.writeLock().lock();
@@ -270,6 +324,7 @@ public class EntityCache {
         }
 
         session.getPlayerWithCustomHeads().clear();
+        pendingLeashLinks.clear();
     }
 
     /**
