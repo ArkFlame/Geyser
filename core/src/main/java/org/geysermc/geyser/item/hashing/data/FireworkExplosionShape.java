@@ -25,6 +25,8 @@
 
 package org.geysermc.geyser.item.hashing.data;
 
+import net.kyori.adventure.text.Component;
+
 import java.util.Locale;
 
 // Ordered and named by Java ID
@@ -34,6 +36,13 @@ public enum FireworkExplosionShape {
     STAR,
     CREEPER,
     BURST;
+
+    /**
+     * The Java tooltip name for this explosion shape. Ported from GeyserMC/Geyser#5692.
+     */
+    public Component displayName() {
+        return Component.translatable("item.minecraft.firework_star.shape." + name().toLowerCase(Locale.ROOT));
+    }
 
     public static FireworkExplosionShape fromJavaIdentifier(String identifier) {
         for (FireworkExplosionShape shape : values()) {

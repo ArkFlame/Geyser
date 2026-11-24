@@ -41,6 +41,7 @@ import org.geysermc.geyser.inventory.GeyserItemStack;
 import org.geysermc.geyser.inventory.item.BedrockEnchantment;
 import org.geysermc.geyser.item.Items;
 import org.geysermc.geyser.item.TooltipOptions;
+import org.geysermc.geyser.item.tooltip.TooltipProviders;
 import org.geysermc.geyser.item.components.resolvable.ResolvableComponent;
 import org.geysermc.geyser.item.components.resolvable.ResolvableComponentGetter;
 import org.geysermc.geyser.item.enchantment.Enchantment;
@@ -244,7 +245,8 @@ public class Item {
             return;
         }
 
-        List<Component> loreComponents = components.get(DataComponentTypes.LORE);
+        // The opt-in provider framework emits lore itself, with Java's per-line styling.
+        List<Component> loreComponents = TooltipProviders.isEnabled() ? null : components.get(DataComponentTypes.LORE);
         if (loreComponents != null && tooltip.showInTooltip(DataComponentTypes.LORE)) {
             List<String> lore = builder.getOrCreateLore();
             for (Component loreComponent : loreComponents) {

@@ -47,6 +47,8 @@ import org.geysermc.geyser.inventory.item.Potion;
 import org.geysermc.geyser.item.Items;
 import org.geysermc.geyser.item.TooltipOptions;
 import org.geysermc.geyser.item.components.Rarity;
+import org.geysermc.geyser.item.tooltip.TooltipContext;
+import org.geysermc.geyser.item.tooltip.TooltipProviders;
 import org.geysermc.geyser.item.type.Item;
 import org.geysermc.geyser.item.type.PotionItem;
 import org.geysermc.geyser.item.type.TippedArrowItem;
@@ -252,29 +254,36 @@ public final class ItemTranslator {
             nbtBuilder.setCustomName(customName);
         }
 
-        if (customComponents != null) {
-            ItemAttributeModifiers attributeModifiers = customComponents.get(DataComponentTypes.ATTRIBUTE_MODIFIERS);
-            if (attributeModifiers != null && tooltip.showInTooltip(DataComponentTypes.ATTRIBUTE_MODIFIERS)) {
-                // only add if attribute modifiers do not indicate to hide them
-                addAttributeLore(session, attributeModifiers, nbtBuilder, session.locale());
+        if (TooltipProviders.isEnabled()) {
+            // Opt-in Java tooltip parity: per-component providers replace the legacy lore blocks below.
+            TooltipProviders.addTooltips(TooltipContext.create(session, javaItem, components),
+                line -> nbtBuilder.getOrCreateLore().add(
+                    MessageTranslator.convertMessageForItem(line, session.locale(), NamedTextColor.GRAY)));
+        } else {
+            if (customComponents != null) {
+                ItemAttributeModifiers attributeModifiers = customComponents.get(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+                if (attributeModifiers != null && tooltip.showInTooltip(DataComponentTypes.ATTRIBUTE_MODIFIERS)) {
+                    // only add if attribute modifiers do not indicate to hide them
+                    addAttributeLore(session, attributeModifiers, nbtBuilder, session.locale());
+                }
             }
-        }
 
-        if (components.contains(DataComponentTypes.UNBREAKABLE) && tooltip.showInTooltip(DataComponentTypes.UNBREAKABLE)) {
-            nbtBuilder.getOrCreateLore().add(
-                MessageTranslator.convertMessage(
-                    Component.text()
-                        .resetStyle()
-                        .color(NamedTextColor.BLUE)
-                        .append(Component.translatable("item.unbreakable"))
-                        .build(),
-                    session.locale()
-                )
-            );
-        }
+            if (components.contains(DataComponentTypes.UNBREAKABLE) && tooltip.showInTooltip(DataComponentTypes.UNBREAKABLE)) {
+                nbtBuilder.getOrCreateLore().add(
+                    MessageTranslator.convertMessage(
+                        Component.text()
+                            .resetStyle()
+                            .color(NamedTextColor.BLUE)
+                            .append(Component.translatable("item.unbreakable"))
+                            .build(),
+                        session.locale()
+                    )
+                );
+            }
 
-        if (session.isAdvancedTooltips() && !TooltipOptions.hideTooltip(components)) {
-            addAdvancedTooltips(components, nbtBuilder, javaItem, session.locale());
+            if (session.isAdvancedTooltips() && !TooltipOptions.hideTooltip(components)) {
+                addAdvancedTooltips(components, nbtBuilder, javaItem, session.locale());
+            }
         }
 
         // Add enchantment override. We can't remove it - enchantments would stop showing - but we can add it.
