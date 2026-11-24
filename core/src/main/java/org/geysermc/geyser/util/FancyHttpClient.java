@@ -215,6 +215,38 @@ public final class FancyHttpClient implements AutoCloseable {
     }
 
     /**
+     * Downloads a file from the given URL and saves it to disk, refusing responses that exceed the given size limit.
+     *
+     * <p>If the request failed, or the size limit was exceeded, an empty {@link Optional} is returned.</p>
+     *
+     * @param uri the URL to download from
+     * @param path location to save on disk
+     * @param maxSize the maximum accepted content length in bytes
+     * @return a {@link CompletableFuture} returning the saved path, or an empty {@link Optional} on failure
+     */
+    public CompletableFuture<Optional<Path>> downloadFileSafe(URI uri, Path path, long maxSize) {
+        HttpResponse.BodyHandler<Path> downloader = HttpResponse.BodyHandlers.ofFile(path);
+        HttpResponse.BodyHandler<Path> handler = response -> {
+            long contentLength = response.headers().firstValueAsLong("content-length").orElse(-1L);
+            if (contentLength >= 0L && contentLength <= maxSize) {
+                return downloader.apply(response);
+            }
+            throw new UncheckedIOException(new IOException("content-length header was missing or exceeded maxSize"));
+        };
+        return fetch(uri.toString(), HttpRequest.Builder::GET, handler)
+            .thenApply(response -> {
+                if (!isSuccess(response.statusCode())) {
+                    return Optional.<Path>empty();
+                }
+                return Optional.of(response.body());
+            })
+            .exceptionally(throwable -> {
+                GeyserImpl.getInstance().getLogger().error("Failed to download file \"" + path + "\" from URL \"" + uri + "\" safely", throwable);
+                return Optional.empty();
+            });
+    }
+
+    /**
      * Checks a remote resourcepack URL to see if it is valid. If it is, it will download the pack file and return a path to it.
      *
      * <p>If the request failed, the {@link CompletableFuture} completes exceptionally.</p>

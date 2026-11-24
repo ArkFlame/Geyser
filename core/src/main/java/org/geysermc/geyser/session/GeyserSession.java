@@ -168,6 +168,7 @@ import org.geysermc.geyser.level.JavaDimension;
 import org.geysermc.geyser.level.gamerule.GameRuleHandler;
 import org.geysermc.geyser.level.physics.CollisionManager;
 import org.geysermc.geyser.network.java.LocalSession;
+import org.geysermc.geyser.pack.java.JavaPackStack;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.java.JavaRegistries;
 import org.geysermc.geyser.registry.java.JavaRegistryProvider;
@@ -328,6 +329,9 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     private final StructureBlockCache structureBlockCache;
     private final WaypointCache waypointCache;
     private final WorldCache worldCache;
+
+    @Accessors(fluent = true)
+    private final JavaPackStack javaPackStack;
 
     /**
      * Handles block breaking and break animation progress caching.
@@ -927,6 +931,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         this.structureBlockCache = new StructureBlockCache();
         this.waypointCache = new WaypointCache(this);
         this.worldCache = new WorldCache(this);
+        this.javaPackStack = new JavaPackStack(this);
         this.cameraData = new GeyserCameraData(this);
         this.entityData = new GeyserEntityData(this);
 

@@ -45,10 +45,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MinecraftLocale {
 
     public static final Map<String, Map<String, String>> LOCALE_MAPPINGS = new HashMap<>();
+
+    /**
+     * Translations supplied by Java resource packs, keyed by locale. Checked before the built-in locale files.
+     */
+    private static final Map<String, Map<String, String>> PACK_TRANSLATIONS = new ConcurrentHashMap<>();
 
     private static final List<String> REMOVED_KEYS = new ArrayList<>();
     private static final Map<String, String> REPLACED_KEYS = new HashMap<>();
@@ -283,6 +289,13 @@ public class MinecraftLocale {
      * @return Translated string or null if it was not found in the given locale
      */
     public static @Nullable String getLocaleStringIfPresent(String messageText, String locale) {
+        Map<String, String> packStrings = PACK_TRANSLATIONS.get(locale.toLowerCase(Locale.ROOT));
+        if (packStrings != null) {
+            String translated = packStrings.get(messageText);
+            if (translated != null) {
+                return translated;
+            }
+        }
         Map<String, String> localeStrings = LOCALE_MAPPINGS.get(locale.toLowerCase(Locale.ROOT));
         if (localeStrings != null) {
             String translated = localeStrings.get(messageText);
@@ -295,6 +308,21 @@ public class MinecraftLocale {
             return localeStrings.get(messageText);
         }
         return null;
+    }
+
+    /**
+     * Sets the translations provided by the Java resource packs of the current session. An empty map clears them.
+     *
+     * @param locale locale the translations belong to
+     * @param translations the flattened translations, later packs already overriding earlier ones
+     */
+    public static void setPackTranslations(String locale, Map<String, String> translations) {
+        String key = locale.toLowerCase(Locale.ROOT);
+        if (translations.isEmpty()) {
+            PACK_TRANSLATIONS.remove(key);
+        } else {
+            PACK_TRANSLATIONS.put(key, Map.copyOf(translations));
+        }
     }
 
     /**
