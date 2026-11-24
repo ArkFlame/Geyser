@@ -37,14 +37,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3312 |
+| `UNFIXED` | 3308 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 57 |
+| `FIXED` | 58 |
 | `UPSTREAM_FIXED` | 2340 |
 | `DUPLICATE` | 385 |
-| `BLOCKED` | 8 |
-| `UNSUPPORTED` | 292 |
-| `NOT_APPLICABLE` | 423 |
+| `BLOCKED` | 9 |
+| `UNSUPPORTED` | 293 |
+| `NOT_APPLICABLE` | 424 |
 
 ## Mass audit (two passes)
 
@@ -145,6 +145,19 @@ The final wave-3 audit was recorded against `integration/final-release` HEAD `23
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3316 → 3312, FIXED 56 → 57, UPSTREAM_FIXED 2339 → 2340, BLOCKED 7 → 8, UNSUPPORTED 291 → 292); every status is in the documented enum and all 6817 IDs remain unique. No build or test run was performed for this documentation pass.
 
+#### Final wave-3 fix and dispositions (commit `b50035b2c`)
+
+This batch was recorded against `integration/final-release` HEAD `b50035b2c472120ea64561d26859042950ecd575`. #6551 is `FIXED` at that commit (display entity teleport interpolation, upstream PR #6566); the single-thread 8G CI build finished **BUILD SUCCESSFUL in 6m 10s** (exit 0), compile/test only. The other three records received static dispositions with no new integration commit: #6556 `BLOCKED`, #6499 `UNSUPPORTED`, #6513 `NOT_APPLICABLE`. **No runtime or gameplay verification was performed.** Reference: https://github.com/GeyserMC/Geyser/issues/6903.
+
+| ID | Disposition | Evidence / reference |
+| ---: | --- | --- |
+| #6551 | `FIXED` | Integrated commit `b50035b2c472120ea64561d26859042950ecd575` (display entity teleport interpolation, upstream PR #6566); clean single-thread 8G CI BUILD SUCCESSFUL in 6m 10s; compile/test only, no runtime verification — https://github.com/GeyserMC/Geyser/issues/6551 |
+| #6556 | `BLOCKED` | No upstream diagnosis; armor-slot mapping fix requires design-level rerouting to player-inventory window; no repro — https://github.com/GeyserMC/Geyser/issues/6556 |
+| #6499 | `UNSUPPORTED` | Already fixed by dependency NBT deserializer; sprite-to-icon mapping declined upstream — https://github.com/GeyserMC/Geyser/issues/6499 |
+| #6513 | `NOT_APPLICABLE` | Unmerged draft PR with unresolved reviews; duplicates rejected PRs #4996/#6586 — https://github.com/GeyserMC/Geyser/pull/6513 |
+
+`status_counts` was recomputed from all 6817 records (UNFIXED 3312 → 3308, FIXED 57 → 58, BLOCKED 8 → 9, UNSUPPORTED 292 → 293, NOT_APPLICABLE 423 → 424); every status is in the documented enum and all 6817 IDs remain unique.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -236,14 +249,14 @@ _(291 records)_
 | 4934805024 | Recipe book auto-craft reverts inventory / returns ingredients instead of crafted item | https://github.com/GeyserMC/Geyser/issues/6563 | `DUPLICATE` |
 | 4915679666 | Cant see Skins | https://github.com/GeyserMC/Geyser/issues/6558 | `UPSTREAM_FIXED` |
 | 4915592951 | Possible regression with "forward-player-ping" causing Bedrock timeouts after long teleports | https://github.com/GeyserMC/Geyser/issues/6557 | `BLOCKED` |
-| 4915065150 | Unable to wear armor after crafting | https://github.com/GeyserMC/Geyser/issues/6556 | `UNFIXED` |
-| 4902059744 | Movement of non-living entities (Display entities) isn't interpolated, causing visible drag for anything riding one | https://github.com/GeyserMC/Geyser/issues/6551 | `UNFIXED` |
+| 4915065150 | Unable to wear armor after crafting | https://github.com/GeyserMC/Geyser/issues/6556 | `BLOCKED` |
+| 4902059744 | Movement of non-living entities (Display entities) isn't interpolated, causing visible drag for anything riding one | https://github.com/GeyserMC/Geyser/issues/6551 | `FIXED` |
 | 4889086403 | Update bedrock limiations to include attributes | https://github.com/GeyserMC/Geyser/issues/6544 | `NOT_APPLICABLE` |
 | 4868140574 | Allow custom Bedrock item identifiers in horse armor GUI acceptedItems | https://github.com/GeyserMC/Geyser/issues/6535 | `FIXED` |
 | 4866786667 | Players kicked while right-click on block | https://github.com/GeyserMC/Geyser/issues/6532 | `UNSUPPORTED` |
 | 4859485425 | enchant table cannot be used | https://github.com/GeyserMC/Geyser/issues/6527 | `UNFIXED` |
 | 4819367010 | Bedrock Worlds tab server entry disappears or connects to wrong port behind NAT port remapping | https://github.com/GeyserMC/Geyser/issues/6508 | `UNFIXED` |
-| 4787423496 | Dialog buttons with object atlas sprite labels should map to FormImage.Type.PATH on Bedrock, but currently error with Expected tag to be a literal string... and render blank. | https://github.com/GeyserMC/Geyser/issues/6499 | `UNFIXED` |
+| 4787423496 | Dialog buttons with object atlas sprite labels should map to FormImage.Type.PATH on Bedrock, but currently error with Expected tag to be a literal string... and render blank. | https://github.com/GeyserMC/Geyser/issues/6499 | `UNSUPPORTED` |
 | 4776889765 | Failed to correctly map the zombie villager's profession | https://github.com/GeyserMC/Geyser/issues/6495 | `UNFIXED` |
 | 4756478294 | Minecart Visual Lag/desync | https://github.com/GeyserMC/Geyser/issues/6485 | `UNFIXED` |
 | 4737289181 | [ViaProxy] Client is having trouble establishing the connection | https://github.com/GeyserMC/Geyser/issues/6478 | `UNSUPPORTED` |
@@ -498,7 +511,7 @@ _(56 records)_
 | 4111042967 | Interpolate per-tick entity movement on Bedrock | https://github.com/GeyserMC/Geyser/pull/6566 | `NOT_APPLICABLE` |
 | 4083854339 | Improve bamboo collision | https://github.com/GeyserMC/Geyser/pull/6560 | `FIXED` |
 | 4078328957 | Fix collision for copper bars and turtle eggs | https://github.com/GeyserMC/Geyser/pull/6555 | `FIXED` |
-| 4008215209 | Change logger to a static reference and add some debugging commands | https://github.com/GeyserMC/Geyser/pull/6513 | `UNFIXED` |
+| 4008215209 | Change logger to a static reference and add some debugging commands | https://github.com/GeyserMC/Geyser/pull/6513 | `NOT_APPLICABLE` |
 | 3948152368 | Attempt to lower scoreboard allocs | https://github.com/GeyserMC/Geyser/pull/6489 | `NOT_APPLICABLE` |
 | 3707133775 | Fix block breaking | https://github.com/GeyserMC/Geyser/pull/6419 | `FIXED` |
 | 3662155537 | Add proper combat sounds | https://github.com/GeyserMC/Geyser/pull/6393 | `UNFIXED` |
