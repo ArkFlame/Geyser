@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T22:13:34Z_
+_Generated at: 2026-11-24T22:20:59Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,14 +38,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 822 |
+| `UNFIXED` | 659 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 126 |
-| `UPSTREAM_FIXED` | 2847 |
-| `DUPLICATE` | 556 |
-| `BLOCKED` | 46 |
-| `UNSUPPORTED` | 598 |
-| `NOT_APPLICABLE` | 1822 |
+| `FIXED` | 129 |
+| `UPSTREAM_FIXED` | 2885 |
+| `DUPLICATE` | 565 |
+| `BLOCKED` | 48 |
+| `UNSUPPORTED` | 610 |
+| `NOT_APPLICABLE` | 1921 |
 | `PARTIAL` | 1 |
 
 ## Mass audit (two passes)
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-18 — open PR adoption and open issue fixes
+## Waves 8-19 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -411,6 +411,18 @@ Eight issues were proven already fixed and promoted to FIXED: #5231, #5057, #438
 
 All 55 `BLOCKED` records were re-checked against published dependency metadata, upstream commit ancestry (GitHub `compare` `behind_by=0`), and the current local jar. Nine stale dispositions were promoted to `UPSTREAM_FIXED`: #64, #132, #144, #545 and #4844 (MCProtocolLib fixes merged and ancestral to master, older than the pinned `protocol:26.3-4`), #5667 (Floodgate `096c605`), #904 (mappings `83a34687` ancestral to the pinned mappings submodule), #5714 (frp#5119 merged) and #6807 (libdatachannel-java `c2d3c9a6` musl-stack fix ancestral to upstream `main`, predating the pinned snapshot build). PR #6914 remains blocked: `javap` on `protocol-26.3-4.jar` shows `PotionContents(int,int,List,String)` with only `getPotionId/getCustomColor/getCustomEffects/getCustomName` and no `hasCustomColor`/`OptionalInt`, while maven-releases latest is 26.3-4 and maven-snapshots newest 26.3-SNAPSHOT build is 14 (20261014.110736); upstream GeyserMC/MCProtocolLib#942 is still open. No dependency version bump, source edit or runtime verification was performed in this wave.
 
+### Wave 19 — full-history unblocks, book-copy fix and backlog R/S/T/U
+
+This wave used the now-complete git history (5322 commits) to re-check all 55 BLOCKED records, took one more pass over the 80 open UNFIXED issues, and audited 1000 closed UNFIXED records. The merged tree compiles (`compileJava compileTestJava` -> BUILD SUCCESSFUL in 1m 17s), and the narrow `item.hashing` unit suite also passes (BUILD SUCCESSFUL in 59s), rejecting the hypothesis that this campaign's hash-encoder changes caused the recurring gametest hash warnings — those remain the pre-existing optional failures documented from the baseline CI run.
+
+**Source change.** #3682/#6577 (book-and-quill duplicate copy results): `InventoryTranslator` now accepts identical duplicate craft results, ignores Bedrock's extra CREATE/output transfer and reports the real slots; commit `9329eb798`, merged as `179eb4397`.
+
+**Open issues.** One more already-fixed record was promoted with proof: #3411 (unique command enum names, fork commit `55a5db05f`, ancestor of HEAD). The other 77 candidates have no merged upstream fix and no reproducible fork-local cause; each outcome, including the missing evidence, is recorded in `/tmp/open19.md`.
+
+**Unblocked records.** Nine stale BLOCKED dispositions were promoted to UPSTREAM_FIXED after verifying ancestry/merge evidence with the unshallowed history: #64, #132, #144, #545, #904, #4844, #5667, #5714 and #6807. #6914 remains BLOCKED: `javap` on `protocol-26.3-4` still shows `PotionContents` without a custom-color presence flag.
+
+**Backlog audit R/S/T/U.** Four read-only auditors produced **160 evidence-backed dispositions**: 38 UPSTREAM_FIXED, 12 UNSUPPORTED, 99 NOT_APPLICABLE, 9 DUPLICATE and 2 BLOCKED; the rest stayed `UNFIXED`. Every UPSTREAM_FIXED claim was verified with `git merge-base --is-ancestor <sha> HEAD` plus a fork `file:line` — for example #6751 via PR #6712 (`1f6ef23`, which the shallow-history shard P had to leave UNFIXED), #6214 via PR #6243 (`b728af2`), #6118 via PR #6124 (`2ba76f0`), and #4662 via `5ebb6ef0` with an explicit issue link. GitHub's core API quota was exhausted partway through shards S/T/U, so their remaining records were classified only from cached tracker metadata and local git verification, with no disposition inferred from closure alone.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -494,7 +506,7 @@ _(291 records)_
 | 5061576088 | Bedroack cant load chunks | https://github.com/GeyserMC/Geyser/issues/6587 | `NOT_APPLICABLE` |
 | 5055981657 | /fly toggled on causing swimming and block breaking issues | https://github.com/GeyserMC/Geyser/issues/6584 | `FIXED` |
 | 5040716111 | Players at Y 64 get inexplicably stuck | https://github.com/GeyserMC/Geyser/issues/6580 | `UNFIXED` |
-| 5011405882 | Crafting Crash - Book & Quill / Book | https://github.com/GeyserMC/Geyser/issues/6577 | `UNFIXED` |
+| 5011405882 | Crafting Crash - Book & Quill / Book | https://github.com/GeyserMC/Geyser/issues/6577 | `FIXED` |
 | 5001803063 | Bedrock chat not visible to Java players & Bedrock skins show as Steve/Alex | https://github.com/GeyserMC/Geyser/issues/6574 | `UNFIXED` |
 | 4979519119 | Click register delay | https://github.com/GeyserMC/Geyser/issues/6570 | `FIXED` |
 | 4969896275 | Bedrock Players left incapacitated by ImageFrame maps | https://github.com/GeyserMC/Geyser/issues/6569 | `NOT_APPLICABLE` |
@@ -672,7 +684,7 @@ _(291 records)_
 | 1750783737 | BE slim (3px) skin is not reflected correctly | https://github.com/GeyserMC/Geyser/issues/3856 | `NOT_APPLICABLE` |
 | 1739441457 | item/block display entities | https://github.com/GeyserMC/Geyser/issues/3810 | `UNSUPPORTED` |
 | 1686001459 | Java players can't push bedrock players | https://github.com/GeyserMC/Geyser/issues/3702 | `UNFIXED` |
-| 1671866467 | Cannot Copy Books | https://github.com/GeyserMC/Geyser/issues/3682 | `UNFIXED` |
+| 1671866467 | Cannot Copy Books | https://github.com/GeyserMC/Geyser/issues/3682 | `FIXED` |
 | 1666874262 | Bedrock can fly under certain conditions | https://github.com/GeyserMC/Geyser/issues/3678 | `FIXED` |
 | 1641340815 | Custom Grass/Leaf colors | https://github.com/GeyserMC/Geyser/issues/3645 | `UNFIXED` |
 | 1599570030 | Items with "AttributeModifiers" in their NBTData get stuck in clients cursor and are not being displayed properly. | https://github.com/GeyserMC/Geyser/issues/3580 | `UNFIXED` |
@@ -682,7 +694,7 @@ _(291 records)_
 | 1497715636 | Please implement "aerial perspective" for how chunks look. | https://github.com/GeyserMC/Geyser/issues/3458 | `FIXED` |
 | 1495006234 | GeyserApi.api().connectionByUuid() is flaky | https://github.com/GeyserMC/Geyser/issues/3456 | `FIXED` |
 | 1483856962 | Allows custom InteractiveTag for Entity | https://github.com/GeyserMC/Geyser/issues/3441 | `UNFIXED` |
-| 1455706435 | overlapping command enums | https://github.com/GeyserMC/Geyser/issues/3411 | `UNFIXED` |
+| 1455706435 | overlapping command enums | https://github.com/GeyserMC/Geyser/issues/3411 | `FIXED` |
 | 1453152029 | Complex Spigot+Paper server player moving and climbing rebound | https://github.com/GeyserMC/Geyser/issues/3407 | `UNFIXED` |
 | 1428000485 | Employ fix for headless Armor Stand | https://github.com/GeyserMC/Geyser/issues/3373 | `UNSUPPORTED` |
 | 1422823529 | Packet intercepting and sending API | https://github.com/GeyserMC/Geyser/issues/3365 | `NOT_APPLICABLE` |
