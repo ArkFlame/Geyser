@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T19:32:30Z_
+_Generated at: 2026-11-24T20:34:52Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,15 +38,15 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3180 |
+| `UNFIXED` | 2936 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 107 |
-| `UPSTREAM_FIXED` | 2349 |
-| `DUPLICATE` | 387 |
+| `FIXED` | 111 |
+| `UPSTREAM_FIXED` | 2364 |
+| `DUPLICATE` | 394 |
 | `BLOCKED` | 9 |
-| `UNSUPPORTED` | 299 |
-| `NOT_APPLICABLE` | 486 |
-| `PARTIAL` | 1 |
+| `UNSUPPORTED` | 360 |
+| `NOT_APPLICABLE` | 642 |
+| `PARTIAL` | 2 |
 
 ## Mass audit (two passes)
 
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-13 — open PR adoption and open issue fixes
+## Waves 8-14 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -329,6 +329,22 @@ Six area workers audited the 170 open issues that were still unresolved after wa
 **Blocked:** #6032 — the duplicate item-mapping collision lives in the pinned `GeyserMC/mappings` submodule, so it has to be fixed upstream.
 
 **Reclassified as not a Geyser defect (53 issues, `NOT_APPLICABLE`)** with per-issue evidence: Bedrock client limits and crashes with no server-side path, third-party libraries (PacketEvents, ViaProxy, MCGateway), Java/server-side encoder limits, documented configuration trade-offs (`broadcast-port`, Rak rate limiting, `-DGeyser.RakRateLimitingDisabled`), and upstream feature requests that would need new public API surface. The remaining issues stay `UNFIXED` because they need a dump, a log or a hardware reproduction; each has its evidence recorded in the JSON.
+
+### Wave 14 — last open PRs and closed-record backlog audit
+
+This wave took the five open upstream PRs that were still unadopted after wave 13 and audited the closed backlog that earlier passes had left `UNFIXED`. As in wave 13, workers could not build; the only verification is the single compile-only pass on the merged tree. No live tests, gametest or Spigot jar runs were performed.
+
+| PR | Change | Commit | State |
+| ---: | --- | --- | --- |
+| #5685 | Geyser Networking API: session/JavaState/ProtocolState/codec/channel API (38 new files), lifecycle hooks, inbound/outbound Bedrock+Java packet hooks, custom-payload dispatch, channel handshake, 3 network tests | `432836ef4` | FIXED — zero per-packet cost when no listener is registered; the upstream `LocalSession final -> non-final` edit was replaced with a `GeyserSessionAdapter` hook, preserving the NetherNet lifecycle |
+| #5860 | Custom Translation API — `TranslationManager`, `GeyserLoadLocaleEvent`, `GeyserApi` accessors, default `CommandSource` helpers, extension locale loading | `a0a496936` | FIXED — purely additive; pack locale overrides are applied first so extensions have the final word |
+| #6922 | `.geyserpack` archive loading — `GeyserAssetPack`, cached extraction with traversal/size/entry caps, `GEYSER_ASSET_PACKS` registry, pack resource-pack/mapping/locale overrides, opt-in config, regression test | `65de3c644` | FIXED — default off; existing manifest handling preserved |
+| #5595 | Anvil cost refactor and small cleanups | `955914e` | FIXED — its item-name helpers were merged into one implementation with #5692 (both component- and stack-based overloads retained) |
+| #5692 | Full Java tooltip parity | `6c77d08eb` | **PARTIAL** — Java hover names ported, but the 24-provider tooltip framework and registry rewrite depend on registry types absent from this fork (`JavaRegistryKey<T,MCPL>`, per-registry entry contexts), and the lore rewrite would change default formatting |
+
+**Closed backlog audit.** Two read-only auditors reviewed the 800 most recent `UNFIXED` closed records (even and odd id shards) against cached GitHub metadata, maintainer closing comments, `state_reason`, and the fork source. They produced **239 evidence-backed dispositions** (`/tmp/backlogA.json` + `/tmp/backlogB.json`): 15 UPSTREAM_FIXED, 7 DUPLICATE, 96 UNSUPPORTED and 121 NOT_APPLICABLE. UPSTREAM_FIXED was only used when the fixing commit was confirmed as an ancestor of fork master with `git merge-base --is-ancestor` and the symbol was found in the tree (for example #6836 -> `8c61d7398` at `BlockTag.java:232`, #6797/#6779 -> `d14f2046`, #6457 -> 26.2 support present in the baseline). The remaining 561 reviewed records stayed `UNFIXED` because no admissible evidence was found; notably #5317 was deliberately not promoted because upstream commit `0416b55959` is not in master.
+
+Verification level for this wave: `./gradlew compileJava compileTestJava --no-daemon --no-parallel -Dorg.gradle.jvmargs='-Xmx4G -XX:MaxMetaspaceSize=1G'` — compile-only. Runtime behaviour of all five PRs is **unverified**; the two merge conflicts that were resolved by hand (`MinecraftLocale` combining extension-locale and pack-locale hooks, and the overlapping #5692/#5595 item-name helpers) are included in that compile check.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
@@ -643,7 +659,7 @@ _(57 records)_
 | 5398766503 | Fix: include Git SHA in Spigot plugin version | https://github.com/GeyserMC/Geyser/pull/6931 | `FIXED` |
 | 5387806158 | Fill server-side command suggestions on Bedrock | https://github.com/GeyserMC/Geyser/pull/6928 | `FIXED` |
 | 5368363595 | Keep the name tag of entities that only carry text displays | https://github.com/GeyserMC/Geyser/pull/6925 | `FIXED` |
-| 5360752965 | Introduce `.geyserpack` loading | https://github.com/GeyserMC/Geyser/pull/6922 | `UNFIXED` |
+| 5360752965 | Introduce `.geyserpack` loading | https://github.com/GeyserMC/Geyser/pull/6922 | `FIXED` |
 | 5330888326 | FIX synchronize item frames after teleportation | https://github.com/GeyserMC/Geyser/pull/6921 | `FIXED` |
 | 5295765293 | Register vanilla tools as custom items to fix block breaking times | https://github.com/GeyserMC/Geyser/pull/6916 | `FIXED` |
 | 5286632827 | build(deps): use the MCProtocolLib codec fixes build | https://github.com/GeyserMC/Geyser/pull/6914 | `NOT_APPLICABLE` |
@@ -690,8 +706,8 @@ _(57 records)_
 | 3662155537 | Add proper combat sounds | https://github.com/GeyserMC/Geyser/pull/6393 | `PARTIAL` |
 | 3142621945 | Feature: Reloadable Mappings | https://github.com/GeyserMC/Geyser/pull/6081 | `FIXED` |
 | 3044136529 | Workaround for client-sided removal of all items from the crafting grid on inventory close | https://github.com/GeyserMC/Geyser/pull/6008 | `FIXED` |
-| 2875767111 | Custom Translation API | https://github.com/GeyserMC/Geyser/pull/5860 | `UNFIXED` |
-| 2670923346 | Full Java tooltip parity (as much as that is possible) | https://github.com/GeyserMC/Geyser/pull/5692 | `UNFIXED` |
-| 2662538702 | Geyser Networking API | https://github.com/GeyserMC/Geyser/pull/5685 | `UNFIXED` |
-| 2593566343 | Anvil updater refactor and other small refactors | https://github.com/GeyserMC/Geyser/pull/5595 | `UNFIXED` |
+| 2875767111 | Custom Translation API | https://github.com/GeyserMC/Geyser/pull/5860 | `FIXED` |
+| 2670923346 | Full Java tooltip parity (as much as that is possible) | https://github.com/GeyserMC/Geyser/pull/5692 | `PARTIAL` |
+| 2662538702 | Geyser Networking API | https://github.com/GeyserMC/Geyser/pull/5685 | `FIXED` |
+| 2593566343 | Anvil updater refactor and other small refactors | https://github.com/GeyserMC/Geyser/pull/5595 | `FIXED` |
 | 2047932455 | Support for max stack size | https://github.com/GeyserMC/Geyser/pull/5011 | `FIXED` |
