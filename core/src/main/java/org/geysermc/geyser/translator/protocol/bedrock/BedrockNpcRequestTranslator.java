@@ -57,8 +57,10 @@ public class BedrockNpcRequestTranslator extends PacketTranslator<NpcRequestPack
             session.sendUpstreamPacket(closeDialogue);
 
             session.getFormCache().handleResponse(packet);
+            session.setNpcId(-1L);
             session.sendAdventureSettings();
         } else if (packet.getRequestType() == NpcRequestType.EXECUTE_CLOSING_COMMANDS) {
+            session.setNpcId(-1L);
             session.closeForm();
         }
     }

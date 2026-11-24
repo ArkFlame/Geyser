@@ -29,16 +29,22 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import lombok.RequiredArgsConstructor;
 import org.cloudburstmc.protocol.bedrock.data.AttributeData;
+import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes;
 import org.cloudburstmc.protocol.bedrock.packet.ClientboundCloseFormPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ModalFormRequestPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ModalFormResponsePacket;
+import org.cloudburstmc.protocol.bedrock.packet.NpcDialoguePacket;
 import org.cloudburstmc.protocol.bedrock.packet.NpcRequestPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateAttributesPacket;
 import org.geysermc.cumulus.form.Form;
 import org.geysermc.cumulus.form.SimpleForm;
 import org.geysermc.cumulus.form.impl.FormDefinitions;
+import org.geysermc.cumulus.form.impl.simple.SimpleFormDefinition;
 import org.geysermc.geyser.GeyserImpl;
+import org.geysermc.geyser.api.bedrock.form.NpcDialogueForm;
 import org.geysermc.geyser.entity.attribute.GeyserAttributeType;
+import org.geysermc.geyser.entity.type.Entity;
+import org.geysermc.geyser.entity.type.LivingEntity;
 import org.geysermc.geyser.session.GeyserSession;
 
 import java.util.Collections;
@@ -88,6 +94,11 @@ public class FormCache {
     }
 
     private void sendForm(int formId, Form form) {
+        if (form instanceof NpcDialogueForm npcForm) {
+            sendNpcDialogue(formId, npcForm);
+            return;
+        }
+
         String jsonData = formDefinitions.codecFor(form).jsonData(form);
 
         ModalFormRequestPacket formRequestPacket = new ModalFormRequestPacket();
@@ -120,6 +131,44 @@ public class FormCache {
     }
 
     /**
+     * Opens a plugin-provided NPC dialogue. Kept gated so that the default configuration keeps the
+     * pre-dialogue form behaviour, and so that clients that do not expect these packets are unaffected.
+     */
+    private void sendNpcDialogue(int formId, NpcDialogueForm dialogue) {
+        if (!session.getGeyser().config().gameplay().enableNpcDialogues()) {
+            forms.remove(formId);
+            return;
+        }
+
+        Entity entity = session.getEntityCache().getEntityByUuid(dialogue.entityUuid());
+        if (!(entity instanceof LivingEntity)) {
+            forms.remove(formId);
+            GeyserImpl.getInstance().getLogger().error("Cannot open an NPC dialogue for unknown or non-living entity " + dialogue.entityUuid());
+            return;
+        }
+
+        entity.getMetadata().put(EntityDataTypes.HAS_NPC, true);
+        entity.getMetadata().put(EntityDataTypes.NPC_DATA, dialogue.npcData());
+        entity.updateBedrockMetadata();
+        session.setNpcId(entity.geyserId());
+
+        NpcDialoguePacket packet = new NpcDialoguePacket();
+        packet.setNpcName(dialogue.title());
+        packet.setDialogue(dialogue.content());
+        // Not visible to the player, so it doubles as the form ID for the response
+        packet.setSceneName(String.valueOf(formId));
+        packet.setAction(NpcDialoguePacket.Action.OPEN);
+        packet.setUniqueEntityId(entity.geyserId());
+        packet.setActionJson(dialogue.actionJson());
+
+        // The dialogue will not open unless the adventure settings update precedes it
+        session.scheduleInEventLoop(() -> {
+            session.sendAdventureSettings();
+            session.sendUpstreamPacket(packet);
+        }, 200, TimeUnit.MILLISECONDS);
+    }
+
+    /**
      * @return whether a settings form may be built for a request now
      */
     public boolean allowSettingsRequest() {
@@ -144,8 +193,33 @@ public class FormCache {
     }
 
     public void resendAllForms() {
-        for (Int2ObjectMap.Entry<Form> entry : forms.int2ObjectEntrySet()) {
+        // Send from a copy: sending an NPC dialogue may drop an invalid form from the cache
+        for (Int2ObjectMap.Entry<Form> entry : new Int2ObjectOpenHashMap<>(forms).int2ObjectEntrySet()) {
             sendForm(entry.getIntKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * @return whether an NPC dialogue is currently cached
+     */
+    public boolean hasNpcFormOpen() {
+        for (Form form : forms.values()) {
+            if (form instanceof NpcDialogueForm) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void completeForm(Form form, String response) {
+        try {
+            if (form instanceof NpcDialogueForm dialogue) {
+                SimpleFormDefinition.instance().handleFormResponse(dialogue.form(), response);
+            } else {
+                formDefinitions.definitionFor(form).handleFormResponse(form, response);
+            }
+        } catch (Exception e) {
+            GeyserImpl.getInstance().getLogger().error("Error while processing form response!", e);
         }
     }
 
@@ -155,12 +229,7 @@ public class FormCache {
             return;
         }
 
-        try {
-            formDefinitions.definitionFor(form)
-                    .handleFormResponse(form, response.getFormData());
-        } catch (Exception e) {
-            GeyserImpl.getInstance().getLogger().error("Error while processing form response!", e);
-        }
+        completeForm(form, response.getFormData());
     }
 
     /**
@@ -179,12 +248,7 @@ public class FormCache {
             return;
         }
 
-        try {
-            formDefinitions.definitionFor(form)
-                    .handleFormResponse(form, "" + response.getActionType());
-        } catch (Exception e) {
-            GeyserImpl.getInstance().getLogger().error("Error while processing NPC form response!", e);
-        }
+        completeForm(form, String.valueOf(response.getActionType()));
     }
 
     public void closeForms() {
@@ -193,14 +257,21 @@ public class FormCache {
             Int2ObjectMap<Form> copy = new Int2ObjectOpenHashMap<>(this.forms);
             this.forms.clear();
             // Now close it
+            if (session.getNpcId() != -1L && session.getGeyser().config().gameplay().enableNpcDialogues()) {
+                NpcDialoguePacket closeDialogue = new NpcDialoguePacket();
+                closeDialogue.setAction(NpcDialoguePacket.Action.CLOSE);
+                closeDialogue.setSceneName("");
+                closeDialogue.setDialogue("");
+                closeDialogue.setActionJson("");
+                closeDialogue.setNpcName("");
+                closeDialogue.setUniqueEntityId(session.getNpcId());
+                session.sendUpstreamPacket(closeDialogue);
+                session.setNpcId(-1L);
+            }
             session.sendUpstreamPacket(new ClientboundCloseFormPacket());
 
             for (Form form : copy.values()) {
-                try {
-                    formDefinitions.definitionFor(form).handleFormResponse(form, "");
-                } catch (Exception e) {
-                    GeyserImpl.getInstance().getLogger().error("Error while closing form!", e);
-                }
+                completeForm(form, "");
             }
         }
     }
