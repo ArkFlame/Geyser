@@ -34,7 +34,7 @@ import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.ints.IntSortedSet;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.math.vector.Vector3i;
@@ -93,7 +93,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.geysermc.geyser.translator.inventory.BundleInventoryTranslator.isBundle;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 public abstract class InventoryTranslator<Type extends Inventory> {
 
     public static final InventoryTranslator<PlayerInventory> PLAYER_INVENTORY_TRANSLATOR = new PlayerInventoryTranslator();
@@ -138,6 +138,7 @@ public abstract class InventoryTranslator<Type extends Inventory> {
     public static final int PLAYER_INVENTORY_OFFSET = 9;
 
     public final int size;
+    protected boolean refreshPending;
 
     // Whether the inventory open should be delayed.
     public boolean requiresOpeningDelay(GeyserSession session, Type inventory) {
@@ -258,7 +259,7 @@ public abstract class InventoryTranslator<Type extends Inventory> {
     }
 
     private void translateRequests(GeyserSession session, Type inventory, List<ItemStackRequest> requests, boolean firstTime) {
-        boolean refresh = false;
+        this.refreshPending = false;
 
         // If we get another request, we're not closing the inventory and should run the queued request asap
         // to "not fall behind" on transactions
@@ -332,14 +333,14 @@ public abstract class InventoryTranslator<Type extends Inventory> {
 
             if (response.getResult() != ItemStackResponseStatus.OK) {
                 // Sync our copy of the inventory with Bedrock's to prevent desyncs
-                refresh = true;
+                this.refreshPending = true;
             }
 
             responsePacket.getEntries().add(response);
         }
         session.sendUpstreamPacket(responsePacket);
 
-        if (refresh) {
+        if (this.refreshPending) {
             InventoryUtils.updateCursor(session);
             updateInventory(session, inventory);
         }
