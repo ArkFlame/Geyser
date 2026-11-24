@@ -908,6 +908,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     /**
      * The runtime entity ID of the entity whose NPC dialogue is currently open, used to close that dialogue again.
      */
+    @Getter
     @Setter
     private long npcId = -1L;
 
@@ -2487,6 +2488,10 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         // This allows mobile players access to a GUI for doing commands. The commands there do not change above OPERATOR
         // and all commands there are accessible with OP permission level 2
         CommandPermission commandPermission = opPermissionLevel >= 2 ? CommandPermission.GAME_DIRECTORS : CommandPermission.ANY;
+        // GAME_DIRECTORS would open an NPC dialogue in edit mode instead of running its actions
+        if (getFormCache().hasNpcFormOpen()) {
+            commandPermission = CommandPermission.ANY;
+        }
         // Required to make command blocks destroyable
         PlayerPermission playerPermission = opPermissionLevel >= 2 ? PlayerPermission.OPERATOR : PlayerPermission.MEMBER;
 
