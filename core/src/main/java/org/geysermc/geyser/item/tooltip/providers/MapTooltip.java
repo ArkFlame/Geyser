@@ -40,7 +40,7 @@ public class MapTooltip implements ComponentTooltipProvider<Integer> {
         // The scale/level/locked lines need MapItemSavedData, which the protocol does not send to Bedrock.
         // The id line only needs MAP_ID and is what Java shows with advanced tooltips.
         if (context.advanced()) {
-            adder.accept(Component.translatable("filled_map.id", component).color(NamedTextColor.GRAY));
+            adder.accept(Component.translatable("filled_map.id", component.toString()).color(NamedTextColor.GRAY));
         }
     }
 }
