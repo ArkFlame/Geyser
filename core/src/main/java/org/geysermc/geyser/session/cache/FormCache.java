@@ -32,6 +32,7 @@ import org.cloudburstmc.protocol.bedrock.data.AttributeData;
 import org.cloudburstmc.protocol.bedrock.packet.ClientboundCloseFormPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ModalFormRequestPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ModalFormResponsePacket;
+import org.cloudburstmc.protocol.bedrock.packet.NpcRequestPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateAttributesPacket;
 import org.geysermc.cumulus.form.Form;
 import org.geysermc.cumulus.form.SimpleForm;
@@ -159,6 +160,30 @@ public class FormCache {
                     .handleFormResponse(form, response.getFormData());
         } catch (Exception e) {
             GeyserImpl.getInstance().getLogger().error("Error while processing form response!", e);
+        }
+    }
+
+    /**
+     * Handles a response to an NPC dialogue. The scene name carries the form ID and the action type carries
+     * the selected button index.
+     */
+    public void handleResponse(NpcRequestPacket response) {
+        int formId;
+        try {
+            formId = Integer.parseInt(response.getSceneName());
+        } catch (NumberFormatException e) {
+            return;
+        }
+        Form form = forms.remove(formId);
+        if (form == null) {
+            return;
+        }
+
+        try {
+            formDefinitions.definitionFor(form)
+                    .handleFormResponse(form, "" + response.getActionType());
+        } catch (Exception e) {
+            GeyserImpl.getInstance().getLogger().error("Error while processing NPC form response!", e);
         }
     }
 
