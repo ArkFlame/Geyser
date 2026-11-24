@@ -205,7 +205,7 @@ public class InventoryUtils {
 
     /**
      * A util method to get an (open) inventory based on a Java id. This method should be used over
-     * {@link GeyserSession#getOpenInventory()} (or {@link GeyserSession#getInventoryHolder()}) to account for an edge-case where the Java server expects
+     * {@link GeyserSession#getOpenInventory()} to account for an edge-case where the Java server expects
      * Geyser to have the player inventory open while we're using a virtual lectern for the {@link ClientboundOpenBookPacket}.
      */
     public static @Nullable InventoryHolder<?> getInventory(GeyserSession session, int javaId) {

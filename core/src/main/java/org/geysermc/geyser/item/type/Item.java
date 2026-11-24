@@ -137,13 +137,6 @@ public class Item {
         return baseComponents.getOrDefault(DataComponentTypes.MAX_STACK_SIZE, 1);
     }
 
-    /**
-     * @return the item's default display name, as defined by its {@link DataComponentTypes#ITEM_NAME} component
-     */
-    public Component getName(GeyserItemStack stack) {
-        return baseComponents.getOrDefault(DataComponentTypes.ITEM_NAME, Component.empty());
-    }
-
     public boolean is(GeyserSession session, Tag<Item> tag) {
         return session.javaRegistries().is(tag, javaId);
     }
