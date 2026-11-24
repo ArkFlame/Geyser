@@ -27,8 +27,10 @@ package org.geysermc.geyser.text;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.geysermc.geyser.GeyserImpl;
+import org.geysermc.geyser.api.event.lifecycle.GeyserLoadLocaleEvent;
 import org.geysermc.geyser.util.AssetUtils;
 import org.geysermc.geyser.util.FancyHttpClient;
 import org.geysermc.geyser.util.FileUtils;
@@ -41,10 +43,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MinecraftLocale {
@@ -196,6 +200,39 @@ public class MinecraftLocale {
         // Load the locale overwrites
         if (Files.exists(localeOverride) && Files.isReadable(localeOverride)) {
             langMap.putAll(parseLangFile(localeOverride, lowercaseLocale));
+        }
+
+        // Let extensions add or remove translations before the locale is stored.
+        // Guarded for tests, where no Geyser instance (and thus no event bus) exists.
+        if (IN_INSTANCE) {
+            String finalLowercaseLocale = lowercaseLocale;
+            GeyserImpl.getInstance().eventBus().fire(new GeyserLoadLocaleEvent() {
+                @Override
+                public @NonNull String locale() {
+                    return finalLowercaseLocale;
+                }
+
+                @Override
+                public void registerTranslation(@NonNull String key, @NonNull String value) {
+                    langMap.put(key, value);
+                }
+
+                @Override
+                public void registerTranslations(@NonNull Map<String, String> translations) {
+                    langMap.putAll(translations);
+                }
+
+                @Override
+                public void unregisterTranslation(@NonNull String key) {
+                    langMap.remove(key);
+                }
+
+                @Override
+                public @NonNull Map<String, String> getTranslations() {
+                    // Sorted so callers hashing the map's iteration order see a deterministic result.
+                    return Collections.unmodifiableMap(new TreeMap<>(langMap));
+                }
+            });
         }
 
         if (!langMap.isEmpty()) {
