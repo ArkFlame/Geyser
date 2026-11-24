@@ -40,6 +40,8 @@ import org.geysermc.geyser.entity.type.living.animal.horse.ZombieHorseEntity;
 import org.geysermc.geyser.entity.type.living.animal.nautilus.NautilusEntity;
 import org.geysermc.geyser.inventory.Container;
 import org.geysermc.geyser.inventory.InventoryHolder;
+import org.geysermc.geyser.item.GeyserCustomMappingData;
+import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.inventory.InventoryTranslator;
 import org.geysermc.geyser.translator.inventory.horse.DonkeyInventoryTranslator;
@@ -51,8 +53,11 @@ import org.geysermc.geyser.util.InventoryUtils;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.inventory.ClientboundMountScreenOpenPacket;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Translator(packet = ClientboundMountScreenOpenPacket.class)
 public class JavaMountScreenOpenTranslator extends PacketTranslator<ClientboundMountScreenOpenPacket> {
@@ -116,6 +121,28 @@ public class JavaMountScreenOpenTranslator extends PacketTranslator<ClientboundM
         return armorBuilder.build();
     }
 
+    /**
+     * Gets the armor slot list for this session. Custom items registered against a Java armor item use their own
+     * Bedrock identifier, so they must be added to the slot's acceptedItems or the Bedrock client rejects them.
+     * See GeyserMC/Geyser#6535.
+     */
+    private static List<NbtMap> armorSlots(GeyserSession session, String[] accepted, String name, List<NbtMap> vanillaSlots) {
+        Set<String> identifiers = new LinkedHashSet<>(Arrays.asList(accepted));
+        for (String javaIdentifier : accepted) {
+            ItemMapping mapping = session.getItemMappings().getMapping(javaIdentifier);
+            if (mapping == null || mapping.getCustomItemDefinitions() == null) {
+                continue;
+            }
+            for (GeyserCustomMappingData customMapping : mapping.getCustomItemDefinitions().values()) {
+                identifiers.add(customMapping.itemDefinition().getIdentifier());
+            }
+        }
+        if (identifiers.size() == accepted.length) {
+            return vanillaSlots;
+        }
+        return List.of(SADDLE_SLOT, buildAcceptedArmorSlot(identifiers.toArray(new String[0]), name));
+    }
+
     @Override
     public void translate(GeyserSession session, ClientboundMountScreenOpenPacket packet) {
         Entity entity = session.getEntityCache().getEntityByJavaId(packet.getEntityId());
@@ -162,9 +189,9 @@ public class JavaMountScreenOpenTranslator extends PacketTranslator<ClientboundM
             default -> {
                 inventoryTranslator = new MountInventoryTranslator(slotCount);
                 if (entity instanceof NautilusEntity) {
-                    slots = NAUTILUS_ARMOR_SLOTS;
+                    slots = armorSlots(session, ACCEPTED_NAUTILUS_ARMORS, "minecraft:nautilusarmor", NAUTILUS_ARMOR_SLOTS);
                 } else if (!(entity instanceof SkeletonHorseEntity)) {
-                    slots = HORSE_ARMOR_SLOTS;
+                    slots = armorSlots(session, ACCEPTED_HORSE_ARMORS, "minecraft:horsearmoriron", HORSE_ARMOR_SLOTS);
                 } else {
                     slots = SADDLE_SLOTS;
                 }
