@@ -189,6 +189,15 @@ public final class EntityUtils {
             float xOffset = 0;
             float yOffset = mountedHeightOffset + heightOffset;
             float zOffset = 0;
+            if (passenger instanceof TextDisplayEntity textDisplay && textDisplay.usesPrimitiveText()) {
+                // Primitive text positions itself, so only reseat the attached shape
+                xOffset = 0;
+                yOffset = 0.2f;
+                zOffset = 0;
+
+                // Update the primitive text to reseat the entity
+                textDisplay.updatePrimitiveText();
+            }
             switch (mount.getEntityType()) {
                 case CAMEL -> {
                     zOffset = 0.5f;
@@ -211,7 +220,7 @@ public final class EntityUtils {
                 case CHICKEN -> zOffset = -0.1f;
                 case TRADER_LLAMA, LLAMA -> zOffset = -0.3f;
                 case TEXT_DISPLAY -> {
-                    if (passenger instanceof TextDisplayEntity textDisplay) {
+                    if (passenger instanceof TextDisplayEntity textDisplay && !textDisplay.usesPrimitiveText()) {
                         Vector3f displayTranslation = textDisplay.getTranslation();
                         if (displayTranslation == null) {
                             return;
@@ -223,7 +232,7 @@ public final class EntityUtils {
                     }
                 }
                 case PLAYER, MANNEQUIN -> {
-                    if (passenger instanceof TextDisplayEntity textDisplay) {
+                    if (passenger instanceof TextDisplayEntity textDisplay && !textDisplay.usesPrimitiveText()) {
                         Vector3f displayTranslation = textDisplay.getTranslation();
                         int lines = textDisplay.getLineCount();
                         if (displayTranslation != null && lines != 0) {
