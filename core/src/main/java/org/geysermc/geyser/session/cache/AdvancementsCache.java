@@ -149,7 +149,7 @@ public class AdvancementsCache {
                 if (earned || !advancement.getDisplayData().isHidden()) {
                     if (advancement.getParentId() != null && currentAdvancementCategoryId.equals(advancement.getRootId(this))) {
                         String color = earned ? advancement.getDisplayColor() : "";
-                        builder.button(color + MessageTranslator.convertMessage(advancement.getDisplayData().getTitle()) + '\n');
+                        builder.button(color + MessageTranslator.convertMessage(advancement.getDisplayData().getTitle(), language) + '\n');
 
                         visibleAdvancements.add(advancement);
                     }
@@ -232,7 +232,7 @@ public class AdvancementsCache {
 
         session.sendForm(
                 SimpleForm.builder()
-                        .title(MessageTranslator.convertMessage(advancement.getDisplayData().getTitle()))
+                        .title(MessageTranslator.convertMessage(advancement.getDisplayData().getTitle(), language))
                         .content(content)
                         .button(GeyserLocale.getPlayerLocaleString("gui.back", language))
                         .validResultHandler((response) -> buildAndShowListForm())
