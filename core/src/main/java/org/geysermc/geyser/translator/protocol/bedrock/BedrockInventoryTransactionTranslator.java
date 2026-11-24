@@ -648,7 +648,7 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
         }
 
         Item heldItem = session.getPlayerInventory().getItemInHand().asItem();
-        if (!(heldItem instanceof BlockItem) || !heldItem.javaIdentifier().value().endsWith("_door")) {
+        if (!(heldItem instanceof BlockItem) || !heldItem.javaIdentifier().path().endsWith("_door")) {
             return;
         }
 
