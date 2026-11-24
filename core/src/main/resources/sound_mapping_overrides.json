@@ -1,9 +1,9 @@
 {
-  "_comment": "Fork-owned overrides for mappings/sounds.json. These entries are intentionally kept out of the GeyserMC/mappings submodule so its pinned upstream commit stays clean. SoundRegistryLoader merges keys from this file over the parsed sound mappings.",
+  "_comment": "Fork-owned overrides for mappings/sounds.json. These entries are intentionally kept out of the GeyserMC/mappings submodule so its pinned upstream commit stays clean. SoundRegistryLoader merges keys from this file over the parsed sound mappings. The integrated_playsound_mapping values below are vanilla Bedrock sound names (defined in every client's built-in resource pack), so the Java-side integrated-pack substitution resolves without needing custom audio from GeyserIntegratedPack.mcpack. Knockback uses attack.strong (a heavier hit) and sweep uses attack.critical (a brighter special hit), keeping both distinct from a normal attack and from each other.",
   "entity.player.attack.knockback": {
-    "integrated_playsound_mapping": "geyseropt.entity.player.attack.knockback"
+    "integrated_playsound_mapping": "attack.strong"
   },
   "entity.player.attack.sweep": {
-    "integrated_playsound_mapping": "geyseropt.entity.player.attack.sweep"
+    "integrated_playsound_mapping": "attack.critical"
   }
 }

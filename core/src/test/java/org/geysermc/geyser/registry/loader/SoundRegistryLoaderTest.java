@@ -54,8 +54,11 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 public class SoundRegistryLoaderTest {
+    private static final String KNOCKBACK = "entity.player.attack.knockback";
     private static final String SWEEP = "entity.player.attack.sweep";
-    private static final String INTEGRATED_SWEEP = "geyseropt.entity.player.attack.sweep";
+    // Vanilla Bedrock sound names: no custom audio from GeyserIntegratedPack.mcpack is required.
+    private static final String INTEGRATED_KNOCKBACK = "attack.strong";
+    private static final String INTEGRATED_SWEEP = "attack.critical";
 
     @Test
     public void appliesForkOverridesOverSubmoduleMappings() {
@@ -63,6 +66,11 @@ public class SoundRegistryLoaderTest {
             mockResources(context);
 
             Map<String, SoundMapping> mappings = new SoundRegistryLoader().load("mappings/sounds.json");
+            SoundMapping knockback = mappings.get(KNOCKBACK);
+
+            assertEquals(INTEGRATED_KNOCKBACK, knockback.integratedPlaySound());
+            assertNull(knockback.playsound());
+            assertEquals("ATTACK", knockback.bedrock());
             SoundMapping sweep = mappings.get(SWEEP);
 
             assertEquals(INTEGRATED_SWEEP, sweep.integratedPlaySound());
@@ -85,6 +93,10 @@ public class SoundRegistryLoaderTest {
             }).when(session).sendUpstreamPacket(any());
 
             when(session.integratedPackActive()).thenReturn(true);
+            SoundUtils.playSound(session, BuiltinSound.ENTITY_PLAYER_ATTACK_KNOCKBACK, Vector3f.ZERO, 1.0f, 1.0f);
+            assertEquals(INTEGRATED_KNOCKBACK, assertInstanceOf(PlaySoundPacket.class, packets.getFirst()).getSound());
+
+            packets.clear();
             SoundUtils.playSound(session, BuiltinSound.ENTITY_PLAYER_ATTACK_SWEEP, Vector3f.ZERO, 1.0f, 1.0f);
             assertEquals(INTEGRATED_SWEEP, assertInstanceOf(PlaySoundPacket.class, packets.getFirst()).getSound());
 
