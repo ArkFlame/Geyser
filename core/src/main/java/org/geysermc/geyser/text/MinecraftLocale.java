@@ -205,8 +205,9 @@ public class MinecraftLocale {
 
         // Load locale overrides provided by Geyser packs first, so extensions have the final say.
         if (Registries.GEYSER_ASSET_PACKS.loaded()) {
-            Registries.GEYSER_ASSET_PACKS.get().forEach(pack -> pack.locale(lowercaseLocale,
-                path -> langMap.putAll(parseLangFile(path, lowercaseLocale))));
+            final String packLocale = lowercaseLocale;
+            Registries.GEYSER_ASSET_PACKS.get().forEach(pack -> pack.locale(packLocale,
+                path -> langMap.putAll(parseLangFile(path, packLocale))));
         }
 
         // Let extensions add or remove translations before the locale is stored.
