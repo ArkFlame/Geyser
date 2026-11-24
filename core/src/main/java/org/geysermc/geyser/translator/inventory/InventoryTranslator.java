@@ -401,6 +401,25 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                         return rejectRequest(request, false);
                     }
 
+                    // A furnace result slot rejects any placement on the Java side, so a partial take cannot be
+                    // emulated with "pick up everything, then right-click the remainder back in"; that plan left
+                    // items stuck on the cursor. Java can only pick up the whole stack (left click) or, from an
+                    // empty cursor, the larger half (right click). https://github.com/GeyserMC/Geyser/issues/6113
+                    if (!isSourceCursor && getSlotType(sourceSlot) == SlotType.FURNACE_OUTPUT) {
+                        int outputAmount = plan.getItem(sourceSlot).getAmount();
+                        boolean wholeStack = transferAction.getCount() == outputAmount
+                            && !(isDestCursor && !plan.getCursor().isEmpty());
+                        boolean largerHalfToEmptyCursor = isDestCursor && plan.getCursor().isEmpty()
+                            && outputAmount > 1 && transferAction.getCount() == outputAmount - (outputAmount / 2);
+                        if (!wholeStack && !largerHalfToEmptyCursor) {
+                            return rejectRequest(request, false);
+                        }
+                    }
+                    if (!isDestCursor && getSlotType(destSlot) == SlotType.FURNACE_OUTPUT) {
+                        // Java never accepts items in a furnace result slot.
+                        return rejectRequest(request, false);
+                    }
+
                     // Handle partial transfer of output slot
                     if (pendingOutput == 0 && !isSourceCursor && getSlotType(sourceSlot) == SlotType.OUTPUT
                         && transferAction.getCount() < plan.getItem(sourceSlot).getAmount()) {
@@ -552,7 +571,12 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                         return rejectRequest(request, false);
                     }
 
-                    if (!isSourceCursor && destination.getContainerName().getContainer() == ContainerSlotType.HOTBAR || destination.getContainerName().getContainer() == ContainerSlotType.HOTBAR_AND_INVENTORY) {
+                    // A number-key swap is only valid when the source is a real slot. With the cursor as source,
+                    // Bedrock means "swap the carried item with this hotbar slot", which the generic cursor branch
+                    // below expresses as a left click; the shortcut would click the container's slot 0 instead,
+                    // because a cursor slot maps to slot number 0.
+                    if (!isSourceCursor && (destination.getContainerName().getContainer() == ContainerSlotType.HOTBAR
+                            || destination.getContainerName().getContainer() == ContainerSlotType.HOTBAR_AND_INVENTORY)) {
                         // Tell the server we're pressing one of the hotbar keys to save clicks
                         Click click = InventoryUtils.getClickForHotbarSwap(destination.getSlot());
                         if (click != null) {
@@ -639,18 +663,23 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                             // We check this now since setting the inventory slots here messes up shouldRejectItemPlace
                             return rejectRequest(request, false);
                         }
+                        if (inventory.getItem(sourceSlot).isEmpty() || consumeData.getCount() <= 0) {
+                            // Consuming from an empty slot must not decrement below zero; GeyserItemStack.EMPTY is a
+                            // shared instance, so adjusting it would corrupt every empty slot.
+                            return rejectRequest(request, false);
+                        }
 
                         if (sourceSlot == 1) {
                             // Decrease the item count, but only after both slots are checked.
                             // Otherwise, the slot 1 check will fail
                             GeyserItemStack item = inventory.getItem(sourceSlot);
-                            item.setAmount(item.getAmount() - consumeData.getCount());
+                            item.sub(consumeData.getCount());
                             if (item.isEmpty()) {
                                 inventory.setItem(sourceSlot, GeyserItemStack.EMPTY, session);
                             }
 
                             GeyserItemStack itemZero = inventory.getItem(0);
-                            itemZero.setAmount(itemZero.getAmount() - consumeData.getCount());
+                            itemZero.sub(consumeData.getCount());
                             if (itemZero.isEmpty()) {
                                 inventory.setItem(0, GeyserItemStack.EMPTY, session);
                             }

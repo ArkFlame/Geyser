@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser.translator.protocol.bedrock;
 
+import net.kyori.adventure.text.Component;
 import org.cloudburstmc.protocol.bedrock.packet.BookEditPacket;
 import org.geysermc.geyser.inventory.GeyserItemStack;
 import org.geysermc.geyser.item.type.WrittenBookItem;
@@ -143,8 +144,17 @@ public class BedrockBookEditTranslator extends PacketTranslator<BookEditPacket> 
 
             String title;
             if (packet.getAction() == BookEditPacket.Action.SIGN_BOOK) {
-                // Add title to packet so the server knows we're signing
-                title = MessageTranslator.convertIncomingToPlainText(packet.getTitle());
+                // Add title to packet so the server knows we're signing.
+                // Bedrock does not always send a title - for example when the book already carries a custom name,
+                // the client signs with that name instead of asking for one. Fall back to the item's name so a
+                // signed book with NBT still signs instead of throwing. https://github.com/GeyserMC/Geyser/issues/6224
+                String packetTitle = packet.getTitle();
+                if (packetTitle != null) {
+                    title = MessageTranslator.convertIncomingToPlainText(packetTitle);
+                } else {
+                    Component customName = components.get(DataComponentTypes.CUSTOM_NAME);
+                    title = customName == null ? "" : MessageTranslator.convertToPlainText(customName, session.locale());
+                }
                 if (title.length() > WrittenBookItem.MAXIMUM_TITLE_LENGTH) {
                     session.getGeyser().getLogger().warning("Book title larger than server allows!");
                     return;
