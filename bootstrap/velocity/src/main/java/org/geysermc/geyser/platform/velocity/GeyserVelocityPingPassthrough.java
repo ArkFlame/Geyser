@@ -31,6 +31,7 @@ import com.velocitypowered.api.network.ProtocolState;
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.proxy.InboundConnection;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import com.velocitypowered.api.proxy.server.ServerPing.Version;
 import lombok.AllArgsConstructor;
@@ -58,7 +59,7 @@ public class GeyserVelocityPingPassthrough implements IGeyserPingPassthrough {
     public GeyserPingInfo getPingInformation(InetSocketAddress inetSocketAddress, @Nullable InetSocketAddress virtualHost) {
         ProxyPingEvent event;
         try {
-            event = server.getEventManager().fire(new ProxyPingEvent(new GeyserInboundConnection(inetSocketAddress, virtualHost), ServerPing.builder()
+            event = server.getEventManager().fire(new ProxyPingEvent(new GeyserInboundConnection(inetSocketAddress, resolveVirtualHost(virtualHost)), ServerPing.builder()
                 .description(server.getConfiguration().getMotd())
                 .onlinePlayers(server.getPlayerCount())
                 .maximumPlayers(server.getConfiguration().getShowMaxPlayers())
@@ -71,6 +72,88 @@ public class GeyserVelocityPingPassthrough implements IGeyserPingPassthrough {
                 event.getPing().getPlayers().map(ServerPing.Players::getMax).orElse(1),
                 event.getPing().getPlayers().map(ServerPing.Players::getOnline).orElse(0)
         );
+    }
+
+    /**
+     * A Bedrock client can ping without a host or with a bare IP (NetherNet clients do), which leaves
+     * Velocity unable to resolve a registered server and makes it answer with its own MOTD. Use the first
+     * forced host, or else the address of the server Velocity would join first, so ping passthrough still
+     * reaches the Java server. A real hostname is used unchanged.
+     */
+    private InetSocketAddress resolveVirtualHost(@Nullable InetSocketAddress virtualHost) {
+        if (virtualHost != null && !isBareAddress(virtualHost.getHostString())) {
+            return virtualHost;
+        }
+
+        for (String forcedHost : server.getConfiguration().getForcedHosts().keySet()) {
+            if (!forcedHost.isBlank()) {
+                return parseHost(forcedHost);
+            }
+        }
+
+        for (String serverName : server.getConfiguration().getAttemptConnectionOrder()) {
+            Optional<RegisteredServer> registered = server.getServer(serverName);
+            if (registered.isPresent()) {
+                return registered.get().getServerInfo().getAddress();
+            }
+        }
+
+        return virtualHost;
+    }
+
+    private static boolean isBareAddress(@Nullable String host) {
+        if (host == null || host.isBlank()) {
+            return true;
+        }
+        if (host.indexOf(':') >= 0) {
+            // IPv6 literal, with or without brackets.
+            return true;
+        }
+        String[] parts = host.split("\\.");
+        if (parts.length != 4) {
+            return false;
+        }
+        for (String part : parts) {
+            if (part.isEmpty() || part.length() > 3) {
+                return false;
+            }
+            for (int i = 0; i < part.length(); i++) {
+                if (!Character.isDigit(part.charAt(i))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private InetSocketAddress parseHost(String host) {
+        String value = host.trim();
+        int port = server.getBoundAddress().getPort();
+
+        if (value.startsWith("[")) {
+            int close = value.indexOf(']');
+            if (close > 0) {
+                if (value.length() > close + 1 && value.charAt(close + 1) == ':') {
+                    port = parsePort(value.substring(close + 2), port);
+                }
+                return InetSocketAddress.createUnresolved(value.substring(1, close), port);
+            }
+        }
+
+        int colon = value.lastIndexOf(':');
+        if (colon > 0 && value.indexOf(':') == colon) {
+            port = parsePort(value.substring(colon + 1), port);
+            value = value.substring(0, colon);
+        }
+        return InetSocketAddress.createUnresolved(value, port);
+    }
+
+    private static int parsePort(String value, int fallback) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
     }
 
     private static class GeyserInboundConnection implements InboundConnection {
