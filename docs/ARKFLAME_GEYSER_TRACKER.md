@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T21:07:07Z_
+_Generated at: 2026-11-24T21:26:01Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,15 +38,15 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 2192 |
+| `UNFIXED` | 1683 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 114 |
-| `UPSTREAM_FIXED` | 2436 |
-| `DUPLICATE` | 432 |
-| `BLOCKED` | 16 |
-| `UNSUPPORTED` | 419 |
-| `NOT_APPLICABLE` | 1207 |
-| `PARTIAL` | 2 |
+| `FIXED` | 117 |
+| `UPSTREAM_FIXED` | 2621 |
+| `DUPLICATE` | 515 |
+| `BLOCKED` | 29 |
+| `UNSUPPORTED` | 476 |
+| `NOT_APPLICABLE` | 1376 |
+| `PARTIAL` | 1 |
 
 ## Mass audit (two passes)
 
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-15 — open PR adoption and open issue fixes
+## Waves 8-16 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -361,6 +361,19 @@ Six workers attacked the previously gated or partial PRs and three read-only aud
 
 **Backlog audit C/D/E.** Three read-only auditors processed 1500 closed `UNFIXED` records and produced **744 evidence-backed dispositions**: 569 NOT_APPLICABLE, 72 UPSTREAM_FIXED, 59 UNSUPPORTED, 38 DUPLICATE and 6 BLOCKED. UPSTREAM_FIXED was asserted only when the fixing commit was verified as an ancestor of master (`git merge-base --is-ancestor` or `compare <sha>...master`) and a `file:line` was found — for example #6810 → `5a24ded` at `NetherNetServer.java:202-233`, #5493 → `a9c1da5` at `InventoryHolder.java:83`, #6760 → `12532288` at `gradle/libs.versions.toml:23`. Because this checkout is shallow, cited commits that could not be proven were deliberately kept `UNFIXED` (#6582 is one such case). The remaining 756 reviewed records stayed `UNFIXED` because no admissible evidence was found.
 
+### Wave 16 — finishing PARTIALs, unblocking data records and backlog F/G/H/I
+
+Six workers finished the two remaining PARTIAL PRs, attempted the BLOCKED records using only fork-local code, and audited another 1600 closed records. All changes merged cleanly; verification is a single compile-only pass on the merged tree (no runtime, gametest or Spigot jar runs).
+
+| Record | Outcome | Evidence |
+| --- | ---: | --- |
+| #6690 | FIXED | `d6ac2517a` — the plugin-facing path is now present via a fork-owned additive `NpcDialogueForm` API wrapping Cumulus `SimpleForm`; `FormCache` branches NPC forms to `NpcDialoguePacket`, adapts responses, and closes safely; session permission handling and stale-`npcId` reset added; `NpcDialogueFormTest` plus a standalone `javac` and response smoke run |
+| #6813, #6032 | FIXED | `4e4dc6aef` — the two mappings-submodule blockers were resolved with a fork-owned `item_mapping_overrides.json` merged by `ItemMappingOverrides.apply()` in `ItemRegistryPopulator`; furnace minecart gets a distinct `bedrock_data`, copper bars get an idempotent identifier/block-range guard; submodule pin untouched |
+| #5692 | PARTIAL | `2ebee401a` — the concrete provider TODOs are implemented (name dispatch/gating, spawner, canBreak/canPlace, built-in potion effects, `filled_map.id`) with `TooltipProvidersTest` (5 tests); still impossible without protocol-library changes: MCPL per-registry entry contexts, map scale/level/locked lines (`MapItemSavedData` is not sent), and vanilla name providers that the `getName` path already covers |
+| #6556, #6399, #6116, #5489, #6795 | BLOCKED (confirmed) | no compile-safe cause was found: armor slot mapping already matches upstream; bucket rotation fixes are already in the baseline and changing them risks known regressions; the enchanting translator matches upstream and repro links are dead; no reliable death-state flag exists for ~1 HP falling; #6795 has no repro or logs |
+
+**Backlog audit F/G/H/I.** Four read-only auditors processed 1600 closed `UNFIXED` records and produced **509 evidence-backed dispositions**: 185 UPSTREAM_FIXED, 169 NOT_APPLICABLE, 83 DUPLICATE, 57 UNSUPPORTED and 15 BLOCKED. UPSTREAM_FIXED required a fix commit verified as an ancestor (via `compare <sha>...master` or `git merge-base`) plus a `file:line` in the fork. Shard G alone yielded 89 such records; shard I verified 67 closing PRs/commits. Because this checkout is shallow, unverifiable cited commits were deliberately left `UNFIXED` rather than asserted.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -399,7 +412,7 @@ _(291 records)_
 | 6049372589 | Add a dump option to indicate whether NetherNet/signaling is being used by another component. | https://github.com/GeyserMC/Geyser/issues/6831 | `FIXED` |
 | 6048759025 | Text Displays appear way higher than they should on Bedrock Edition | https://github.com/GeyserMC/Geyser/issues/6830 | `FIXED` |
 | 6012421771 | NetherNet DLL blocked by Windows Smart App Control on Windows 11 | https://github.com/GeyserMC/Geyser/issues/6822 | `UNSUPPORTED` |
-| 5958150713 | Wierd Itemswap/Item deletion in Creative Mode | https://github.com/GeyserMC/Geyser/issues/6813 | `BLOCKED` |
+| 5958150713 | Wierd Itemswap/Item deletion in Creative Mode | https://github.com/GeyserMC/Geyser/issues/6813 | `FIXED` |
 | 5922887066 | Players in death state and cannot respawn urgent bug | https://github.com/GeyserMC/Geyser/issues/6805 | `FIXED` |
 | 5916322359 | Some items in Bedrock are invisible | https://github.com/GeyserMC/Geyser/issues/6802 | `UNFIXED` |
 | 5914104967 | Implements block_placer component | https://github.com/GeyserMC/Geyser/issues/6801 | `NOT_APPLICABLE` |
@@ -507,7 +520,7 @@ _(291 records)_
 | 3771522889 | Nintendo Switch 1 OLED Game Crash on Join | https://github.com/GeyserMC/Geyser/issues/6078 | `UNFIXED` |
 | 3760739627 | Custom mapped (note)blocks don't render their texture/model if they're a falling block | https://github.com/GeyserMC/Geyser/issues/6072 | `NOT_APPLICABLE` |
 | 3720071081 | Add the SHA hash when outputting version | https://github.com/GeyserMC/Geyser/issues/6037 | `FIXED` |
-| 3717137044 | Copper Bars craft into Trap Doors on Bedrock (iOS) | https://github.com/GeyserMC/Geyser/issues/6032 | `BLOCKED` |
+| 3717137044 | Copper Bars craft into Trap Doors on Bedrock (iOS) | https://github.com/GeyserMC/Geyser/issues/6032 | `FIXED` |
 | 3708933008 | Nintendo Switch players and Pack file size | https://github.com/GeyserMC/Geyser/issues/6023 | `UNSUPPORTED` |
 | 3700997392 | Support for proper tooltip display of unsafe enchantments | https://github.com/GeyserMC/Geyser/issues/6020 | `UNSUPPORTED` |
 | 3690401445 | Support registering extension commands without a root command | https://github.com/GeyserMC/Geyser/issues/6018 | `NOT_APPLICABLE` |
@@ -699,7 +712,7 @@ _(57 records)_
 | 4569560222 | Fix collision loading and addon-pack flags for non-vanilla blocks | https://github.com/GeyserMC/Geyser/pull/6724 | `FIXED` |
 | 4540681458 | Fix client-side waterlogging prediction on doors and non-waterloggable blocks | https://github.com/GeyserMC/Geyser/pull/6706 | `FIXED` |
 | 4496366694 | Lava fishing workaround | https://github.com/GeyserMC/Geyser/pull/6694 | `FIXED` |
-| 4476271563 | Add support for Npc Dialogues | https://github.com/GeyserMC/Geyser/pull/6690 | `PARTIAL` |
+| 4476271563 | Add support for Npc Dialogues | https://github.com/GeyserMC/Geyser/pull/6690 | `FIXED` |
 | 4457015299 | Xbox split-screen support, reworked onto master and fixed on hardware | https://github.com/GeyserMC/Geyser/pull/6689 | `FIXED` |
 | 4440438587 | Move recipe shift clicking to use ServerboundPlaceRecipePacket | https://github.com/GeyserMC/Geyser/pull/6686 | `FIXED` |
 | 4345263370 | Avoid have no response when trading using touch or the Shift key cause by client bug since v1.21.30 | https://github.com/GeyserMC/Geyser/pull/6667 | `FIXED` |
