@@ -288,7 +288,14 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                 int z = blockEntity.getZ(); // Relative to chunk
 
                 // Get the Java block state ID from block entity position
-                DataPalette section = javaChunks[(y >> 4) - yOffset];
+                int javaSectionY = (y >> 4) - yOffset;
+                if (javaSectionY < 0 || javaSectionY >= javaChunks.length) {
+                    // A Java client ignores block entities outside the dimension; throwing here drops the whole chunk
+                    session.getGeyser().getLogger().debug("Ignoring block entity " + type + " outside the world at y=" + y
+                            + " in chunk " + packet.getX() + ", " + packet.getZ());
+                    continue;
+                }
+                DataPalette section = javaChunks[javaSectionY];
                 BlockState blockState = BlockState.of(section.get(x, y & 0xF, z));
 
                 // Note that, since 1.20.5, tags can be null, but Bedrock still needs a default tag to render the item
@@ -305,8 +312,9 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                         BlockDefinition blockDefinition = SkullBlockEntityTranslator.translateSkull(session, tag, Vector3i.from(x + chunkBlockX, y, z + chunkBlockZ), blockState);
                         if (blockDefinition != null) {
                             int bedrockSectionY = (y >> 4) - (bedrockDimension.minY() >> 4);
-                            int subChunkIndex = (y >> 4) + (bedrockDimension.minY() >> 4);
-                            if (0 <= bedrockSectionY && bedrockSectionY < maxBedrockSectionY) {
+                            // Section indices on the wire are absolute (y >> 4), as used for every other section
+                            int subChunkIndex = y >> 4;
+                            if (0 <= bedrockSectionY && bedrockSectionY <= maxBedrockSectionY && sections[bedrockSectionY] != null) {
                                 // Custom skull is in a section accepted by Bedrock
                                 GeyserChunkSection bedrockSection = sections[bedrockSectionY];
                                 IntList palette = bedrockSection.getBlockStorageArray()[0].getPalette();
