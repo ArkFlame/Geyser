@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T23:10:53Z_
+_Generated at: 2026-11-24T23:22:34Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,14 +38,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 310 |
+| `UNFIXED` | 231 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 133 |
-| `UPSTREAM_FIXED` | 2959 |
-| `DUPLICATE` | 596 |
-| `BLOCKED` | 57 |
-| `UNSUPPORTED` | 648 |
-| `NOT_APPLICABLE` | 2113 |
+| `FIXED` | 134 |
+| `UPSTREAM_FIXED` | 2971 |
+| `DUPLICATE` | 600 |
+| `BLOCKED` | 59 |
+| `UNSUPPORTED` | 654 |
+| `NOT_APPLICABLE` | 2167 |
 | `PARTIAL` | 2 |
 
 ## Mass audit (two passes)
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-22 — open PR adoption and open issue fixes
+## Waves 8-23 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -451,6 +451,14 @@ Of the other 72 open issues, none had a merged upstream fix absent from the fork
 
 **Backlog audit AB/AC.** Two read-only auditors produced **94 evidence-backed dispositions** from 251 records: 18 UPSTREAM_FIXED, 16 UNSUPPORTED, 48 NOT_APPLICABLE, 10 DUPLICATE and 2 BLOCKED; 157 stayed `UNFIXED`. Every UPSTREAM_FIXED claim was tied to a specific commit verified as an ancestor of HEAD and a fork `file:line` (#2117, #1981, #2558, #4730, #4916, #2061, #3248, #3909, #2953, #2692, #1705/#4841 via PR #5518, #3536 via PR #5659, and the verified set from AC). No DUPLICATE was recorded unless the target record was already resolved, so unresolved duplicates stayed UNFIXED.
 
+### Wave 23 — render distance fix and backlog AD/AE
+
+Three workers ran with ~1459 GitHub API requests remaining; `git fetch upstream` again showed 0 new upstream commits, so no newly published upstream fix was available.
+
+**Source change.** #5386 (low-end clients render less than the server's view distance): the upstream issue timeline pointed to maintainer onebeastchris's commit `3ef5fff8`, which is not an ancestor of fork HEAD. Only its render-distance hunk was ported: a `circleToSquare` inverse helper in `ChunkUtils` and `GeyserSession.getRenderDistance` requesting the largest Java square that fits the Bedrock render circle. Commit `142f767d5`, merged as `a8416f919`. The other 71 open issues had no concrete fork-local root cause or fix commit outside the fork, so they stay UNFIXED with their evidence recorded in `/tmp/issues23.md`.
+
+**Backlog audit AD/AE.** Two read-only auditors produced **78 evidence-backed dispositions** from 199 records: 54 NOT_APPLICABLE, 12 UPSTREAM_FIXED, 6 UNSUPPORTED, 4 DUPLICATE and 2 BLOCKED; 121 stayed `UNFIXED`. Every UPSTREAM_FIXED claim was tied to a commit verified as an ancestor of HEAD with a fork `file:line`, including #1499 (PR #1502, `434a2e150`), #1725 (PR #2051, `f827b2885`), #4710 (can_break, `35be9072c`), #1723 (thorns, `eb5e4d79b`), #1374 (anvil costs, `d01665a76`) and #1210 (recipe shift-click, this campaign's own `0a974ad9f`). DUPLICATE was only recorded when the target record was already resolved; unresolved duplicates stayed UNFIXED.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -643,7 +651,7 @@ _(291 records)_
 | 2948344051 | chunks do not go and the player falls constantly down to -200 blocks and cannot do anything | https://github.com/GeyserMC/Geyser/issues/5431 | `UNFIXED` |
 | 2920514585 | Working piston bolts not rendering correctly on bedrock | https://github.com/GeyserMC/Geyser/issues/5408 | `UNSUPPORTED` |
 | 2908555375 | Custom Player Head Misalignment | https://github.com/GeyserMC/Geyser/issues/5404 | `FIXED` |
-| 2888772644 | Not receiving chunk | https://github.com/GeyserMC/Geyser/issues/5386 | `UNFIXED` |
+| 2888772644 | Not receiving chunk | https://github.com/GeyserMC/Geyser/issues/5386 | `FIXED` |
 | 2878608332 | Hardcore Hearts | https://github.com/GeyserMC/Geyser/issues/5373 | `NOT_APPLICABLE` |
 | 2875732073 | Players disconnected after teleportation | https://github.com/GeyserMC/Geyser/issues/5371 | `FIXED` |
 | 2857247988 | Bedrock players experience extreme lag when crafting using crafting table | https://github.com/GeyserMC/Geyser/issues/5350 | `UNFIXED` |
