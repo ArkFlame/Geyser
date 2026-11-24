@@ -33,6 +33,7 @@ import java.util.List;
 import net.kyori.adventure.text.Component;
 import org.cloudburstmc.protocol.bedrock.data.ScoreInfo;
 import org.geysermc.geyser.entity.type.player.PlayerEntity;
+import org.geysermc.geyser.scoreboard.GlobalScoreboardCache;
 import org.geysermc.geyser.scoreboard.Objective;
 import org.geysermc.geyser.scoreboard.ScoreReference;
 import org.geysermc.geyser.scoreboard.UpdateType;
@@ -181,7 +182,7 @@ public class BelownameDisplaySlot extends DisplaySlot {
         if (numberFormat instanceof BlankFormat) {
             numberString = "";
         } else if (numberFormat instanceof FixedFormat fixedFormat) {
-            numberString = MessageTranslator.convertMessageRaw(fixedFormat.getValue(), session.locale());
+            numberString = GlobalScoreboardCache.fixedNumberFormatToString(fixedFormat.getValue(), session.locale());
         } else if (numberFormat instanceof StyledFormat styledFormat) {
             numberString = MessageTranslator.convertMessage(
                 Component.text(score, MessageTranslator.getStyleFromNbtMap(styledFormat.getStyle())),
