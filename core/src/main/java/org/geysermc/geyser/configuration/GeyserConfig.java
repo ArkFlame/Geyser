@@ -529,6 +529,15 @@ public interface GeyserConfig {
         boolean tooltipStyleMarkers();
 
         @Comment("""
+            Whether Geyser should download the resource packs the Java server asks clients to download, and load the
+            translation strings they contain for the player's locale. Packs are downloaded in the background with a
+            size limit, and failures are logged without disconnecting the player.
+            When disabled (the default), Geyser does not download these packs and only acknowledges them so the Java
+            server does not time the connection out.""")
+        @DefaultBoolean(false)
+        boolean downloadJavaResourcePacks();
+
+        @Comment("""
             Whether to automatically serve a resource pack that is required for some Geyser features to all connecting Bedrock players.
             If enabled, force-resource-packs will be enabled.""")
         @DefaultBoolean(true)
