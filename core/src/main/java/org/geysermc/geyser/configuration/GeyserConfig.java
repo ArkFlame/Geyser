@@ -768,6 +768,14 @@ public interface GeyserConfig {
         int commandSuggestionRequestInterval();
 
         @Comment("""
+            Whether to load .geyserpack archives from the packs directory. These can override resource packs,
+            custom mappings and locales for Bedrock clients. Archives are supplied by the server administrator
+            and are extracted into the cache at startup; leave this disabled unless those archives are trusted.
+            """)
+        @DefaultBoolean(false)
+        boolean loadGeyserPacks();
+
+        @Comment("""
             A list of remote resource pack urls to send to the Bedrock client for downloading.
             The Bedrock client is very picky about how these are delivered - please see our wiki page for further info: https://geysermc.org/wiki/geyser/packs/
             """)

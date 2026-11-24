@@ -82,7 +82,8 @@ public class ResourcePackLoader implements RegistryLoader<Path, Map<UUID, Resour
             .expireAfterWrite(15, TimeUnit.MINUTES)
             .build();
 
-    static final PathMatcher PACK_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.{zip,mcpack}");
+    public static final String PACK_GLOB = "**.{zip,mcpack}";
+    static final PathMatcher PACK_MATCHER = FileSystems.getDefault().getPathMatcher("glob:" + PACK_GLOB);
 
     private static final boolean SHOW_RESOURCE_PACK_LENGTH_WARNING = Boolean.parseBoolean(System.getProperty("Geyser.ShowResourcePackLengthWarning", "true"));
 
@@ -118,6 +119,12 @@ public class ResourcePackLoader implements RegistryLoader<Path, Map<UUID, Resour
         Path skullResourcePack = SkullResourcePackManager.createResourcePack();
         if (skullResourcePack != null) {
             resourcePacks.add(skullResourcePack);
+        }
+
+        // Add resource packs provided by Geyser packs. The manifest selection below is unchanged:
+        // packs registered here go through the same event and readPack() path as ordinary packs.
+        if (Registries.GEYSER_ASSET_PACKS.loaded()) {
+            Registries.GEYSER_ASSET_PACKS.get().forEach(pack -> pack.resourcePacks(resourcePacks::add));
         }
 
         //noinspection deprecation - we know
@@ -397,9 +404,7 @@ public class ResourcePackLoader implements RegistryLoader<Path, Map<UUID, Resour
     }
 
     public static void clear() {
-        if (Registries.RESOURCE_PACKS.loaded()) {
-            Registries.RESOURCE_PACKS.get().clear();
-        }
+        Registries.RESOURCE_PACKS.clear();
         CACHED_FAILED_PACKS.invalidateAll();
     }
 

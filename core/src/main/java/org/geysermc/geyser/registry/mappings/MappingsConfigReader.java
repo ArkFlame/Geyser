@@ -33,6 +33,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.event.lifecycle.GeyserDefineCustomMappingsEvent;
 import org.geysermc.geyser.event.type.GeyserDefineCustomMappingsEventImpl;
+import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.util.WebUtils;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -72,12 +73,17 @@ public final class MappingsConfigReader {
     }
 
     public static <K, V> void loadCustomMappingsFromJson(MappingsType<K, V> type, BiConsumer<K, V> consumer) {
+        // First, read the mappings added manually by the user
         getCustomMappingsDirectoryAndEnsureItExists().ifPresent(customMappingsDirectory -> {
             Path[] mappingsFiles = getCustomMappingsFiles(customMappingsDirectory);
             for (Path mappingsFile : mappingsFiles) {
                 readCustomMappings(type, mappingsFile, consumer);
             }
         });
+        // Then, read the mappings provided by Geyser packs
+        if (Registries.GEYSER_ASSET_PACKS.loaded()) {
+            Registries.GEYSER_ASSET_PACKS.get().forEach(pack -> pack.mappings(mapping -> readCustomMappings(type, mapping, consumer)));
+        }
         for (Path mappingsFile : registeredMappingsFiles) {
             readCustomMappings(type, mappingsFile, consumer);
         }

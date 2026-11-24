@@ -31,6 +31,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.event.lifecycle.GeyserLoadLocaleEvent;
+import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.util.AssetUtils;
 import org.geysermc.geyser.util.FancyHttpClient;
 import org.geysermc.geyser.util.FileUtils;
@@ -200,6 +201,12 @@ public class MinecraftLocale {
         // Load the locale overwrites
         if (Files.exists(localeOverride) && Files.isReadable(localeOverride)) {
             langMap.putAll(parseLangFile(localeOverride, lowercaseLocale));
+        }
+
+        // Load locale overrides provided by Geyser packs first, so extensions have the final say.
+        if (Registries.GEYSER_ASSET_PACKS.loaded()) {
+            Registries.GEYSER_ASSET_PACKS.get().forEach(pack -> pack.locale(lowercaseLocale,
+                path -> langMap.putAll(parseLangFile(path, lowercaseLocale))));
         }
 
         // Let extensions add or remove translations before the locale is stored.
