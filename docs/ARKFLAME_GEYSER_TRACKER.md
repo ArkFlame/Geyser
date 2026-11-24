@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T21:44:55Z_
+_Generated at: 2026-11-24T22:05:41Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,14 +38,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 1364 |
+| `UNFIXED` | 822 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 117 |
-| `UPSTREAM_FIXED` | 2687 |
-| `DUPLICATE` | 546 |
-| `BLOCKED` | 46 |
-| `UNSUPPORTED` | 492 |
-| `NOT_APPLICABLE` | 1565 |
+| `FIXED` | 126 |
+| `UPSTREAM_FIXED` | 2838 |
+| `DUPLICATE` | 556 |
+| `BLOCKED` | 55 |
+| `UNSUPPORTED` | 598 |
+| `NOT_APPLICABLE` | 1822 |
 | `PARTIAL` | 1 |
 
 ## Mass audit (two passes)
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-17 — open PR adoption and open issue fixes
+## Waves 8-18 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -393,6 +393,18 @@ GeyserSession has no map cache; upstream PR patch leaves MapTooltip as "// TODO"
 **#6914 — BLOCKED across every published artifact.** The maven release line ends at `26.3-4` (the fork's version) and the newest `26.3-SNAPSHOT` build is `14` (`20261014.110736`). `javap` on that snapshot shows `PotionContents` still has only `(int,int,List,String)` plus the four getters — no `hasCustomColor`, `OptionalInt` or presence flag. Absent and present `-1` colors both decode to `-1`, and `writePotionContents` gates on `>= 0`, so the distinction is destroyed before hashing. Only GeyserMC/MCProtocolLib#942 plus a new release can resolve it.
 
 **Backlog audit J/K/L/M.** Four read-only auditors processed 1594 closed `UNFIXED` records and produced **319 evidence-backed dispositions**: 189 NOT_APPLICABLE, 66 UPSTREAM_FIXED, 31 DUPLICATE, 16 UNSUPPORTED and 17 BLOCKED; 1275 stayed `UNFIXED`. Note that this checkout is shallow (grafted at `777434cf`), so shards J and M downgraded every cited fix commit they could not prove an ancestor; the UPSTREAM_FIXED set above comes only from shards K and L, where ancestry was verified with `compare <sha>...master` or `git merge-base --is-ancestor`.
+
+### Wave 18 — full-history verification of open issues and backlog N/O/P/Q
+
+The checkout was unshallowed before this wave (`git rev-list --count HEAD` went from 249 to 5322, with no `.git/shallow`), so `git merge-base --is-ancestor <sha> HEAD` could finally verify fix commits that earlier auditors had to downgrade. Six workers ran: two on the 89 remaining open issues and four on 1275 closed UNFIXED records. One source fix landed; the rest were evidence-based tracker dispositions. Verification is compile-only.
+
+**Open issues.** One portable upstream fix was found and ported:
+
+- #2769 (`allow-bedrock-bridging=false` ignored by touch users) — upstream PR #6220's Bedrock interact-rotation check added at `BedrockInventoryTransactionTranslator.java:204-207`, commit `40c0cf638`, merged as `7598a5870`.
+
+Eight issues were proven already fixed and promoted to FIXED: #5231, #5057, #4383, #4058, #3358, #2490, #2358 (fork commit `817a95c29`, verified an ancestor of `origin/master`, with `EntityCache.java:90,180,188-227` and `JavaSetEntityLinkTranslator.java:70-81`) and #3458 (upstream PR #5381 present at `GeyserSession.java:2001-2026` and `ChunkUtils.java:115,125`). The other batch found no portable work: `upstream/master` (`d2cf20058c`) is an ancestor of fork HEAD, and none of those issues has a merged fix or a clear reproducible fork-code root cause; partial upstream work was noted for #6802 (`PaintingEntity.java:106-112`) and #6202 (`TooltipProviders.java:99-124`).
+
+**Backlog audit N/O/P/Q.** Four read-only auditors processed 1275 closed UNFIXED records and produced **574 evidence-backed dispositions**: 177 UPSTREAM_FIXED, 107 UNSUPPORTED, 269 NOT_APPLICABLE, 11 DUPLICATE and 10 BLOCKED; 701 stayed `UNFIXED`. Every UPSTREAM_FIXED claim was verified with `git merge-base --is-ancestor <sha> HEAD` plus a fork `file:line` — for example #6583 → this campaign's text-display commit `994cd6a8b`, #6353 → upstream PR #6351, #3495 → the skull-skin NPE fix, #5236 → `006fe75e5a`. Duplicate classifications were only accepted when the target record was itself already fixed (#4434/#3729 were kept UNFIXED for that reason), and unverifiable "fixed in latest build" closures were likewise left alone.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
@@ -596,7 +608,7 @@ _(291 records)_
 | 2767079695 | InventoryClickEvent gets triggered multiple times when player inventory gets closed and crafting slots are full | https://github.com/GeyserMC/Geyser/issues/5258 | `FIXED` |
 | 2763399238 | Bedrock Edition Animated Skins Not Showing | https://github.com/GeyserMC/Geyser/issues/5253 | `NOT_APPLICABLE` |
 | 2760504860 | Stonecutter and Mod GUI menu move item not working for PS4 Bedrock Users | https://github.com/GeyserMC/Geyser/issues/5246 | `UNFIXED` |
-| 2743754360 | Bedrock players getting console spam "moved too quickly!" | https://github.com/GeyserMC/Geyser/issues/5231 | `UNFIXED` |
+| 2743754360 | Bedrock players getting console spam "moved too quickly!" | https://github.com/GeyserMC/Geyser/issues/5231 | `FIXED` |
 | 2739739899 | Bedrock player does not receive knockback when an entity with a negative explosion range affects the player. | https://github.com/GeyserMC/Geyser/issues/5227 | `FIXED` |
 | 2724412280 | [API] ServerboundDiagnosticsPacket data | https://github.com/GeyserMC/Geyser/issues/5199 | `NOT_APPLICABLE` |
 | 2697961951 | Text preprocess / postprocess API | https://github.com/GeyserMC/Geyser/issues/5166 | `NOT_APPLICABLE` |
@@ -604,7 +616,7 @@ _(291 records)_
 | 2660360181 | Bedrock mining advantage | https://github.com/GeyserMC/Geyser/issues/5152 | `NOT_APPLICABLE` |
 | 2634025004 | Lead links sometimes don't appear. | https://github.com/GeyserMC/Geyser/issues/5123 | `FIXED` |
 | 2573240553 | Bug with GSit /lay command on bedrock | https://github.com/GeyserMC/Geyser/issues/5073 | `DUPLICATE` |
-| 2541243115 | Cannot move player correctly, cannot interact with things | https://github.com/GeyserMC/Geyser/issues/5057 | `UNFIXED` |
+| 2541243115 | Cannot move player correctly, cannot interact with things | https://github.com/GeyserMC/Geyser/issues/5057 | `FIXED` |
 | 2540190174 | Implement JFR profiler on the "geyser" command for standalone. | https://github.com/GeyserMC/Geyser/issues/5053 | `NOT_APPLICABLE` |
 | 2535701984 | Crafting issue | https://github.com/GeyserMC/Geyser/issues/5047 | `DUPLICATE` |
 | 2525964971 | Custom Tools with attributes not working on bedrock  | https://github.com/GeyserMC/Geyser/issues/5037 | `NOT_APPLICABLE` |
@@ -629,7 +641,7 @@ _(291 records)_
 | 2154934969 | Bedrock Classic Skin Wrapping Incorrectly on Model | https://github.com/GeyserMC/Geyser/issues/4464 | `NOT_APPLICABLE` |
 | 2146683715 | Weird Slow Crafting | https://github.com/GeyserMC/Geyser/issues/4453 | `UNFIXED` |
 | 2097630743 | Player hand shaking | https://github.com/GeyserMC/Geyser/issues/4409 | `UNFIXED` |
-| 2069382809 | Bedrock players getting "moved too quickly!" WARN using warps and TP to claim | https://github.com/GeyserMC/Geyser/issues/4383 | `UNFIXED` |
+| 2069382809 | Bedrock players getting "moved too quickly!" WARN using warps and TP to claim | https://github.com/GeyserMC/Geyser/issues/4383 | `FIXED` |
 | 2061878718 | Elytra cape texture doesn't get displayed on Bedrock | https://github.com/GeyserMC/Geyser/issues/4374 | `NOT_APPLICABLE` |
 | 2054838682 | Custom Itemsadder shield blocking not working for bedrock players | https://github.com/GeyserMC/Geyser/issues/4359 | `NOT_APPLICABLE` |
 | 2022879416 | Some Player Head textures display white when placed | https://github.com/GeyserMC/Geyser/issues/4325 | `FIXED` |
@@ -644,7 +656,7 @@ _(291 records)_
 | 1884438284 | Villager trading on mobile disregards which trade you select, and always gives you the first trade. | https://github.com/GeyserMC/Geyser/issues/4102 | `UNFIXED` |
 | 1873967017 | Trading doesn't seem to be working in the end only for geyser users. | https://github.com/GeyserMC/Geyser/issues/4092 | `UNFIXED` |
 | 1870724269 | Allow items to map to custom blocks | https://github.com/GeyserMC/Geyser/issues/4090 | `UNFIXED` |
-| 1853575554 | Dismounting Fake Entity | https://github.com/GeyserMC/Geyser/issues/4058 | `UNFIXED` |
+| 1853575554 | Dismounting Fake Entity | https://github.com/GeyserMC/Geyser/issues/4058 | `FIXED` |
 | 1819258094 | FishHook on Lava with CustomFishing | https://github.com/GeyserMC/Geyser/issues/4012 | `UNSUPPORTED` |
 | 1806744583 | Client crashes when starting to type a command | https://github.com/GeyserMC/Geyser/issues/3990 | `UNSUPPORTED` |
 | 1805860584 | Unfair Advantage in Mining Speeds between Bedrock & Java | https://github.com/GeyserMC/Geyser/issues/3987 | `UNSUPPORTED` |
@@ -662,14 +674,14 @@ _(291 records)_
 | 1580737714 | Support multiple ip binds | https://github.com/GeyserMC/Geyser/issues/3547 | `NOT_APPLICABLE` |
 | 1559783482 | Mounting cod on player | https://github.com/GeyserMC/Geyser/issues/3520 | `NOT_APPLICABLE` |
 | 1512242345 | when holding items in both hands and interacting geyser does not correctly send both the main hand and offhand interactions to the event handler | https://github.com/GeyserMC/Geyser/issues/3480 | `UNFIXED` |
-| 1497715636 | Please implement "aerial perspective" for how chunks look. | https://github.com/GeyserMC/Geyser/issues/3458 | `UNFIXED` |
+| 1497715636 | Please implement "aerial perspective" for how chunks look. | https://github.com/GeyserMC/Geyser/issues/3458 | `FIXED` |
 | 1495006234 | GeyserApi.api().connectionByUuid() is flaky | https://github.com/GeyserMC/Geyser/issues/3456 | `FIXED` |
 | 1483856962 | Allows custom InteractiveTag for Entity | https://github.com/GeyserMC/Geyser/issues/3441 | `UNFIXED` |
 | 1455706435 | overlapping command enums | https://github.com/GeyserMC/Geyser/issues/3411 | `UNFIXED` |
 | 1453152029 | Complex Spigot+Paper server player moving and climbing rebound | https://github.com/GeyserMC/Geyser/issues/3407 | `UNFIXED` |
 | 1428000485 | Employ fix for headless Armor Stand | https://github.com/GeyserMC/Geyser/issues/3373 | `UNSUPPORTED` |
 | 1422823529 | Packet intercepting and sending API | https://github.com/GeyserMC/Geyser/issues/3365 | `NOT_APPLICABLE` |
-| 1419228638 | Camouflage blocks, GeyserMC players see teleportation | https://github.com/GeyserMC/Geyser/issues/3358 | `UNFIXED` |
+| 1419228638 | Camouflage blocks, GeyserMC players see teleportation | https://github.com/GeyserMC/Geyser/issues/3358 | `FIXED` |
 | 1397034352 | Command description support for geyser standalone | https://github.com/GeyserMC/Geyser/issues/3337 | `NOT_APPLICABLE` |
 | 1395538072 | Stopsound stops all sounds on bedrock regardless of chosen category | https://github.com/GeyserMC/Geyser/issues/3335 | `UNSUPPORTED` |
 | 1306933326 | Horse Issues | https://github.com/GeyserMC/Geyser/issues/3146 | `NOT_APPLICABLE` |
@@ -679,14 +691,14 @@ _(291 records)_
 | 1164369454 | Disguise Issue | https://github.com/GeyserMC/Geyser/issues/2879 | `UNFIXED` |
 | 1122496813 | Allow query port and bedrock port to be on the same port | https://github.com/GeyserMC/Geyser/issues/2807 | `NOT_APPLICABLE` |
 | 1112663867 | Bedrock bridging possible despite allow-bedrock-bridging being false | https://github.com/GeyserMC/Geyser/issues/2787 | `UNFIXED` |
-| 1104960974 | Bedrock godbridging block doesn’t affect blocks placed on the sides | https://github.com/GeyserMC/Geyser/issues/2769 | `UNFIXED` |
+| 1104960974 | Bedrock godbridging block doesn’t affect blocks placed on the sides | https://github.com/GeyserMC/Geyser/issues/2769 | `FIXED` |
 | 1104122871 | Tooltips are automatically turned off while rejoining | https://github.com/GeyserMC/Geyser/issues/2768 | `NOT_APPLICABLE` |
 | 1068005488 | Geyser doesn't like old-style skin files | https://github.com/GeyserMC/Geyser/issues/2658 | `NOT_APPLICABLE` |
 | 1052791662 | Xbox achievements not unlocking properly with Geyser | https://github.com/GeyserMC/Geyser/issues/2629 | `UNSUPPORTED` |
 | 988382023 | Move mappings to config files | https://github.com/GeyserMC/Geyser/issues/2514 | `NOT_APPLICABLE` |
-| 976467865 | Other players' boats have very jerky movement | https://github.com/GeyserMC/Geyser/issues/2490 | `UNFIXED` |
+| 976467865 | Other players' boats have very jerky movement | https://github.com/GeyserMC/Geyser/issues/2490 | `FIXED` |
 | 945607347 | Content log spam on server join/switch worlds & command suggestions not working ([Commands][error]-Keywords in commands need to be lower case. '<argument>' was not registered.) | https://github.com/GeyserMC/Geyser/issues/2385 | `UPSTREAM_FIXED` |
-| 938291459 | End crystals don't move when pushed by pistons | https://github.com/GeyserMC/Geyser/issues/2358 | `UNFIXED` |
+| 938291459 | End crystals don't move when pushed by pistons | https://github.com/GeyserMC/Geyser/issues/2358 | `FIXED` |
 | 869272079 | Bedrock clients are unable to crawl when using the GSit plugin | https://github.com/GeyserMC/Geyser/issues/2180 | `UNSUPPORTED` |
 | 809712905 | Itemframe Placing Bug | https://github.com/GeyserMC/Geyser/issues/1938 | `UNSUPPORTED` |
 | 805141067 | Infinite up movement while elytra flying in gamemode creative | https://github.com/GeyserMC/Geyser/issues/1916 | `UNSUPPORTED` |
