@@ -25,7 +25,9 @@
 
 package org.geysermc.geyser.item.type;
 
+import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.geysermc.geyser.inventory.item.DyeColor;
 import org.geysermc.geyser.item.TooltipOptions;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.item.BedrockItemBuilder;
@@ -38,6 +40,18 @@ import java.util.List;
 public class ShieldItem extends Item {
     public ShieldItem(String javaIdentifier, Builder builder) {
         super(javaIdentifier, builder);
+    }
+
+    @Override
+    public Component getName(DataComponents components) {
+        Integer color = components == null ? null : components.get(DataComponentTypes.BASE_COLOR);
+        if (color == null) {
+            return super.getName(components);
+        }
+        DyeColor dyeColor = DyeColor.getById(color);
+        return dyeColor != null
+            ? Component.translatable(translationKey() + "." + dyeColor.getJavaIdentifier())
+            : super.getName(components);
     }
 
     @Override

@@ -195,6 +195,21 @@ public class Item {
         return baseComponents.get(type);
     }
 
+    /**
+     * Returns the hover name Java Edition uses for the given stack, before any custom name override.
+     * Ported from GeyserMC/Geyser#5692.
+     */
+    public Component getName(GeyserItemStack stack) {
+        return getName(stack.getAllComponents());
+    }
+
+    /**
+     * Component-based form used when a stack is not available, so tooltips don't need to allocate one.
+     */
+    public Component getName(@Nullable DataComponents components) {
+        return components != null ? components.getOrDefault(DataComponentTypes.ITEM_NAME, Component.empty()) : Component.empty();
+    }
+
     public String translationKey() {
         return "item." + javaIdentifier.namespace() + "." + javaIdentifier.value();
     }

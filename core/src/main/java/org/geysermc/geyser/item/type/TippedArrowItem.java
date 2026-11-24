@@ -25,6 +25,7 @@
 
 package org.geysermc.geyser.item.type;
 
+import net.kyori.adventure.text.Component;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.inventory.item.Potion;
@@ -38,6 +39,11 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.PotionConten
 public class TippedArrowItem extends ArrowItem {
     public TippedArrowItem(String javaIdentifier, Builder builder) {
         super(javaIdentifier, builder);
+    }
+
+    @Override
+    public Component getName(DataComponents components) {
+        return PotionItem.getName(components, translationKey(), super::getName);
     }
 
     @Override
