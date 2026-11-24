@@ -30,6 +30,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.geysermc.geyser.session.auth.AuthData;
 import org.geysermc.geyser.text.GeyserLocale;
 
 import java.util.Collection;
@@ -89,6 +90,26 @@ public final class SessionManager {
         for (GeyserSession session : sessions.values()) {
             if (session.xuid().equals(xuid)) {
                 return session;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Looks up a connection by its UUID, including connections that are still pending their Java login. Plugins on
+     * proxies can ask for a connection by UUID before Geyser has finished logging in, when only the Bedrock identity
+     * UUID is known, so those are matched against their auth data as well.
+     */
+    public @Nullable GeyserSession sessionByUuid(@NonNull UUID uuid) {
+        Objects.requireNonNull(uuid);
+        GeyserSession session = sessions.get(uuid);
+        if (session != null) {
+            return session;
+        }
+        for (GeyserSession pending : pendingSessions) {
+            AuthData authData = pending.getAuthData();
+            if (authData != null && uuid.equals(authData.uuid())) {
+                return pending;
             }
         }
         return null;

@@ -59,7 +59,7 @@ import java.util.zip.ZipOutputStream;
 
 public class SkullResourcePackManager {
 
-    private static final long RESOURCE_PACK_VERSION = 8;
+    private static final long RESOURCE_PACK_VERSION = 9;
 
     private static final Path SKULL_SKIN_CACHE_PATH = GeyserImpl.getInstance().getBootstrap().getConfigFolder().resolve("cache").resolve("player_skulls");
 

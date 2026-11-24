@@ -27,9 +27,11 @@ package org.geysermc.geyser.registry.loader;
 
 import org.geysermc.geyser.api.pack.ResourcePack;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.Objects;
@@ -73,6 +75,20 @@ public class ResourcePackLoaderTest {
         Path path = getResource("encrypted_pack.zip");
         ResourcePack pack = ResourcePackLoader.readPack(path).build();
         assertEquals("JAGcSXcXwcODc1YS70GzeWAUKEO172UA", pack.contentKey());
+    }
+
+    @Test
+    public void testUnzippedPackDetection(@TempDir Path directory) throws Exception {
+        assertFalse(ResourcePackLoader.isUnzippedPack(directory));
+
+        Files.writeString(directory.resolve("pack_manifest.json"), "{}");
+        assertTrue(ResourcePackLoader.isUnzippedPack(directory));
+
+        Path nested = Files.createDirectories(directory.resolve("nested"));
+        Files.createDirectories(nested.resolve("MyPack"));
+        assertFalse(ResourcePackLoader.isUnzippedPack(nested));
+        Files.writeString(nested.resolve("MyPack").resolve("manifest.json"), "{}");
+        assertTrue(ResourcePackLoader.isUnzippedPack(nested));
     }
 
     private Path getResource(String name) throws URISyntaxException {

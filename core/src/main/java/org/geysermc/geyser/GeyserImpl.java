@@ -614,7 +614,7 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
 
     @Override
     public @Nullable GeyserSession connectionByUuid(@NonNull UUID uuid) {
-        return this.sessionManager.getSessions().get(uuid);
+        return this.sessionManager.sessionByUuid(uuid);
     }
 
     @Override
