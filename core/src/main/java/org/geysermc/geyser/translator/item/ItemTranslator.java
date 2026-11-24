@@ -308,9 +308,10 @@ public final class ItemTranslator {
             translateCustomItem(session, count, components, builder, bedrockItem);
         }
 
-        // Translate the canDestroy and canPlaceOn Java components
-        AdventureModePredicate canDestroy = components.get(DataComponentTypes.CAN_BREAK);
-        AdventureModePredicate canPlaceOn = components.get(DataComponentTypes.CAN_PLACE_ON);
+        // Translate the canDestroy and canPlaceOn Java components. Java hides both lines when the
+        // tooltip_display component asks for it, and Bedrock only shows them as lore, so honour that.
+        AdventureModePredicate canDestroy = tooltip.showInTooltip(DataComponentTypes.CAN_BREAK) ? components.get(DataComponentTypes.CAN_BREAK) : null;
+        AdventureModePredicate canPlaceOn = tooltip.showInTooltip(DataComponentTypes.CAN_PLACE_ON) ? components.get(DataComponentTypes.CAN_PLACE_ON) : null;
         String[] canBreak = getCanModify(session, canDestroy);
         String[] canPlace = getCanModify(session, canPlaceOn);
         if (canBreak != null) {
