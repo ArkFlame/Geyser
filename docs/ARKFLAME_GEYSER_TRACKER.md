@@ -37,14 +37,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3301 |
+| `UNFIXED` | 3296 |
 | `IN_PROGRESS` | 0 |
 | `FIXED` | 59 |
-| `UPSTREAM_FIXED` | 2341 |
+| `UPSTREAM_FIXED` | 2343 |
 | `DUPLICATE` | 386 |
 | `BLOCKED` | 10 |
-| `UNSUPPORTED` | 295 |
-| `NOT_APPLICABLE` | 425 |
+| `UNSUPPORTED` | 297 |
+| `NOT_APPLICABLE` | 426 |
 
 ## Mass audit (two passes)
 
@@ -177,6 +177,25 @@ This pass was recorded against `integration/final-release` HEAD `ef6ca6736238f92
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3308 → 3301, FIXED 58 → 59, UPSTREAM_FIXED 2340 → 2341, DUPLICATE 385 → 386, BLOCKED 9 → 10, UNSUPPORTED 293 → 295, NOT_APPLICABLE 424 → 425); every status is in the documented enum and all 6817 IDs remain unique. No build or test run was performed for this documentation pass.
 
+### Wave 5 audit — verified dispositions (HEAD `77e7e13ffc805e9e93f739617ad71df153c69bfa`)
+
+Wave-5 audit dispositions were reconciled against upstream issue/PR state and the integrated source on `integration/final-release` @ `77e7e13ffc805e9e93f739617ad71df153c69bfa`. No new `FIXED` status was recorded: no new integration commit was produced for this batch, and the `UPSTREAM_FIXED` entries rely on fix commits already present as ancestors of HEAD.
+
+| ID | Disposition | Evidence / reference |
+| ---: | --- | --- |
+| #6393 | `NOT_APPLICABLE` | open dirty/draft feature PR (Add proper combat sounds) with two unmerged prerequisite PRs and no maintainer reviews; not an actionable defect for this fork — https://github.com/GeyserMC/Geyser/pull/6393 |
+| #6342 | `UNSUPPORTED` | item stacking is Bedrock client-side auto-place/stack prediction; Geyser can only accept or reject the resulting request packets, so there is no server-side translation to fix — https://github.com/GeyserMC/Geyser/issues/6342 |
+| #6266 | `UNSUPPORTED` | maintainer-confirmed Java-only item attributes have no Bedrock equivalents and cannot be represented over the protocol — https://github.com/GeyserMC/Geyser/issues/6266 |
+| #6239 | `UPSTREAM_FIXED` | Dolphin's Grace / Dolphin Tunnels already addressed by integrated upstream PR #6840 (https://github.com/GeyserMC/Geyser/pull/6840), commit f88753d4c4bcb4967b2d38082f36e99dcfbed222 (ancestor of HEAD); the remaining difference is Bedrock client physics — https://github.com/GeyserMC/Geyser/issues/6239 |
+| #6278 | `UNFIXED` | intentional upstream custom-trim behavior introduced by PR #6218 (https://github.com/GeyserMC/Geyser/pull/6218); the fork's armor-trim translation is byte-identical to upstream, so there is no fork divergence to correct — https://github.com/GeyserMC/Geyser/issues/6278 |
+| #6373 | `UNFIXED` | supplied log shows only normal inventory debug paths in a plugin-heavy setup; no Geyser inventory-translation defect identified — https://github.com/GeyserMC/Geyser/issues/6373 |
+| #6302 | `UNFIXED` | custom-skull pipeline is intact with 27 skulls registered; the failure is specific to a third-party mod's skull data — https://github.com/GeyserMC/Geyser/issues/6302 |
+| #6283 | `UNFIXED` | horse-riding desync on Bedrock protocol 944 (26.10/26.12); all upstream fixes cited in the report are already present in the base and the issue was deferred upstream — https://github.com/GeyserMC/Geyser/issues/6283 |
+| #6368 | `UPSTREAM_FIXED` | self-player listed-state skin bug fixed upstream by PR #6675 (https://github.com/GeyserMC/Geyser/pull/6675), commit 7ba09fed1388c335de5bb8865914391c7e4178e8, and PR #6937 (https://github.com/GeyserMC/Geyser/pull/6937), commit d2cf20058c6c875f7036deb6f6c59e0c39775199; both are ancestors of HEAD — https://github.com/GeyserMC/Geyser/issues/6368 |
+| #6320 | `UNFIXED` | unconfirmed upstream and console-only report; smelting and armor-trim recipe translation verified correct against the integrated source — https://github.com/GeyserMC/Geyser/issues/6320 |
+
+`status_counts` was recomputed from all 6817 records (UNFIXED 3301 → 3296, UPSTREAM_FIXED 2341 → 2343, UNSUPPORTED 295 → 297, NOT_APPLICABLE 425 → 426; FIXED 59, DUPLICATE 386 and BLOCKED 10 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No build or test run was performed for this documentation-only change.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -291,18 +310,18 @@ _(291 records)_
 | 4426982552 | Chests visual bug | https://github.com/GeyserMC/Geyser/issues/6397 | `UNSUPPORTED` |
 | 4424154581 | Bedrock users spawn facing wrong direction | https://github.com/GeyserMC/Geyser/issues/6395 | `DUPLICATE` |
 | 4411316441 | BEDROCK INVENTORY BUG | https://github.com/GeyserMC/Geyser/issues/6373 | `UNFIXED` |
-| 4402991483 | Globally linked Java skin does not show on Bedrock | https://github.com/GeyserMC/Geyser/issues/6368 | `UNFIXED` |
-| 4367591866 | Bedrock mobile players crafted items do not stack in inventory | https://github.com/GeyserMC/Geyser/issues/6342 | `UNFIXED` |
+| 4402991483 | Globally linked Java skin does not show on Bedrock | https://github.com/GeyserMC/Geyser/issues/6368 | `UPSTREAM_FIXED` |
+| 4367591866 | Bedrock mobile players crafted items do not stack in inventory | https://github.com/GeyserMC/Geyser/issues/6342 | `UNSUPPORTED` |
 | 4367583984 | Bamboo and crop blocks cause rubber-banding/glitching for Bedrock mobile players | https://github.com/GeyserMC/Geyser/issues/6341 | `FIXED` |
 | 4307745168 | Minecraft armour trims problem | https://github.com/GeyserMC/Geyser/issues/6320 | `UNFIXED` |
 | 4259757094 | Custom Skulls Bug? | https://github.com/GeyserMC/Geyser/issues/6302 | `UNFIXED` |
 | 4198616510 | Bedrock 26.10/26.12 (protocol 944) horse riding desync: delayed first jump, rubberbanding, dismount snapback | https://github.com/GeyserMC/Geyser/issues/6283 | `UNFIXED` |
 | 4196235341 | Mapping api v2 predicate property fishing_rod_cast or crossbow charged Not compatible with Java players | https://github.com/GeyserMC/Geyser/issues/6281 | `UPSTREAM_FIXED` |
 | 4186822367 | Bedrock clients are crashing while somebody has a custom armor with armor trim equipped | https://github.com/GeyserMC/Geyser/issues/6278 | `UNFIXED` |
-| 4154311005 | Custom item attirbutes do not work proplerly on bedrock edition | https://github.com/GeyserMC/Geyser/issues/6266 | `UNFIXED` |
+| 4154311005 | Custom item attirbutes do not work proplerly on bedrock edition | https://github.com/GeyserMC/Geyser/issues/6266 | `UNSUPPORTED` |
 | 4113646890 | Bedrock Spectator Mode not working as intended. | https://github.com/GeyserMC/Geyser/issues/6248 | `FIXED` |
 | 4110465428 | Title: Bedrock recipe book auto-crafting does not work correctly through Geyser | https://github.com/GeyserMC/Geyser/issues/6246 | `UNFIXED` |
-| 4079217873 | Dolphin Tunnels not working for bedrock players | https://github.com/GeyserMC/Geyser/issues/6239 | `UNFIXED` |
+| 4079217873 | Dolphin Tunnels not working for bedrock players | https://github.com/GeyserMC/Geyser/issues/6239 | `UPSTREAM_FIXED` |
 | 4041295810 | signing writable books if they have NBT does not work | https://github.com/GeyserMC/Geyser/issues/6224 | `UNFIXED` |
 | 4005465880 | PS5 Bedrock Edition Crashing consistently | https://github.com/GeyserMC/Geyser/issues/6213 | `UNSUPPORTED` |
 | 3997506286 | Players using Bedrock Edition on mobile devices are unable to enchant items or books. | https://github.com/GeyserMC/Geyser/issues/6210 | `UNFIXED` |
@@ -533,7 +552,7 @@ _(56 records)_
 | 4008215209 | Change logger to a static reference and add some debugging commands | https://github.com/GeyserMC/Geyser/pull/6513 | `NOT_APPLICABLE` |
 | 3948152368 | Attempt to lower scoreboard allocs | https://github.com/GeyserMC/Geyser/pull/6489 | `NOT_APPLICABLE` |
 | 3707133775 | Fix block breaking | https://github.com/GeyserMC/Geyser/pull/6419 | `FIXED` |
-| 3662155537 | Add proper combat sounds | https://github.com/GeyserMC/Geyser/pull/6393 | `UNFIXED` |
+| 3662155537 | Add proper combat sounds | https://github.com/GeyserMC/Geyser/pull/6393 | `NOT_APPLICABLE` |
 | 3142621945 | Feature: Reloadable Mappings | https://github.com/GeyserMC/Geyser/pull/6081 | `UNFIXED` |
 | 3044136529 | Workaround for client-sided removal of all items from the crafting grid on inventory close | https://github.com/GeyserMC/Geyser/pull/6008 | `FIXED` |
 | 2875767111 | Custom Translation API | https://github.com/GeyserMC/Geyser/pull/5860 | `UNFIXED` |
