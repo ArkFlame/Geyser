@@ -37,14 +37,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3286 |
+| `UNFIXED` | 3276 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 60 |
-| `UPSTREAM_FIXED` | 2347 |
+| `FIXED` | 61 |
+| `UPSTREAM_FIXED` | 2349 |
 | `DUPLICATE` | 388 |
 | `BLOCKED` | 10 |
-| `UNSUPPORTED` | 297 |
-| `NOT_APPLICABLE` | 429 |
+| `UNSUPPORTED` | 299 |
+| `NOT_APPLICABLE` | 434 |
 
 ## Mass audit (two passes)
 
@@ -214,6 +214,25 @@ Wave-6 re-verified closed upstream records against the integrated source on `int
 | #6877 | `NOT_APPLICABLE` | Closed Invalid with an empty issue template: no reproduction steps, dump, or diagnostics; no actionable defect identified — https://github.com/GeyserMC/Geyser/issues/6877 |
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3296 → 3286, FIXED 59 → 60, UPSTREAM_FIXED 2343 → 2347, DUPLICATE 386 → 388, NOT_APPLICABLE 426 → 429; BLOCKED 10, UNSUPPORTED 297 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No build or test run was performed for this documentation-only change.
+
+### Wave 7 audit — verified dispositions (HEAD `8e90a388cca4d93c4f3ba5894de4227d31b2f2bb`)
+
+Wave-7 re-verified closed upstream records and one closed PR against the integrated source on `integration/final-release` @ `8e90a388cca4d93c4f3ba5894de4227d31b2f2bb`. Cited fix commits were checked as ancestors of that HEAD with `git merge-base --is-ancestor`. This is a documentation-only change: no source fix was introduced and no build or test was run. The CI build at `8e90a388` was still running when this was recorded, so no build result is claimed and no runtime or gameplay verification is asserted for any disposition. Reference: https://github.com/GeyserMC/Geyser/issues/6903.
+
+| ID | Disposition | Evidence / reference |
+| ---: | --- | --- |
+| #6857 | `FIXED` | Integrated at `8e90a388cca4d93c4f3ba5894de4227d31b2f2bb` — soft enums for mixed-case command literals, porting upstream #6619; PR #6857 ('Sync 6619') was closed by its author as a mistake, so the fix never landed through the PR. CI running at that HEAD, no result claimed — https://github.com/GeyserMC/Geyser/pull/6857 , https://github.com/GeyserMC/Geyser/pull/6619 |
+| #6870 | `UPSTREAM_FIXED` | Missing Java entity_type definitions are handled gracefully by ancestor commit `b9d535a67cb6ef75a38140db0bd5ac2ccbe1e9ba` (Fix: gracefully handle missing entity type definitions in JavaAddEntityTranslator) — https://github.com/GeyserMC/Geyser/issues/6870 |
+| #6852 | `UPSTREAM_FIXED` | Actionable NetherNet native diagnostics replace the misleading message via ancestor commits `64bb3993b4beef6743af0ab76ee5dfc8e67a0d21` (#6843) and `e91c8cd125fc9157ec99f0a090df9ae0487e03f8` (keep Geyser running when NetherNet libc detection fails, #6848) — https://github.com/GeyserMC/Geyser/issues/6852 , https://github.com/GeyserMC/Geyser/pull/6843 , https://github.com/GeyserMC/Geyser/issues/6848 |
+| #6861 | `NOT_APPLICABLE` | Closed support/setup issue ('TERRACOTTA ERROR WONT LET ME JOIN' on a Fabric 26.3 / Geyser b1280 / Bedrock 26.60 setup); no code defect — https://github.com/GeyserMC/Geyser/issues/6861 |
+| #6859 | `NOT_APPLICABLE` | Closed not_planned user setup issue (Persona/Terracotta initialization on Paper 26.3 with Termux/Android Bedrock) — https://github.com/GeyserMC/Geyser/issues/6859 |
+| #6860 | `UNSUPPORTED` | Intentional warning about third-party custom-entity int properties; no Geyser defect — https://github.com/GeyserMC/Geyser/issues/6860 |
+| #6856 | `NOT_APPLICABLE` | Closed not_planned wrong-port setup issue (Aternos Paper 26.3, NetherNet client connecting to the wrong port) — https://github.com/GeyserMC/Geyser/issues/6856 |
+| #6855 | `NOT_APPLICABLE` | Reporter self-resolved an external Sonar antibot false positive (view distance 0 check); not a Geyser defect — https://github.com/GeyserMC/Geyser/issues/6855 |
+| #6872 | `UNSUPPORTED` | Closed support redirect for an Xbox Bedrock account that could not join a Java server — https://github.com/GeyserMC/Geyser/issues/6872 |
+| #6871 | `NOT_APPLICABLE` | Third-party extension incompatibility with intentional upstream cleanup that removed the `JAVA_ENTITY_TYPES` registry in commit `e87ad1475d629f58175f325f7b2ca5630fd231b8` (#6832) — https://github.com/GeyserMC/Geyser/issues/6871 , https://github.com/GeyserMC/Geyser/pull/6832 |
+
+`status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
