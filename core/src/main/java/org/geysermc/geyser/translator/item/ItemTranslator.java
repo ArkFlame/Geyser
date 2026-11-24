@@ -224,6 +224,21 @@ public final class ItemTranslator {
 
         Rarity rarity = Rarity.fromId(components.getOrDefault(DataComponentTypes.RARITY, 0));
         String customName = getCustomName(session, customComponents, bedrockItem, rarity.getColor(), false, false);
+
+        // Opt-in: append a resource pack marker for the Java tooltip style. This only touches the Bedrock display name;
+        // GeyserHash is derived from the Java components (which already include TOOLTIP_STYLE), so hashing and
+        // stacking stay identical whether or not the option is enabled.
+        boolean tooltipStyleMarkers = session.getGeyser().config().gameplay().tooltipStyleMarkers();
+        Key tooltipStyle = components.get(DataComponentTypes.TOOLTIP_STYLE);
+        if (tooltipStyleMarkers && tooltipStyle != null && !TooltipOptions.hideTooltip(components)) {
+            if (customName == null) {
+                // The marker needs a name to ride on; use the same reset and rarity color prefix getCustomName uses
+                customName = ChatColor.RESET + ChatColor.ESCAPE + rarity.getColor()
+                    + MinecraftLocale.getLocaleString(javaItem.translationKey(), session.locale());
+            }
+            customName = TooltipStyleMarkers.append(customName, tooltipStyle, tooltipStyleMarkers);
+        }
+
         if (customName != null) {
             PotionContents potionContents = components.get(DataComponentTypes.POTION_CONTENTS);
             // Make custom effect information visible when shown in tooltip
