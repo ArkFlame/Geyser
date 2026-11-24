@@ -718,6 +718,9 @@ public abstract class InventoryTranslator<Type extends Inventory> {
         CraftState craftState = CraftState.START;
 
         int leftover = 0;
+        // Bedrock reports more than one result when copying a written book (the source and the copy).
+        // Java's crafting grid has a single output, so only the first reported output is crafted.
+        boolean duplicateResults = false;
         ClickPlan plan = new ClickPlan(session, this, inventory);
         // Track all the crafting table slots to report back the contents of the slots after crafting
         IntSet affectedSlots = new IntOpenHashSet();
@@ -737,14 +740,29 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                     }
                     craftState = CraftState.DEPRECATED;
 
-                    if (deprecatedCraftAction.getResultItems().length != 1) {
+                    var resultItems = deprecatedCraftAction.getResultItems();
+                    if (resultItems.length == 0) {
                         return rejectRequest(request);
                     }
-                    resultSize = deprecatedCraftAction.getResultItems()[0].getCount();
+                    resultSize = resultItems[0].getCount();
+                    // Bedrock can send both books as results when copying one; they share a definition
+                    // and count but differ in the generation tag. Anything else is not a single craft.
+                    duplicateResults = resultItems.length > 1;
+                    for (var resultItem : resultItems) {
+                        if (resultItem.getCount() != resultSize ||
+                            !resultItem.getDefinition().equals(resultItems[0].getDefinition())) {
+                            return rejectRequest(request);
+                        }
+                    }
                     timesCrafted = deprecatedCraftAction.getTimesCrafted();
                     if (resultSize <= 0 || timesCrafted <= 0) {
                         return rejectRequest(request);
                     }
+                    break;
+                }
+                case CREATE: {
+                    // Bedrock reserves a created-output slot when copying books. Java has no equivalent
+                    // action; the click plan creates output slots itself. See GeyserMC/Geyser#3682.
                     break;
                 }
                 case CONSUME: {
@@ -758,14 +776,19 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                 case TAKE:
                 case PLACE: {
                     TransferItemStackRequestAction transferAction = (TransferItemStackRequestAction) action;
+                    if (transferAction.getSource().getContainerName().getContainer() != ContainerSlotType.CREATED_OUTPUT) {
+                        return rejectRequest(request);
+                    }
+                    if (duplicateResults && craftState != CraftState.INGREDIENTS) {
+                        // The client predicted a second output that Java never produced. Report the real
+                        // slot contents instead of rejecting or crafting the same recipe twice.
+                        affectedSlots.add(bedrockSlotToJava(transferAction.getDestination()));
+                        break;
+                    }
                     if (craftState != CraftState.INGREDIENTS && craftState != CraftState.TRANSFER) {
                         return rejectRequest(request);
                     }
                     craftState = CraftState.TRANSFER;
-
-                    if (transferAction.getSource().getContainerName().getContainer() != ContainerSlotType.CREATED_OUTPUT) {
-                        return rejectRequest(request);
-                    }
                     if (transferAction.getCount() <= 0) {
                         return rejectRequest(request);
                     }
