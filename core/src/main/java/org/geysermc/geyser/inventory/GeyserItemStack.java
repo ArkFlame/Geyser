@@ -30,6 +30,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
@@ -54,6 +55,7 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponen
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponents;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.HolderSet;
+import org.geysermc.mcprotocollib.protocol.data.game.item.component.WrittenBookContent;
 import org.geysermc.mcprotocollib.protocol.data.game.recipe.display.slot.CompositeSlotDisplay;
 import org.geysermc.mcprotocollib.protocol.data.game.recipe.display.slot.DyedSlotDisplay;
 import org.geysermc.mcprotocollib.protocol.data.game.recipe.display.slot.EmptySlotDisplay;
@@ -252,6 +254,19 @@ public class GeyserItemStack {
         return value == null ? supplier.get() : value;
     }
 
+    /**
+     * @return this stack's display name: its custom name, the title of a written book, or the item's default name
+     */
+    public Component getName() {
+        return getComponentElseGet(DataComponentTypes.CUSTOM_NAME, () -> {
+            WrittenBookContent book = getComponent(DataComponentTypes.WRITTEN_BOOK_CONTENT);
+            if (book != null) {
+                return Component.text(book.getTitle().getRaw());
+            }
+            return asItem().getName(this);
+        });
+    }
+
     public int getNetId() {
         return isEmpty() ? 0 : netId;
     }
@@ -367,7 +382,7 @@ public class GeyserItemStack {
     }
 
     public boolean isDamageable() {
-        return getComponent(DataComponentTypes.MAX_DAMAGE) != null && getComponent(DataComponentTypes.UNBREAKABLE) == null && getComponent(DataComponentTypes.DAMAGE) != null;
+        return has(DataComponentTypes.MAX_DAMAGE) && !has(DataComponentTypes.UNBREAKABLE) && has(DataComponentTypes.DAMAGE);
     }
 
     public boolean isDamaged() {
