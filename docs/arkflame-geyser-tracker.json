@@ -7021,7 +7021,7 @@
       "branch": null,
       "status": "FIXED",
       "sha": "ef6ca6736238f9228d951076748a34566c713306",
-      "evidence": "Integrated into integration/final-release @ ef6ca6736238f9228d951076748a34566c713306 (dialogs no longer close the currently open Java-side inventory, GeyserMC/Geyser#6443). CI single-thread 8G build running after integration — no result claimed; no runtime or gameplay verification was performed. https://github.com/GeyserMC/Geyser/issues/6443",
+      "evidence": "Integrated into integration/final-release @ ef6ca6736238f9228d951076748a34566c713306 (dialogs no longer close the currently open Java-side inventory, GeyserMC/Geyser#6443). CI BUILD SUCCESSFUL in 5m 1s single-thread 8G (compile/test only, no runtime verification). https://github.com/GeyserMC/Geyser/issues/6443",
       "gap": null,
       "timestamp": "2026-11-23T14:40:48Z",
       "number": 6443,
