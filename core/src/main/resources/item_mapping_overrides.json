@@ -1,0 +1,11 @@
+{
+  "_comment": "Fork-owned overrides for mappings/items.json. These entries are intentionally kept out of the GeyserMC/mappings submodule so its pinned commit stays clean; ItemMappingOverrides merges them after the submodule data is parsed. minecraft:furnace_minecart shares the Bedrock identifier of minecraft:hopper_minecart in the pinned mappings, so a distinct bedrock_data keeps Bedrock -> Java lookups from turning a hopper minecart into a furnace minecart in creative (#6813). The copper bars entry pins its own identifier and block-state range so recipe output resolution cannot fall back to copper trapdoors (#6032).",
+  "minecraft:furnace_minecart": {
+    "bedrock_data": 1
+  },
+  "minecraft:copper_bars": {
+    "bedrock_identifier": "minecraft:copper_bars",
+    "firstBlockRuntimeId": 9724,
+    "lastBlockRuntimeId": 9755
+  }
+}
