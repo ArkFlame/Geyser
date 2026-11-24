@@ -37,14 +37,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3296 |
+| `UNFIXED` | 3286 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 59 |
-| `UPSTREAM_FIXED` | 2343 |
-| `DUPLICATE` | 386 |
+| `FIXED` | 60 |
+| `UPSTREAM_FIXED` | 2347 |
+| `DUPLICATE` | 388 |
 | `BLOCKED` | 10 |
 | `UNSUPPORTED` | 297 |
-| `NOT_APPLICABLE` | 426 |
+| `NOT_APPLICABLE` | 429 |
 
 ## Mass audit (two passes)
 
@@ -195,6 +195,25 @@ Wave-5 audit dispositions were reconciled against upstream issue/PR state and th
 | #6320 | `UNFIXED` | unconfirmed upstream and console-only report; smelting and armor-trim recipe translation verified correct against the integrated source — https://github.com/GeyserMC/Geyser/issues/6320 |
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3301 → 3296, UPSTREAM_FIXED 2341 → 2343, UNSUPPORTED 295 → 297, NOT_APPLICABLE 425 → 426; FIXED 59, DUPLICATE 386 and BLOCKED 10 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No build or test run was performed for this documentation-only change.
+
+### Wave 6 audit — verified dispositions (HEAD `037163fe9092b1caf7b40cc4269e6e1fcda76b09`)
+
+Wave-6 re-verified closed upstream records against the integrated source on `integration/final-release` @ `037163fe9092b1caf7b40cc4269e6e1fcda76b09`. Every cited fix commit was checked as an ancestor of that HEAD with `git merge-base --is-ancestor`. No new source fix was introduced and no build or test was run for this documentation-only change; `FIXED` was recorded only where an integrated commit already exists.
+
+| ID | Disposition | Evidence / reference |
+| ---: | --- | --- |
+| #6885 | `UPSTREAM_FIXED` | Riding a happy ghast riding a minecart console spam is fixed by PR #6887 (https://github.com/GeyserMC/Geyser/pull/6887), commit `25eda4141aa1a00ca95dca00af56a5b8dac4e20e` (ancestor of HEAD) guarding `ClientVehicle.shouldSimulateMovement` — https://github.com/GeyserMC/Geyser/issues/6885 |
+| #6898 | `UPSTREAM_FIXED` | Stale teleport accepts after server transfer are fixed by PR #6917 (https://github.com/GeyserMC/Geyser/pull/6917), merge commit `440be82b0b2def7211504226d6ea5c37911a5643` (ancestor of HEAD); the teleport-accept fix is present in `JavaPlayerPositionTranslator.java` — https://github.com/GeyserMC/Geyser/issues/6898 |
+| #6895 | `UPSTREAM_FIXED` | Sleeping-bed teleport-confirm spam is fixed by PR #6892 (https://github.com/GeyserMC/Geyser/pull/6892), merge commit `1955f5151e2af01a7b51db1679e4324345690e70` (ancestor of HEAD), which defers the teleport accept to a latency-ping callback in `JavaPlayerPositionTranslator.java`; the reporter's build predates the fix — https://github.com/GeyserMC/Geyser/issues/6895 |
+| #6932 | `UPSTREAM_FIXED` | Block-registry resident-memory reduction: upstream PR #6932 (https://github.com/GeyserMC/Geyser/pull/6932) was closed unmerged upstream, but both of its commits `5a8d8d81bd166c1573d163b165fde73bc2ad3fba` and `4f8280665f740fe21ff9d868ada9f3c0a415d695` are ancestors of HEAD and the reduction is present in the fork, so the fix is already integrated despite the unmerged PR — https://github.com/GeyserMC/Geyser/pull/6932 |
+| #6904 | `FIXED` | The movement-speed half shares the #6903 root cause and is resolved by integrated commit `f7d4dcb9a81bde74e72a7cefaf22ce86b5818efa` (ancestor of HEAD); the NetherNet/RakNet-transport half is a client-side platform decision, not a code defect — https://github.com/GeyserMC/Geyser/issues/6904 |
+| #6935 | `DUPLICATE` | PR closed unmerged in favour of #6909 (https://github.com/GeyserMC/Geyser/pull/6909); the underlying #6929 fix `c84074574bbdf96640ae8c35d008261b275a0fbb` is already an ancestor of HEAD — https://github.com/GeyserMC/Geyser/pull/6935 |
+| #6888 | `DUPLICATE` | NetherNet family duplicate of #6854 (https://github.com/GeyserMC/Geyser/issues/6854) and #6850 (https://github.com/GeyserMC/Geyser/issues/6850); batching fix `c1c8705ad709f0694b2f5315fc0f9ef11743c314` is an ancestor of HEAD and integrated — https://github.com/GeyserMC/Geyser/issues/6888 |
+| #6930 | `NOT_APPLICABLE` | Closed invalid: wrong-repository feature request for a custom LAN/MCXboxBroadcast world-preview image; the maintainer ruled it impossible, so there is no code defect — https://github.com/GeyserMC/Geyser/issues/6930 |
+| #6889 | `NOT_APPLICABLE` | Closed not_planned: login `DecoderException` stems from a proxy-protocol configuration mismatch (proxy emits PROXY protocol while Geyser is not configured to accept it), not a code defect — https://github.com/GeyserMC/Geyser/issues/6889 |
+| #6877 | `NOT_APPLICABLE` | Closed Invalid with an empty issue template: no reproduction steps, dump, or diagnostics; no actionable defect identified — https://github.com/GeyserMC/Geyser/issues/6877 |
+
+`status_counts` was recomputed from all 6817 records (UNFIXED 3296 → 3286, FIXED 59 → 60, UPSTREAM_FIXED 2343 → 2347, DUPLICATE 386 → 388, NOT_APPLICABLE 426 → 429; BLOCKED 10, UNSUPPORTED 297 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No build or test run was performed for this documentation-only change.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
