@@ -25,17 +25,35 @@
 
 package org.geysermc.geyser.entity.type;
 
+import lombok.Getter;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.cloudburstmc.math.imaginary.Quaternionf;
 import org.cloudburstmc.math.vector.Vector3f;
+import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.entity.spawn.EntitySpawnContext;
 import org.geysermc.geyser.util.EntityUtils;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.EntityMetadata;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.ByteEntityMetadata;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.FloatEntityMetadata;
 
 import java.util.Objects;
 
+@Getter
 public class DisplayBaseEntity extends Entity {
 
     private @NonNull Vector3f baseTranslation = Vector3f.ZERO;
+
+    private @NonNull Vector3f baseScale = Vector3f.ONE;
+
+    private @NonNull Quaternionf leftRotation = Quaternionf.IDENTITY;
+
+    private @NonNull Quaternionf rightRotation = Quaternionf.IDENTITY;
+
+    private @NonNull Billboard billboard = Billboard.FIXED;
+
+    private float viewDistance = 1;
+
+    private boolean displayDataDirty = false;
 
     public DisplayBaseEntity(EntitySpawnContext context) {
         super(context);
@@ -63,8 +81,48 @@ public class DisplayBaseEntity extends Entity {
         return baseTranslation;
     }
 
+    public void setScale(EntityMetadata<Vector3f, ?> metadata) {
+        this.baseScale = metadata.getValue();
+    }
+
+    public void setLeftRotation(EntityMetadata<Quaternionf, ?> metadata) {
+        this.leftRotation = metadata.getValue();
+    }
+
+    public void setRightRotation(EntityMetadata<Quaternionf, ?> metadata) {
+        this.rightRotation = metadata.getValue();
+    }
+
+    public void setBillboard(ByteEntityMetadata metadata) {
+        try {
+            this.billboard = Billboard.values()[metadata.getPrimitiveValue()];
+        } catch (IndexOutOfBoundsException e) {
+            GeyserImpl.getInstance().getLogger().warning("Billboard sent for display entity with an invalid value!");
+            this.billboard = Billboard.FIXED;
+        }
+    }
+
+    public void setViewDistance(FloatEntityMetadata metadata) {
+        this.viewDistance = metadata.getPrimitiveValue();
+    }
+
     @Override
     public Vector3f bedrockPosition() {
         return super.bedrockPosition().add(baseTranslation);
+    }
+
+    protected void setDisplayDataDirty() {
+        displayDataDirty = true;
+    }
+
+    protected void clearDisplayDataDirty() {
+        displayDataDirty = false;
+    }
+
+    public enum Billboard {
+        FIXED,
+        VERTICAL,
+        HORIZONTAL,
+        CENTER;
     }
 }
