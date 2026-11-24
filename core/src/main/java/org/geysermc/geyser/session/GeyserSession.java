@@ -2478,7 +2478,10 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
             abilities.add(Ability.OPERATOR_COMMANDS);
         }
 
-        if (flying || spectator) {
+        // Bedrock treats FLYING while in a fluid as swimming, which breaks /fly there, so do not advertise
+        // the flag. The internal `flying` state stays set for packet spoofing (#6584).
+        boolean inWater = playerEntity.getFlag(EntityFlag.SWIMMING) && collisionManager.isPlayerInWater();
+        if ((flying && !inWater) || spectator) {
             if (spectator && !flying) {
                 // We're "flying locked" in this gamemode
                 flying = true;
