@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T22:05:41Z_
+_Generated at: 2026-11-24T22:13:34Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -41,9 +41,9 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 | `UNFIXED` | 822 |
 | `IN_PROGRESS` | 0 |
 | `FIXED` | 126 |
-| `UPSTREAM_FIXED` | 2838 |
+| `UPSTREAM_FIXED` | 2847 |
 | `DUPLICATE` | 556 |
-| `BLOCKED` | 55 |
+| `BLOCKED` | 46 |
 | `UNSUPPORTED` | 598 |
 | `NOT_APPLICABLE` | 1822 |
 | `PARTIAL` | 1 |
@@ -405,6 +405,11 @@ The checkout was unshallowed before this wave (`git rev-list --count HEAD` went 
 Eight issues were proven already fixed and promoted to FIXED: #5231, #5057, #4383, #4058, #3358, #2490, #2358 (fork commit `817a95c29`, verified an ancestor of `origin/master`, with `EntityCache.java:90,180,188-227` and `JavaSetEntityLinkTranslator.java:70-81`) and #3458 (upstream PR #5381 present at `GeyserSession.java:2001-2026` and `ChunkUtils.java:115,125`). The other batch found no portable work: `upstream/master` (`d2cf20058c`) is an ancestor of fork HEAD, and none of those issues has a merged fix or a clear reproducible fork-code root cause; partial upstream work was noted for #6802 (`PaintingEntity.java:106-112`) and #6202 (`TooltipProviders.java:99-124`).
 
 **Backlog audit N/O/P/Q.** Four read-only auditors processed 1275 closed UNFIXED records and produced **574 evidence-backed dispositions**: 177 UPSTREAM_FIXED, 107 UNSUPPORTED, 269 NOT_APPLICABLE, 11 DUPLICATE and 10 BLOCKED; 701 stayed `UNFIXED`. Every UPSTREAM_FIXED claim was verified with `git merge-base --is-ancestor <sha> HEAD` plus a fork `file:line` — for example #6583 → this campaign's text-display commit `994cd6a8b`, #6353 → upstream PR #6351, #3495 → the skull-skin NPE fix, #5236 → `006fe75e5a`. Duplicate classifications were only accepted when the target record was itself already fixed (#4434/#3729 were kept UNFIXED for that reason), and unverifiable "fixed in latest build" closures were likewise left alone.
+
+
+### Wave 19 — blocked-record dependency and history re-verification
+
+All 55 `BLOCKED` records were re-checked against published dependency metadata, upstream commit ancestry (GitHub `compare` `behind_by=0`), and the current local jar. Nine stale dispositions were promoted to `UPSTREAM_FIXED`: #64, #132, #144, #545 and #4844 (MCProtocolLib fixes merged and ancestral to master, older than the pinned `protocol:26.3-4`), #5667 (Floodgate `096c605`), #904 (mappings `83a34687` ancestral to the pinned mappings submodule), #5714 (frp#5119 merged) and #6807 (libdatachannel-java `c2d3c9a6` musl-stack fix ancestral to upstream `main`, predating the pinned snapshot build). PR #6914 remains blocked: `javap` on `protocol-26.3-4.jar` shows `PotionContents(int,int,List,String)` with only `getPotionId/getCustomColor/getCustomEffects/getCustomName` and no `hasCustomColor`/`OptionalInt`, while maven-releases latest is 26.3-4 and maven-snapshots newest 26.3-SNAPSHOT build is 14 (20261014.110736); upstream GeyserMC/MCProtocolLib#942 is still open. No dependency version bump, source edit or runtime verification was performed in this wave.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
