@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T22:20:59Z_
+_Generated at: 2026-11-24T22:37:23Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,14 +38,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 659 |
+| `UNFIXED` | 625 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 129 |
-| `UPSTREAM_FIXED` | 2885 |
-| `DUPLICATE` | 565 |
-| `BLOCKED` | 48 |
-| `UNSUPPORTED` | 610 |
-| `NOT_APPLICABLE` | 1921 |
+| `FIXED` | 131 |
+| `UPSTREAM_FIXED` | 2905 |
+| `DUPLICATE` | 568 |
+| `BLOCKED` | 49 |
+| `UNSUPPORTED` | 611 |
+| `NOT_APPLICABLE` | 1928 |
 | `PARTIAL` | 1 |
 
 ## Mass audit (two passes)
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-19 — open PR adoption and open issue fixes
+## Waves 8-20 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -423,6 +423,16 @@ This wave used the now-complete git history (5322 commits) to re-check all 55 BL
 
 **Backlog audit R/S/T/U.** Four read-only auditors produced **160 evidence-backed dispositions**: 38 UPSTREAM_FIXED, 12 UNSUPPORTED, 99 NOT_APPLICABLE, 9 DUPLICATE and 2 BLOCKED; the rest stayed `UNFIXED`. Every UPSTREAM_FIXED claim was verified with `git merge-base --is-ancestor <sha> HEAD` plus a fork `file:line` — for example #6751 via PR #6712 (`1f6ef23`, which the shallow-history shard P had to leave UNFIXED), #6214 via PR #6243 (`b728af2`), #6118 via PR #6124 (`2ba76f0`), and #4662 via `5ebb6ef0` with an explicit issue link. GitHub's core API quota was exhausted partway through shards S/T/U, so their remaining records were classified only from cached tracker metadata and local git verification, with no disposition inferred from closure alone.
 
+### Wave 20 — cached-evidence pass and backlog V/W/X
+
+GitHub's REST core quota was exhausted for this wave (`remaining=0`), so all four workers used cached tracker fields plus the unshallowed local git history instead of live API calls. `git fetch upstream` confirmed the fork is 0 commits behind upstream — there were no new upstream fixes to adopt.
+
+**Source change.** #6918/#6753 (hoe/shovel/axe use being reverted on Bedrock 26.6x, and axes/shovels/hoes unusable with Java 26.3): the disable-bedrock-scaffolding side-face/yaw revert is now scoped to a `BlockItem` in hand in `BedrockInventoryTransactionTranslator`, so tool use is no longer rolled back by a placement guard. Default config is unchanged; commit `1b26260cd`, merged as `7a92e805d`. The gated diagnostics added in wave 12 for #6918 remain in place, so a future report can still identify which guard fires.
+
+The cached-data issue pass found no promotable records among the other 77 open UNFIXED issues: their cached `cause`, `affected_files`, `links` and `sha` fields are all null, and git ancestry checks only surfaced the diagnostics commit `273f7c2d7` and the leash commit `817a95c293`, neither of which proves a fix. Those issues stay UNFIXED with the missing evidence recorded.
+
+**Backlog audit V/W/X.** Three read-only auditors produced **32 evidence-backed dispositions** from 582 records: 20 UPSTREAM_FIXED, 7 NOT_APPLICABLE, 3 DUPLICATE, 1 UNSUPPORTED and 1 BLOCKED; 550 stayed `UNFIXED`. Every UPSTREAM_FIXED claim required `git merge-base --is-ancestor <sha> HEAD` plus a fork `file:line`. The set includes #6220 (this campaign's own `7598a5870` port), #5704 (`5a00fa417`), #3106 (`ea967a0b`), #2843 (`d147ee37`), #358 (`ec9f692418b`), #1455/#1724 (`120769c7f68c`), #3448 (`47fd148b7`), #2600/#6069 (`7b60de194`), #1007 (`6884a0f7db8`) and nine more verified by shard X. Weak signals such as build IDs and crash IDs in cached text were not treated as fix commits.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -438,7 +448,7 @@ _(291 records)_
 | 6449358192 | NetherNet Doesn't Work on FreeBSD | https://github.com/GeyserMC/Geyser/issues/6923 | `NOT_APPLICABLE` |
 | 6413008617 | [NetherNet] Native handles and GeyserSession objects are never released after Bedrock players disconnect (Velocity, Windows) – ~90 handles + ~7–11 MB leaked per connection | https://github.com/GeyserMC/Geyser/issues/6920 | `FIXED` |
 | 6398503486 | Regression of #6834 in b1302: players joining through a signaling relay (MCXboxBroadcast) get the relay's IP again | https://github.com/GeyserMC/Geyser/issues/6919 | `DUPLICATE` |
-| 6392359368 | Bedrock 26.6x (NetherNet): tilling grass/dirt with a hoe is reverted, farmland never reaches the Java server | https://github.com/GeyserMC/Geyser/issues/6918 | `UNFIXED` |
+| 6392359368 | Bedrock 26.6x (NetherNet): tilling grass/dirt with a hoe is reverted, farmland never reaches the Java server | https://github.com/GeyserMC/Geyser/issues/6918 | `FIXED` |
 | 6363398043 | Nethernet and Playit: Connecting via an external IPv4 address and receiving a local IPv4 address. | https://github.com/GeyserMC/Geyser/issues/6915 | `NOT_APPLICABLE` |
 | 6353841610 | Bedrock Client Cannot Connect (End of Stream) | https://github.com/GeyserMC/Geyser/issues/6913 | `NOT_APPLICABLE` |
 | 6280416949 | Bedrock players experience abnormally fast movement speed after changing worlds or reconnecting | https://github.com/GeyserMC/Geyser/issues/6903 | `FIXED` |
@@ -468,7 +478,7 @@ _(291 records)_
 | 5910296029 | Player takes fall damage when landing on a waterlogged chest while colliding with the side of an adjacent full block | https://github.com/GeyserMC/Geyser/issues/6798 | `DUPLICATE` |
 | 5903758607 | Bedrock blocks dont appear server side | https://github.com/GeyserMC/Geyser/issues/6795 | `BLOCKED` |
 | 5839390609 | Custom entities in mapping | https://github.com/GeyserMC/Geyser/issues/6770 | `UNSUPPORTED` |
-| 5726325261 | Can't use axes, shovels or hoes with Java Edition 26.3 | https://github.com/GeyserMC/Geyser/issues/6753 | `UNFIXED` |
+| 5726325261 | Can't use axes, shovels or hoes with Java Edition 26.3 | https://github.com/GeyserMC/Geyser/issues/6753 | `FIXED` |
 | 5634129504 | Boat ejects Bedrock player in bubble columns longer than 8 blocks | https://github.com/GeyserMC/Geyser/issues/6741 | `FIXED` |
 | 5578485037 | purpur-geyser bug | https://github.com/GeyserMC/Geyser/issues/6734 | `UPSTREAM_FIXED` |
 | 5494589283 | Sliding display entity translation updates are sent to the client but do not visually apply on Bedrock | https://github.com/GeyserMC/Geyser/issues/6723 | `NOT_APPLICABLE` |
