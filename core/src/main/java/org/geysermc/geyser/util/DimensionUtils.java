@@ -25,7 +25,6 @@
 
 package org.geysermc.geyser.util;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.math.vector.Vector3i;
 import org.cloudburstmc.protocol.bedrock.data.PlayerActionType;
@@ -52,8 +51,6 @@ public class DimensionUtils {
     }
 
     public static void switchDimension(GeyserSession session, JavaDimension javaDimension, int bedrockDimension) {
-        @Nullable JavaDimension previousDimension = session.getDimensionType(); // previous java dimension; can be null if an online player with no saved auth token logs in.
-
         Entity player = session.getPlayerEntity();
 
         session.getChunkCache().clear();
@@ -84,17 +81,6 @@ public class DimensionUtils {
         session.updateThunder(0);
 
         finalizeDimensionSwitch(session, player);
-
-        // If the bedrock nether height workaround is enabled, meaning the client is told it's in the end dimension,
-        // we check if the player is entering the nether and apply the nether fog to fake the fact that the client
-        // thinks they are in the end dimension.
-        if (BedrockDimension.isCustomBedrockNetherId()) {
-            if (javaDimension.isNetherLike()) {
-                session.camera().sendFog(BEDROCK_FOG_HELL);
-            } else if (previousDimension != null && previousDimension.isNetherLike()) {
-                session.camera().removeFog(BEDROCK_FOG_HELL);
-            }
-        }
     }
 
     /**
