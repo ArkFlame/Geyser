@@ -32,6 +32,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.netty.channel.nethernet.AddressSource;
 import org.cloudburstmc.netty.channel.nethernet.NetherNetChannel;
 import org.cloudburstmc.netty.channel.nethernet.SourcedAddress;
+import org.cloudburstmc.netty.signaling.admission.AdmissionPrincipal;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.PacketDirection;
 import org.cloudburstmc.protocol.bedrock.netty.codec.compression.CompressionCodec;
@@ -53,6 +54,7 @@ import org.geysermc.geyser.network.bedrock.nethernet.signaling.provider.GameOutc
 public class NetherNetChannelInitialiser extends GeyserServerInitializer {
     private static final CompressionStrategy NOOP_STRATEGY = new SimpleCompressionStrategy(new NoopCompression());
     private static final String CONNECTION_GATE = "geyser-connection-gate";
+    private static final String RELEASE_HANDLER = "geyser-nethernet-release";
 
     private final @Nullable GameOutcomeReporter outcomes;
 
@@ -100,6 +102,33 @@ public class NetherNetChannelInitialiser extends GeyserServerInitializer {
         if (outcomes != null) {
             channel.pipeline().addBefore(BedrockPeer.NAME, GameOutcomeReporter.HANDLER_NAME,
                     outcomes.observer(protocol -> GameProtocol.getBedrockCodec(protocol) != null));
+        }
+
+        // A NetherNet channel has no RakNet child channel to clean up after it: release the peer and the
+        // per-connection attributes whichever way the connection ends, including a transport-side close.
+        channel.pipeline().addLast(RELEASE_HANDLER, new ChannelInboundHandlerAdapter() {
+            @Override
+            public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+                releaseChannel(ctx.channel());
+                ctx.fireChannelInactive();
+            }
+        });
+    }
+
+    /**
+     * Closes a NetherNet channel and clears the per-connection attributes it carries, so its native WebRTC peer
+     * and the session that owns it can be collected. Safe to call more than once, and from either the session
+     * disconnect event or the channel's own {@code channelInactive}.
+     */
+    public static void releaseChannel(@Nullable Channel channel) {
+        if (channel == null) {
+            return;
+        }
+        // Only meaningful while the connection is alive; it pins the provider's admission ticket.
+        channel.attr(AdmissionPrincipal.KEY).set(null);
+        if (channel.isOpen()) {
+            // doClose() releases the WebRTC peer and its native handles; closing an already closed channel is a no-op.
+            channel.close();
         }
     }
 
