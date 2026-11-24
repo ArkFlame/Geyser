@@ -1988,17 +1988,21 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         }
         // First close any dialogs that are open. This won't execute the dialog's closing action.
         dialogManager.close();
-        return doSendForm(form);
+        return doSendForm(form, true);
     }
 
     /**
      * Sends a form without first closing any open dialog. This should only be used by {@link org.geysermc.geyser.session.dialog.Dialog}s.
+     * <p>
+     * Unlike regular forms, dialogs do not close a currently open inventory on the Java server. As with
+     * any form, the Bedrock inventory still has to be closed locally so the form can be displayed, but
+     * no container close is sent downstream. See <a href="https://github.com/GeyserMC/Geyser/issues/6443">GeyserMC/Geyser#6443</a>.
      */
     public void sendDialogForm(@NonNull Form form) {
-        doSendForm(form);
+        doSendForm(form, false);
     }
 
-    private boolean doSendForm(@NonNull Form form) {
+    private boolean doSendForm(@NonNull Form form, boolean closeJavaInventory) {
         // Close all currently open forms.
         if (formCache.hasFormOpen()) {
             closeForm();
@@ -2010,7 +2014,10 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         // Also close current inventories, otherwise the form will not show
         if (inventoryHolder != null) {
             // We'll open the form when the client confirms current inventory being closed
-            InventoryUtils.sendJavaContainerClose(inventoryHolder);
+            // Dialogs must not notify the Java server, since opening one leaves the inventory open there
+            if (closeJavaInventory) {
+                InventoryUtils.sendJavaContainerClose(inventoryHolder);
+            }
             InventoryUtils.closeInventory(this, inventoryHolder, true);
         }
 
