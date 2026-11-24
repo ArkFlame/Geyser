@@ -102,6 +102,7 @@ import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.session.PendingMicrosoftAuthentication;
 import org.geysermc.geyser.session.SessionDisconnectListener;
 import org.geysermc.geyser.session.SessionManager;
+import org.geysermc.geyser.session.shared.SessionSharedCaches;
 import org.geysermc.geyser.skin.FloodgateSkinUploader;
 import org.geysermc.geyser.skin.ProvidedSkins;
 import org.geysermc.geyser.skin.SkinProvider;
@@ -165,6 +166,8 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
     private static final Pattern IP_REGEX = Pattern.compile("\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b");
 
     private final SessionManager sessionManager = new SessionManager();
+    @Getter(AccessLevel.NONE)
+    private final SessionSharedCaches sharedCaches = new SessionSharedCaches();
     private final GeyserTranslationManager translationManager = new GeyserTranslationManager();
     @Getter
     private final GeyserDebugSessionMap debugSessionMap = new GeyserDebugSessionMap();
@@ -792,6 +795,14 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
     @NonNull
     public GeyserExtensionManager extensionManager() {
         return this.extensionManager;
+    }
+
+    /**
+     * @return the immutable data caches shared by sessions of this Geyser instance
+     */
+    @NonNull
+    public SessionSharedCaches sharedCaches() {
+        return this.sharedCaches;
     }
 
     /**

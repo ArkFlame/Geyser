@@ -36,6 +36,7 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.HolderSet;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -153,6 +154,21 @@ public interface JavaRegistryProvider {
 
         IntList entries = holderSet.resolve(key -> rawTag(new Tag<>(registry, key)));
         return entries.contains(id);
+    }
+
+    /**
+     * Returns a previously computed value for a stateless inline registry entry, if this provider shares one.
+     *
+     * <p>The default returns {@code null}, meaning callers compute the value themselves as before.</p>
+     *
+     * @param registry the registry the entry belongs to
+     * @param data the raw, immutable NBT data of the entry
+     * @param computer computes the value when it is not already cached
+     * @param <T> the type of the registry
+     * @return the shared value, or {@code null} if this provider does not share one
+     */
+    default <T> @Nullable T sharedRegistryValue(JavaRegistryKey<T> registry, Object data, Supplier<T> computer) {
+        return null;
     }
 
     /**
