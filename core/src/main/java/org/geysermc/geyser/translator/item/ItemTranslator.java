@@ -53,6 +53,7 @@ import org.geysermc.geyser.item.type.TippedArrowItem;
 import org.geysermc.geyser.level.block.type.Block;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
+import org.geysermc.geyser.registry.type.CustomBlockItemOverride;
 import org.geysermc.geyser.registry.type.CustomSkull;
 import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.session.GeyserSession;
@@ -213,6 +214,9 @@ public final class ItemTranslator {
 
         // Populates default components that aren't sent over the network
         DataComponents components = javaItem.gatherComponents(session.getComponentCache(), customComponents);
+        CustomBlockData modelBlockOverride = CustomBlockItemTranslator.resolve(
+                BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.get(), javaItem.javaKey().asString(),
+                components.get(DataComponentTypes.ITEM_MODEL));
         TooltipOptions tooltip = TooltipOptions.fromComponents(components);
 
         // Translate item-specific components
@@ -267,9 +271,9 @@ public final class ItemTranslator {
         ItemData.Builder builder = javaItem.translateToBedrock(session, count, components, bedrockItem, session.getItemMappings());
         // Finalize the Bedrock NBT
         builder.tag(nbtBuilder.build());
-        if (bedrockItem.isBlock()) {
+        if (bedrockItem.isBlock() && modelBlockOverride == null) {
             CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.getOrDefault(
-                    bedrockItem.getJavaItem().javaKey().asString(), null);
+                    CustomBlockItemOverride.base(bedrockItem.getJavaItem().javaKey().asString()), null);
             if (customBlockData != null) {
                 translateCustomBlock(customBlockData, session, builder);
             } else {
@@ -277,11 +281,17 @@ public final class ItemTranslator {
             }
         }
 
-        if (bedrockItem.getJavaItem().equals(Items.PLAYER_HEAD)) {
+        if (modelBlockOverride != null) {
+            translateCustomBlock(modelBlockOverride, session, builder);
+        }
+
+        if (modelBlockOverride == null && bedrockItem.getJavaItem().equals(Items.PLAYER_HEAD)) {
             translatePlayerHead(session, components.get(DataComponentTypes.PROFILE), builder);
         }
 
-        translateCustomItem(session, count, components, builder, bedrockItem);
+        if (modelBlockOverride == null) {
+            translateCustomItem(session, count, components, builder, bedrockItem);
+        }
 
         // Translate the canDestroy and canPlaceOn Java components
         AdventureModePredicate canDestroy = components.get(DataComponentTypes.CAN_BREAK);
@@ -571,10 +581,14 @@ public final class ItemTranslator {
         ItemMapping mapping = itemStack.asItem().toBedrockDefinition(itemStack.getAllComponents(), session.getItemMappings());
 
         ItemDefinition itemDefinition = mapping.getBedrockDefinition();
-        CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.getOrDefault(
-                mapping.getJavaItem().javaKey().asString(), null);
-        if (customBlockData != null) {
-            itemDefinition = session.getItemMappings().getCustomBlockItemDefinitions().get(customBlockData);
+        CustomBlockData modelBlockOverride = CustomBlockItemTranslator.resolve(
+                BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.get(), mapping.getJavaItem().javaKey().asString(),
+                itemStack.getComponent(DataComponentTypes.ITEM_MODEL));
+        if (modelBlockOverride != null) {
+            ItemDefinition def = session.getItemMappings().getCustomBlockItemDefinitions().get(modelBlockOverride);
+            if (def != null) {
+                return def;
+            }
         }
 
         if (mapping.getJavaItem().equals(Items.PLAYER_HEAD)) {

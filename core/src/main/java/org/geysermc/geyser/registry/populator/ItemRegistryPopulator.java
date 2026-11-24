@@ -85,6 +85,7 @@ import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
 import org.geysermc.geyser.registry.populator.conversion.ItemRemapper;
 import org.geysermc.geyser.registry.populator.conversion.WildernessBoundConverter;
 import org.geysermc.geyser.registry.type.BlockMappings;
+import org.geysermc.geyser.registry.type.CustomBlockItemOverride;
 import org.geysermc.geyser.registry.type.CustomSkull;
 import org.geysermc.geyser.registry.type.GeyserBedrockBlock;
 import org.geysermc.geyser.registry.type.GeyserMappingItem;
@@ -323,7 +324,7 @@ public class ItemRegistryPopulator {
 
                     // We'll do this here for custom blocks we want in the creative inventory so we can piggyback off the existing logic to find these
                     // blocks in creativeItems
-                    CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.getOrDefault(javaItem.javaKey().asString(), null);
+                    CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.getOrDefault(CustomBlockItemOverride.base(javaItem.javaKey().asString()), null);
                     if (customBlockData != null) {
                         // this block has a custom item override and thus we should use its runtime ID for the ItemMapping
                         if (customBlockData.includedInCreativeInventory()) {
@@ -735,6 +736,27 @@ public class ItemRegistryPopulator {
                     .build(), itemData.getNetId(), itemData.getGroupId()));
             }
 
+            Int2ObjectMap<ItemMapping> customBlockModelItemMappings = new Int2ObjectOpenHashMap<>();
+            for (Map.Entry<CustomBlockItemOverride, CustomBlockData> entry :
+                    BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.get().entrySet()) {
+                if (entry.getKey().itemModel() == null) {
+                    continue; // base overrides handled separately
+                }
+                String javaIdentifier = entry.getKey().javaIdentifier();
+                ItemMapping javaMapping = mappings.stream()
+                        .filter(mapping -> mapping.getJavaItem().javaKey().asString().equals(javaIdentifier))
+                        .findFirst().orElse(null);
+                ItemDefinition customDefinition = customBlockItemDefinitions.get(entry.getValue());
+                if (javaMapping != null && customDefinition != null) {
+                    ItemMapping previous = customBlockModelItemMappings.putIfAbsent(customDefinition.getRuntimeId(), javaMapping);
+                    if (previous != null && previous.getJavaItem() != javaMapping.getJavaItem()) {
+                        throw new IllegalStateException("Custom block " + entry.getValue().identifier()
+                                + " cannot override multiple Java item identifiers: "
+                                + previous.getJavaItem().javaKey().asString() + " and " + javaIdentifier);
+                    }
+                }
+            }
+
             ItemMappings itemMappings = ItemMappings.builder()
                     .items(mappings.toArray(new ItemMapping[0]))
                     .zeroBlockDefinitionRuntimeId(mappings.stream()
@@ -752,6 +774,7 @@ public class ItemRegistryPopulator {
                     .customIdMappings(customIdMappings)
                     .nonVanillaCustomItemIds(nonVanillaCustomItemIds)
                     .customBlockItemDefinitions(customBlockItemDefinitions)
+                    .customBlockModelItemMappings(customBlockModelItemMappings)
                     .build();
 
             Registries.ITEMS.register(palette.protocolVersion(), itemMappings);

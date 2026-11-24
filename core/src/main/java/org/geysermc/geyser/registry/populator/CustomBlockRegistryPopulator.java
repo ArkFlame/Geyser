@@ -30,6 +30,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import net.kyori.adventure.key.Key;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.cloudburstmc.nbt.NbtMap;
 import org.cloudburstmc.nbt.NbtMapBuilder;
@@ -62,6 +63,7 @@ import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
 import org.geysermc.geyser.registry.mappings.MappingsConfigReader;
 import org.geysermc.geyser.registry.mappings.MappingsType;
+import org.geysermc.geyser.registry.type.CustomBlockItemOverride;
 import org.geysermc.geyser.registry.type.CustomSkull;
 import org.geysermc.geyser.translator.collision.OtherCollision;
 import org.geysermc.geyser.util.BlockUtils;
@@ -118,7 +120,7 @@ public class CustomBlockRegistryPopulator {
     }
 
     private static Set<CustomBlockData> CUSTOM_BLOCKS;
-    private static Map<String, CustomBlockData> CUSTOM_BLOCK_ITEM_OVERRIDES;
+    private static Map<CustomBlockItemOverride, CustomBlockData> CUSTOM_BLOCK_ITEM_OVERRIDES;
     private static Map<JavaBlockState, CustomBlockState> NON_VANILLA_BLOCK_STATE_OVERRIDES;
     private static Map<String, CustomBlockState> BLOCK_STATE_OVERRIDES_QUEUE;
 
@@ -161,7 +163,17 @@ public class CustomBlockRegistryPopulator {
                 if (!CUSTOM_BLOCKS.contains(customBlockData)) {
                     throw new IllegalArgumentException("Custom block is unregistered. Name: " + customBlockData.name());
                 }
-                CUSTOM_BLOCK_ITEM_OVERRIDES.put(javaIdentifier, customBlockData);
+                CUSTOM_BLOCK_ITEM_OVERRIDES.put(CustomBlockItemOverride.base(javaIdentifier), customBlockData);
+            }
+
+            @Override
+            public void registerItemOverride(@NonNull String javaIdentifier, @NonNull String itemModel,
+                                             @NonNull CustomBlockData customBlockData) {
+                if (!CUSTOM_BLOCKS.contains(customBlockData)) {
+                    throw new IllegalArgumentException("Custom block is unregistered. Name: " + customBlockData.name());
+                }
+                CUSTOM_BLOCK_ITEM_OVERRIDES.put(
+                        new CustomBlockItemOverride(javaIdentifier, Key.key(itemModel)), customBlockData);
             }
 
             @Override
@@ -203,7 +215,7 @@ public class CustomBlockRegistryPopulator {
         MappingsConfigReader.loadCustomMappingsFromJson(MappingsType.BLOCKS, (key, block) -> {
             CUSTOM_BLOCKS.add(block.data());
             if (block.overrideItem()) {
-                CUSTOM_BLOCK_ITEM_OVERRIDES.put(block.javaIdentifier(), block.data());
+                CUSTOM_BLOCK_ITEM_OVERRIDES.put(CustomBlockItemOverride.base(block.javaIdentifier()), block.data());
             }
             block.states().forEach((javaIdentifier, customBlockState) -> {
                 int id = BlockRegistries.JAVA_BLOCK_STATE_IDENTIFIER_TO_ID.getOrDefault(javaIdentifier, -1);
@@ -393,6 +405,29 @@ public class CustomBlockRegistryPopulator {
     }
 
     /**
+     * Packs the flags of a material instance into its {@code packed_bools} bitset
+     *
+     * @param materialInstance the material instance
+     * @return the packed flags
+     */
+    private static byte packMaterialFlags(MaterialInstance materialInstance) {
+        int flags = 0;
+        if (materialInstance.faceDimming()) {
+            flags |= 1;
+        }
+        if (materialInstance.isotropic()) {
+            flags |= 1 << 1;
+        }
+        if (materialInstance.textureVariation()) {
+            flags |= 1 << 2;
+        }
+        if (materialInstance.alphaMaskedTint()) {
+            flags |= 1 << 3;
+        }
+        return (byte) flags;
+    }
+
+    /**
      * Converts the provided custom block components to an {@link NbtMap} to be sent to the client in the StartGame packet
      *
      * @param components the custom block components to convert
@@ -441,10 +476,7 @@ public class CustomBlockRegistryPopulator {
                 NbtMapBuilder materialBuilder = NbtMap.builder()
                         // Bedrock stopped accepting a byte here in 1.26.20; it must be a float
                         .putFloat("ambient_occlusion", materialInstance.ambientOcclusionExponent())
-                        .putBoolean("isotropic", materialInstance.isotropic());
-
-                // todo this is actually an bitset, we should add the other properties some day
-                materialBuilder.putBoolean("packed_bools", materialInstance.faceDimming());
+                        .putByte("packed_bools", packMaterialFlags(materialInstance));
 
                 if (materialInstance.renderMethod() != null) {
                     materialBuilder.putString("render_method", materialInstance.renderMethod());
