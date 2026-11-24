@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T22:57:14Z_
+_Generated at: 2026-11-24T23:10:53Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,14 +38,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 405 |
+| `UNFIXED` | 310 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 132 |
-| `UPSTREAM_FIXED` | 2941 |
-| `DUPLICATE` | 586 |
-| `BLOCKED` | 55 |
-| `UNSUPPORTED` | 632 |
-| `NOT_APPLICABLE` | 2065 |
+| `FIXED` | 133 |
+| `UPSTREAM_FIXED` | 2959 |
+| `DUPLICATE` | 596 |
+| `BLOCKED` | 57 |
+| `UNSUPPORTED` | 648 |
+| `NOT_APPLICABLE` | 2113 |
 | `PARTIAL` | 2 |
 
 ## Mass audit (two passes)
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-21 — open PR adoption and open issue fixes
+## Waves 8-22 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -441,6 +441,16 @@ With the GitHub core quota restored (`5000` requests) and the checkout unshallow
 
 **Backlog audit Y/Z/AA.** Three read-only auditors produced **218 evidence-backed dispositions**: 137 NOT_APPLICABLE, 36 UPSTREAM_FIXED, 21 UNSUPPORTED, 18 DUPLICATE and 6 BLOCKED; 332 stayed `UNFIXED`. Every UPSTREAM_FIXED claim required `git merge-base --is-ancestor <sha> HEAD` plus a fork `file:line` (26 commits checked in shard Y alone). Notable verdicts: #4070/#1284/#227/#935 fixed by verified ancestor commits, #4794 via the mappings gitlink bump, #1597 as a duplicate of the already-fixed #1524, and #4366 BLOCKED on an external Cloudburst/Protocol fix. One important correction: #15 was downgraded to UNFIXED after `gh pr view 15` showed `merged=false` — the timeline commit belonged to another repository's PR #15. Tentative "should be fixed" remarks and duplicates of unfixed records were likewise left UNFIXED.
 
+### Wave 22 — custom skull chunk fix and backlog AB/AC
+
+Three workers ran with a partially depleted GitHub quota (~2783 requests) and an unshallowed checkout. `git fetch upstream` again showed 0 new upstream commits, so no newly published upstream fix was available.
+
+**Source change.** #6302 (custom skulls render incorrectly at certain Y coordinates): `JavaLevelChunkWithLightTranslator` used `(y >> 4) + (minY >> 4)` as the wire sub-chunk index instead of absolute `y >> 4`, omitted the top section, and let out-of-world block entities throw and drop the whole chunk. It now uses the absolute sub-chunk index with an inclusive top bound and skips out-of-range block entities; commit `e84ad3d6c`, merged as `b2721d78f`. No merged upstream fix existed for this issue — it was derived from the body and the fork's code.
+
+Of the other 72 open issues, none had a merged upstream fix absent from the fork, and no other root cause was concrete enough to change code safely; their outcomes and missing evidence are in `/tmp/issues22.md`.
+
+**Backlog audit AB/AC.** Two read-only auditors produced **94 evidence-backed dispositions** from 251 records: 18 UPSTREAM_FIXED, 16 UNSUPPORTED, 48 NOT_APPLICABLE, 10 DUPLICATE and 2 BLOCKED; 157 stayed `UNFIXED`. Every UPSTREAM_FIXED claim was tied to a specific commit verified as an ancestor of HEAD and a fork `file:line` (#2117, #1981, #2558, #4730, #4916, #2061, #3248, #3909, #2953, #2692, #1705/#4841 via PR #5518, #3536 via PR #5659, and the verified set from AC). No DUPLICATE was recorded unless the target record was already resolved, so unresolved duplicates stayed UNFIXED.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -559,7 +569,7 @@ _(291 records)_
 | 4367591866 | Bedrock mobile players crafted items do not stack in inventory | https://github.com/GeyserMC/Geyser/issues/6342 | `UNSUPPORTED` |
 | 4367583984 | Bamboo and crop blocks cause rubber-banding/glitching for Bedrock mobile players | https://github.com/GeyserMC/Geyser/issues/6341 | `FIXED` |
 | 4307745168 | Minecraft armour trims problem | https://github.com/GeyserMC/Geyser/issues/6320 | `UNFIXED` |
-| 4259757094 | Custom Skulls Bug? | https://github.com/GeyserMC/Geyser/issues/6302 | `UNFIXED` |
+| 4259757094 | Custom Skulls Bug? | https://github.com/GeyserMC/Geyser/issues/6302 | `FIXED` |
 | 4198616510 | Bedrock 26.10/26.12 (protocol 944) horse riding desync: delayed first jump, rubberbanding, dismount snapback | https://github.com/GeyserMC/Geyser/issues/6283 | `UNFIXED` |
 | 4196235341 | Mapping api v2 predicate property fishing_rod_cast or crossbow charged Not compatible with Java players | https://github.com/GeyserMC/Geyser/issues/6281 | `UPSTREAM_FIXED` |
 | 4186822367 | Bedrock clients are crashing while somebody has a custom armor with armor trim equipped | https://github.com/GeyserMC/Geyser/issues/6278 | `NOT_APPLICABLE` |
