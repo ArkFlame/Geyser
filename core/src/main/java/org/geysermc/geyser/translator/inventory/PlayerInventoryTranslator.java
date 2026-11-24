@@ -304,10 +304,15 @@ public class PlayerInventoryTranslator extends InventoryTranslator<PlayerInvento
                     int sourceSlot = bedrockSlotToJava(transferAction.getSource());
                     int destSlot = bedrockSlotToJava(transferAction.getDestination());
                     if (destSlot == 5) {
-                        // only set the head if the destination is the head slot
-                        GeyserItemStack javaItem = inventory.getItem(sourceSlot);
+                        // Only set the head if the destination is the head slot; replacing a custom head with a
+                        // different helmet must restore the original skin. See GeyserMC/Geyser#6115.
+                        GeyserItemStack javaItem = isCursor(transferAction.getSource())
+                            ? playerInv.getCursor()
+                            : inventory.getItem(sourceSlot);
                         if (javaItem.is(Items.PLAYER_HEAD) && javaItem.hasNonBaseComponents()) {
                             FakeHeadProvider.setHead(session, session.getPlayerEntity(), javaItem.getComponent(DataComponentTypes.PROFILE));
+                        } else {
+                            FakeHeadProvider.restoreOriginalSkin(session, session.getPlayerEntity());
                         }
                     } else if (sourceSlot == 5) {
                         // we are probably removing the head, so restore the original skin
