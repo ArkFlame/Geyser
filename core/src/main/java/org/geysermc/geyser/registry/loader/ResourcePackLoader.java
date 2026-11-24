@@ -124,7 +124,8 @@ public class ResourcePackLoader implements RegistryLoader<Path, Map<UUID, Resour
         // Add resource packs provided by Geyser packs. The manifest selection below is unchanged:
         // packs registered here go through the same event and readPack() path as ordinary packs.
         if (Registries.GEYSER_ASSET_PACKS.loaded()) {
-            Registries.GEYSER_ASSET_PACKS.get().forEach(pack -> pack.resourcePacks(resourcePacks::add));
+            final List<Path> mutablePacks = resourcePacks;
+            Registries.GEYSER_ASSET_PACKS.get().forEach(pack -> pack.resourcePacks(mutablePacks::add));
         }
 
         //noinspection deprecation - we know

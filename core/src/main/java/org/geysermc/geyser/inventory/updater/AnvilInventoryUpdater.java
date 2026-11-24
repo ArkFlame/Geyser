@@ -444,7 +444,7 @@ public class AnvilInventoryUpdater extends InventoryUpdater {
 
     private boolean isCombining(GeyserItemStack input, GeyserItemStack material) {
         return isEnchantedBook(material)
-            || (input.isSameItem(material) && (hasDurability(input) || (hasEnchantments(input) && hasEnchantments(material))));
+            || (input.isSameItem(material) && (input.isDamageable() || (hasEnchantments(input) && hasEnchantments(material))));
     }
 
     private boolean isRepairItem(GeyserItemStack input, GeyserItemStack material, GeyserSession session) {
