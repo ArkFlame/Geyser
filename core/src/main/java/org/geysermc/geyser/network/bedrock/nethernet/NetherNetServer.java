@@ -257,7 +257,7 @@ public final class NetherNetServer implements EventRegistrar, DumpMessageSource 
         }
 
         geyser.eventBus().subscribe(this, SessionJoinEvent.class, this::onSessionJoin);
-        geyser.eventBus().subscribe(this, SessionDisconnectEventImpl.class, event -> refreshProviderStatus());
+        geyser.eventBus().subscribe(this, SessionDisconnectEventImpl.class, this::onSessionDisconnect);
 
         List<String> advertised = advertisedAddresses();
         // A front can rewrite built-in signaling's answers to name the relays, which network warns about when it
@@ -999,6 +999,18 @@ public final class NetherNetServer implements EventRegistrar, DumpMessageSource 
         if (event.connection() instanceof GeyserSession session
                 && !session.getUpstream().getSession().isSubClient()) {
             gameOutcomes.joined(session.getUpstream().getSession().getPeer().getChannel());
+        }
+        refreshProviderStatus();
+    }
+
+    /**
+     * Releases a disconnected player's NetherNet channel so its native peer and WebRTC resources do not outlive
+     * the session. RakNet frees its child channel on disconnect; NetherNet keeps the channel open until it is
+     * closed explicitly.
+     */
+    private void onSessionDisconnect(SessionDisconnectEventImpl event) {
+        if (event.connection() instanceof GeyserSession session) {
+            NetherNetChannelInitialiser.releaseChannel(session.getUpstream().getSession().getPeer().getChannel());
         }
         refreshProviderStatus();
     }
