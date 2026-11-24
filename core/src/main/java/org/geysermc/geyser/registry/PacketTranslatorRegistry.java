@@ -35,7 +35,6 @@ import org.geysermc.geyser.text.GeyserLocale;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundCustomReportDetailsPacket;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundPostEffectsPacket;
-import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundResourcePackPopPacket;
 import org.geysermc.mcprotocollib.protocol.packet.configuration.clientbound.ClientboundResetChatPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundCustomChatCompletionsPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundDeleteChatPacket;
@@ -118,7 +117,6 @@ public class PacketTranslatorRegistry<T> extends AbstractMappedRegistry<Class<? 
         IGNORED_PACKETS.add(ClientboundTestInstanceBlockStatus.class);
 
         /// Not yet implemented
-        IGNORED_PACKETS.add(ClientboundResourcePackPopPacket.class);
         IGNORED_PACKETS.add(ClientboundChunksBiomesPacket.class); // ???
 
         IGNORED_PACKETS.add(ClientboundGameTestHighlightPosPacket.class); // Maybe?
