@@ -43,27 +43,47 @@ public class JavaSetEntityLinkTranslator extends PacketTranslator<ClientboundSet
 
     @Override
     public void translate(GeyserSession session, ClientboundSetEntityLinkPacket packet) {
-        Entity holderId = session.getEntityCache().getEntityByJavaId(packet.getEntityId());
-        if (!(holderId instanceof Leashable asLeashable)) {
-            return;
-        }
+        Entity leashedEntity = session.getEntityCache().getEntityByJavaId(packet.getEntityId());
+        int holderJavaId = packet.getAttachedToId();
 
-        Entity attachedToId = session.getEntityCache().getEntityByJavaId(packet.getAttachedToId());
-        if (attachedToId == null || packet.getAttachedToId() == 0) {
+        if (holderJavaId == 0) {
             // Is not being leashed
-            holderId.setFlag(EntityFlag.LEASHED, false);
+            if (!(leashedEntity instanceof Leashable asLeashable)) {
+                return;
+            }
+            leashedEntity.setFlag(EntityFlag.LEASHED, false);
             asLeashable.setLeashHolderBedrockId(-1L);
-            holderId.updateBedrockMetadata();
+            leashedEntity.updateBedrockMetadata();
             EntityEventPacket eventPacket = new EntityEventPacket();
-            eventPacket.setRuntimeEntityId(holderId.geyserId());
+            eventPacket.setRuntimeEntityId(leashedEntity.geyserId());
             eventPacket.setType(EntityEventType.REMOVE_LEASH);
             eventPacket.setData(0);
             session.sendUpstreamPacket(eventPacket);
             return;
         }
 
-        holderId.setFlag(EntityFlag.LEASHED, true);
-        asLeashable.setLeashHolderBedrockId(attachedToId.geyserId());
-        holderId.updateBedrockMetadata();
+        Entity holderEntity = session.getEntityCache().getEntityByJavaId(holderJavaId);
+        if (leashedEntity == null || holderEntity == null) {
+            // Java can send this link before either side is tracked (a fence knot is commonly spawned after the
+            // mob it holds). Remember it and reapply once the missing entity spawns, otherwise the lead never shows
+            // up until the chunk is reloaded and the server sends the link again.
+            session.getEntityCache().cachePendingLeash(packet.getEntityId(), holderJavaId);
+            return;
+        }
+
+        applyLeash(leashedEntity, holderEntity);
+    }
+
+    /**
+     * Applies a leash link that both entities are now known for. Also used by
+     * {@link org.geysermc.geyser.session.cache.EntityCache} when a deferred link can finally be resolved.
+     */
+    public static void applyLeash(Entity leashedEntity, Entity holderEntity) {
+        if (!(leashedEntity instanceof Leashable asLeashable)) {
+            return;
+        }
+        leashedEntity.setFlag(EntityFlag.LEASHED, true);
+        asLeashable.setLeashHolderBedrockId(holderEntity.geyserId());
+        leashedEntity.updateBedrockMetadata();
     }
 }
