@@ -45,6 +45,9 @@ public class TippedArrowItem extends ArrowItem {
     @Override
     public Component getName(DataComponents components) {
         return PotionItem.getName(components, translationKey(), super::getName);
+    }
+
+    @Override
     public Component getName(GeyserItemStack stack) {
         return PotionItem.getName(stack, translationKey(), super::getName);
     }

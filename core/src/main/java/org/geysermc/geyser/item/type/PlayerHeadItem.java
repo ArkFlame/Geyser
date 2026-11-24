@@ -52,6 +52,9 @@ public class PlayerHeadItem extends BlockItem {
         return profile != null && profile.getProfile().getName() != null
             ? Component.translatable(translationKey() + ".named", profile.getProfile().getName())
             : super.getName(components);
+    }
+
+    @Override
     public Component getName(GeyserItemStack stack) {
         ResolvableProfile profile = stack.getComponent(DataComponentTypes.PROFILE);
         GameProfile resolved = profile == null ? null : SkinManager.resolveProfile(profile).getNow(null);

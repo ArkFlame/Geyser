@@ -79,9 +79,11 @@ public class PotionItem extends Item {
             }
         }
         return Component.translatable(baseTranslation + name);
+    }
 
-    public Component getName(DataComponents components) {
-        return getName(components, translationKey(), super::getName);
+    @Override
+    public Component getName(GeyserItemStack stack) {
+        return getName(stack, translationKey(), super::getName);
     }
 
     @Override

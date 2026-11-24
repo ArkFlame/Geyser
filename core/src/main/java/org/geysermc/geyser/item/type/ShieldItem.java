@@ -54,6 +54,9 @@ public class ShieldItem extends Item {
         return dyeColor != null
             ? Component.translatable(translationKey() + "." + dyeColor.getJavaIdentifier())
             : super.getName(components);
+    }
+
+    @Override
     public Component getName(GeyserItemStack stack) {
         Integer color = stack.getComponent(DataComponentTypes.BASE_COLOR);
         return color != null
