@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T20:34:52Z_
+_Generated at: 2026-11-24T21:07:07Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,14 +38,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 2936 |
+| `UNFIXED` | 2192 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 111 |
-| `UPSTREAM_FIXED` | 2364 |
-| `DUPLICATE` | 394 |
-| `BLOCKED` | 9 |
-| `UNSUPPORTED` | 360 |
-| `NOT_APPLICABLE` | 642 |
+| `FIXED` | 114 |
+| `UPSTREAM_FIXED` | 2436 |
+| `DUPLICATE` | 432 |
+| `BLOCKED` | 16 |
+| `UNSUPPORTED` | 419 |
+| `NOT_APPLICABLE` | 1207 |
 | `PARTIAL` | 2 |
 
 ## Mass audit (two passes)
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-14 — open PR adoption and open issue fixes
+## Waves 8-15 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -345,6 +345,21 @@ This wave took the five open upstream PRs that were still unadopted after wave 1
 **Closed backlog audit.** Two read-only auditors reviewed the 800 most recent `UNFIXED` closed records (even and odd id shards) against cached GitHub metadata, maintainer closing comments, `state_reason`, and the fork source. They produced **239 evidence-backed dispositions** (`/tmp/backlogA.json` + `/tmp/backlogB.json`): 15 UPSTREAM_FIXED, 7 DUPLICATE, 96 UNSUPPORTED and 121 NOT_APPLICABLE. UPSTREAM_FIXED was only used when the fixing commit was confirmed as an ancestor of fork master with `git merge-base --is-ancestor` and the symbol was found in the tree (for example #6836 -> `8c61d7398` at `BlockTag.java:232`, #6797/#6779 -> `d14f2046`, #6457 -> 26.2 support present in the baseline). The remaining 561 reviewed records stayed `UNFIXED` because no admissible evidence was found; notably #5317 was deliberately not promoted because upstream commit `0416b55959` is not in master.
 
 Verification level for this wave: `./gradlew compileJava compileTestJava --no-daemon --no-parallel -Dorg.gradle.jvmargs='-Xmx4G -XX:MaxMetaspaceSize=1G'` — compile-only. Runtime behaviour of all five PRs is **unverified**; the two merge conflicts that were resolved by hand (`MinecraftLocale` combining extension-locale and pack-locale hooks, and the overlapping #5692/#5595 item-name helpers) are included in that compile check.
+
+### Wave 15 — gated PRs, PARTIAL remainders and backlog shards C/D/E
+
+Six workers attacked the previously gated or partial PRs and three read-only auditors continued the closed-record backlog. All six PR branches merged cleanly; verification for this wave is a single compile-only pass (`compileJava compileTestJava`) on the merged tree — no tests, gametest or Spigot jar runs.
+
+| PR | Outcome | Evidence |
+| ---: | --- | --- |
+| #6393 | FIXED | `b066aa7a8` — the two `integrated_playsound_mapping` entries now resolve to vanilla Bedrock sounds (`attack.strong`/`attack.critical`) via the fork-owned `sound_mapping_overrides.json`, so the build-downloaded pack binary is no longer required; Java-side substitution kept and `SoundRegistryLoaderTest` covers knockback |
+| #6936 | FIXED | `10c207b42` — `GeyserSession.checkHeightLimit(Vector3f)` toggles vanilla `minecraft:fog_hell` by Y bounds from `BedrockMovePlayer`; the upstream integrated-pack dependency (#86) is cosmetic only; gated by `nether-roof-workaround`, default unchanged |
+| #6690 | PARTIAL | `403b168d4` — config-gated NPC dialogue handling (`enableNpcDialogues`, default false), `BedrockNpcRequestTranslator`, session `npcId`, `FormCache.handleResponse` via existing Cumulus `FormDefinition`; the plugin-facing `NpcForm` opening path cannot be ported because that class does not exist in the fork's Cumulus `1.1.2` |
+| #6811 | FIXED | `00bca39fd` — shared immutable session data: refcounted handles, per-Geyser holder (no static mutable global cache), raw-NBT keys instead of `hashCode`, opt-in stateless-reader allowlist; the draft's global static cache list and `RegistryCache` path were omitted |
+| #5692 | PARTIAL | `3a6f61d4e` — provider framework plus 22 Java-parity providers, opt-in via `geyser.tooltipProviders` so default lore output is unchanged; per-registry entry contexts remain impossible without `JavaRegistryKey<T,MCPL>`, and the name-tooltip, map-tooltip, built-in potion-effect, spawner and can-break/can-place providers remain TODO |
+| #6914 | BLOCKED (confirmed) | `javap` on `protocol-26.3-4` shows `PotionContents` has no presence flag: absent and present `-1` colors both decode to `-1`, and `writePotionContents` gates on `>= 0`, so the distinction is lost before hashing. Only a real MCProtocolLib bump (GeyserMC/MCProtocolLib#942) can fix it. The PR's `ContainerType` renames are already present at `InventoryTranslator.java:119-120` |
+
+**Backlog audit C/D/E.** Three read-only auditors processed 1500 closed `UNFIXED` records and produced **744 evidence-backed dispositions**: 569 NOT_APPLICABLE, 72 UPSTREAM_FIXED, 59 UNSUPPORTED, 38 DUPLICATE and 6 BLOCKED. UPSTREAM_FIXED was asserted only when the fixing commit was verified as an ancestor of master (`git merge-base --is-ancestor` or `compare <sha>...master`) and a `file:line` was found — for example #6810 → `5a24ded` at `NetherNetServer.java:202-233`, #5493 → `a9c1da5` at `InventoryHolder.java:83`, #6760 → `12532288` at `gradle/libs.versions.toml:23`. Because this checkout is shallow, cited commits that could not be proven were deliberately kept `UNFIXED` (#6582 is one such case). The remaining 756 reviewed records stayed `UNFIXED` because no admissible evidence was found.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
@@ -655,14 +670,14 @@ _(57 records)_
 | ID | Title | URL | Status |
 | ---: | --- | --- | --- |
 | 5467968815 | Fix heterogeneous list hashing | https://github.com/GeyserMC/Geyser/pull/6938 | `FIXED` |
-| 5446883801 | Improve functionality of the Nether roof workaround | https://github.com/GeyserMC/Geyser/pull/6936 | `NOT_APPLICABLE` |
+| 5446883801 | Improve functionality of the Nether roof workaround | https://github.com/GeyserMC/Geyser/pull/6936 | `FIXED` |
 | 5398766503 | Fix: include Git SHA in Spigot plugin version | https://github.com/GeyserMC/Geyser/pull/6931 | `FIXED` |
 | 5387806158 | Fill server-side command suggestions on Bedrock | https://github.com/GeyserMC/Geyser/pull/6928 | `FIXED` |
 | 5368363595 | Keep the name tag of entities that only carry text displays | https://github.com/GeyserMC/Geyser/pull/6925 | `FIXED` |
 | 5360752965 | Introduce `.geyserpack` loading | https://github.com/GeyserMC/Geyser/pull/6922 | `FIXED` |
 | 5330888326 | FIX synchronize item frames after teleportation | https://github.com/GeyserMC/Geyser/pull/6921 | `FIXED` |
 | 5295765293 | Register vanilla tools as custom items to fix block breaking times | https://github.com/GeyserMC/Geyser/pull/6916 | `FIXED` |
-| 5286632827 | build(deps): use the MCProtocolLib codec fixes build | https://github.com/GeyserMC/Geyser/pull/6914 | `NOT_APPLICABLE` |
+| 5286632827 | build(deps): use the MCProtocolLib codec fixes build | https://github.com/GeyserMC/Geyser/pull/6914 | `BLOCKED` |
 | 5275355313 | Match Vanilla styles in custom names and lore to fully normalize the text component | https://github.com/GeyserMC/Geyser/pull/6909 | `DUPLICATE` |
 | 5233348431 | Add texture variation and alpha masked tint to material instance API | https://github.com/GeyserMC/Geyser/pull/6905 | `FIXED` |
 | 5216900616 | Add culling to custom block geometry component | https://github.com/GeyserMC/Geyser/pull/6902 | `FIXED` |
@@ -677,14 +692,14 @@ _(57 records)_
 | 5035241143 | Improve translation of commands | https://github.com/GeyserMC/Geyser/pull/6833 | `FIXED` |
 | 5023900867 | Custom biome API, mappings, and generated Bedrock visuals | https://github.com/GeyserMC/Geyser/pull/6829 | `DUPLICATE` |
 | 4943303365 | ViaProxy: don't fail IP passthrough when a downstream session has no local address yet | https://github.com/GeyserMC/Geyser/pull/6812 | `FIXED` |
-| 4938616313 | Implement abstract model for sharing data across sessions | https://github.com/GeyserMC/Geyser/pull/6811 | `NOT_APPLICABLE` |
+| 4938616313 | Implement abstract model for sharing data across sessions | https://github.com/GeyserMC/Geyser/pull/6811 | `FIXED` |
 | 4842813446 | Implement Text Displays via Primitive Text | https://github.com/GeyserMC/Geyser/pull/6768 | `FIXED` |
 | 4805839353 | Fix custom tridents and spears | https://github.com/GeyserMC/Geyser/pull/6759 | `FIXED` |
 | 4744708298 | fix: prevent NPE when attacking Ender Dragon parts | https://github.com/GeyserMC/Geyser/pull/6748 | `FIXED` |
 | 4569560222 | Fix collision loading and addon-pack flags for non-vanilla blocks | https://github.com/GeyserMC/Geyser/pull/6724 | `FIXED` |
 | 4540681458 | Fix client-side waterlogging prediction on doors and non-waterloggable blocks | https://github.com/GeyserMC/Geyser/pull/6706 | `FIXED` |
 | 4496366694 | Lava fishing workaround | https://github.com/GeyserMC/Geyser/pull/6694 | `FIXED` |
-| 4476271563 | Add support for Npc Dialogues | https://github.com/GeyserMC/Geyser/pull/6690 | `NOT_APPLICABLE` |
+| 4476271563 | Add support for Npc Dialogues | https://github.com/GeyserMC/Geyser/pull/6690 | `PARTIAL` |
 | 4457015299 | Xbox split-screen support, reworked onto master and fixed on hardware | https://github.com/GeyserMC/Geyser/pull/6689 | `FIXED` |
 | 4440438587 | Move recipe shift clicking to use ServerboundPlaceRecipePacket | https://github.com/GeyserMC/Geyser/pull/6686 | `FIXED` |
 | 4345263370 | Avoid have no response when trading using touch or the Shift key cause by client bug since v1.21.30 | https://github.com/GeyserMC/Geyser/pull/6667 | `FIXED` |
@@ -703,7 +718,7 @@ _(57 records)_
 | 4008215209 | Change logger to a static reference and add some debugging commands | https://github.com/GeyserMC/Geyser/pull/6513 | `NOT_APPLICABLE` |
 | 3948152368 | Attempt to lower scoreboard allocs | https://github.com/GeyserMC/Geyser/pull/6489 | `FIXED` |
 | 3707133775 | Fix block breaking | https://github.com/GeyserMC/Geyser/pull/6419 | `FIXED` |
-| 3662155537 | Add proper combat sounds | https://github.com/GeyserMC/Geyser/pull/6393 | `PARTIAL` |
+| 3662155537 | Add proper combat sounds | https://github.com/GeyserMC/Geyser/pull/6393 | `FIXED` |
 | 3142621945 | Feature: Reloadable Mappings | https://github.com/GeyserMC/Geyser/pull/6081 | `FIXED` |
 | 3044136529 | Workaround for client-sided removal of all items from the crafting grid on inventory close | https://github.com/GeyserMC/Geyser/pull/6008 | `FIXED` |
 | 2875767111 | Custom Translation API | https://github.com/GeyserMC/Geyser/pull/5860 | `FIXED` |
