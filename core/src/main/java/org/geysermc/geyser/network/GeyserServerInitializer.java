@@ -34,6 +34,7 @@ import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockServerInitializer;
 import org.geysermc.geyser.GeyserImpl;
+import org.geysermc.geyser.api.event.bedrock.SessionDefineNetworkChannelsEvent;
 import org.geysermc.geyser.network.bedrock.GeyserBedrockPeer;
 import org.geysermc.geyser.network.bedrock.InvalidPacketHandler;
 import org.geysermc.geyser.network.bedrock.LoginPacketHandler;
@@ -66,6 +67,8 @@ public abstract class GeyserServerInitializer extends BedrockServerInitializer {
                     handler.setSession(session);
                 }
             }
+
+            session.getNetwork().defineNetworkChannels(SessionDefineNetworkChannelsEvent.State.CREATED);
 
             bedrockServerSession.setPacketHandler(new LoginPacketHandler(this.geyser, session));
         } catch (Throwable e) {
