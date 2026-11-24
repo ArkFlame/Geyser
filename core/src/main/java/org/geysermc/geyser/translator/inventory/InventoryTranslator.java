@@ -1123,10 +1123,16 @@ public abstract class InventoryTranslator<Type extends Inventory> {
      * Print out the contents of an ItemStackRequest, should the net ID check fail.
      */
     protected void dumpStackRequestDetails(GeyserSession session, Type inventory, ItemStackRequestSlotData source, ItemStackRequestSlotData destination) {
-        session.getGeyser().getLogger().error("Source: " + source.toString() + " Result: " + checkNetId(session, inventory, source));
-        session.getGeyser().getLogger().error("Destination: " + destination.toString() + " Result: " + checkNetId(session, inventory, destination));
-        session.getGeyser().getLogger().error("Geyser's record of source slot: " + inventory.getItem(bedrockSlotToJava(source)));
-        session.getGeyser().getLogger().error("Geyser's record of destination slot: " + inventory.getItem(bedrockSlotToJava(destination)));
+        // bedrockSlotToJava() has no CURSOR case and falls through to returning the raw slot, which for cursor
+        // requests is 0 - the crafting output slot. Reading the inventory there showed an unrelated (usually
+        // empty) item and made a net ID rejection look like it had no cause. Compare against the real cursor.
+        // See https://github.com/GeyserMC/Geyser/issues/6653.
+        GeyserItemStack sourceItem = isCursor(source) ? session.getPlayerInventory().getCursor() : inventory.getItem(bedrockSlotToJava(source));
+        GeyserItemStack destinationItem = isCursor(destination) ? session.getPlayerInventory().getCursor() : inventory.getItem(bedrockSlotToJava(destination));
+        session.getGeyser().getLogger().error("Source: " + source + " Result: " + checkNetId(session, inventory, source) + " (Geyser net id: " + sourceItem.getNetId() + ")");
+        session.getGeyser().getLogger().error("Destination: " + destination + " Result: " + checkNetId(session, inventory, destination) + " (Geyser net id: " + destinationItem.getNetId() + ")");
+        session.getGeyser().getLogger().error("Geyser's record of source slot: " + sourceItem);
+        session.getGeyser().getLogger().error("Geyser's record of destination slot: " + destinationItem);
     }
 
     public boolean checkNetId(GeyserSession session, Type inventory, ItemStackRequestSlotData slotInfoData) {
