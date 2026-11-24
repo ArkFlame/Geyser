@@ -30,7 +30,6 @@ import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.protocol.bedrock.data.ScoreInfo;
-import org.cloudburstmc.protocol.bedrock.data.command.CommandEnumConstraint;
 import org.cloudburstmc.protocol.bedrock.packet.RemoveObjectivePacket;
 import org.cloudburstmc.protocol.bedrock.packet.SetScorePacket;
 import org.geysermc.geyser.GeyserImpl;
@@ -45,22 +44,17 @@ import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.mcprotocollib.protocol.data.game.scoreboard.NameTagVisibility;
 import org.geysermc.mcprotocollib.protocol.data.game.scoreboard.ScoreboardPosition;
 import org.geysermc.mcprotocollib.protocol.data.game.scoreboard.TeamColor;
-import org.jetbrains.annotations.Contract;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.geysermc.geyser.scoreboard.UpdateType.REMOVE;
 
@@ -329,11 +323,8 @@ public final class Scoreboard {
         session.removeCommandEnum("Geyser_Teams", remove.id());
     }
 
-    @Contract("-> new")
-    public Map<String, Set<CommandEnumConstraint>> getTeamNames() {
-        return teams.keySet().stream()
-                .collect(Collectors.toMap(Function.identity(), o -> EnumSet.noneOf(CommandEnumConstraint.class),
-                        (o1, o2) -> o1, LinkedHashMap::new));
+    public Set<String> getTeamNames() {
+        return teams.keySet();
     }
 
     public void playerRegistered(PlayerEntity player) {
