@@ -41,6 +41,7 @@ import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
 import org.cloudburstmc.protocol.bedrock.packet.LevelEventPacket;
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket;
 import org.geysermc.geyser.GeyserImpl;
+import org.geysermc.geyser.api.block.custom.CustomBlockBreakProgress;
 import org.geysermc.geyser.api.block.custom.CustomBlockState;
 import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.ItemFrameEntity;
@@ -54,6 +55,7 @@ import org.geysermc.geyser.level.block.type.LecternBlock;
 import org.geysermc.geyser.level.physics.Direction;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.Registries;
+import org.geysermc.geyser.registry.populator.CustomBlockRegistryPopulator;
 import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.item.CustomItemTranslator;
@@ -70,6 +72,7 @@ import org.geysermc.mcprotocollib.protocol.data.game.item.component.ToolData;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundAttackPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundMovePlayerStatusOnlyPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPlayerActionPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPunchPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundUseItemOnPacket;
 
 import java.util.HashSet;
@@ -115,6 +118,20 @@ public class BlockBreakHandler {
      * The current block breaking progress
      */
     protected float currentProgress = 0.0F;
+
+    /**
+     * Session tick on which custom-block progress was last accumulated.
+     * PlayerAuthInput packets can arrive more than once per Java game tick;
+     * counting every packet made Bedrock finish while Java observers were
+     * still around crack stage 3-4.
+     */
+    private int lastProgressSessionTick = -1;
+
+    /** Whether the active custom-block provider requires one Java swing per tick. */
+    private boolean continuousSwing = false;
+
+    /** Whether progress for the active block is supplied by a server-authoritative provider. */
+    private boolean authoritativeBreakProgress = false;
 
     /**
      * The last known face of the block the client was breaking.
@@ -324,7 +341,12 @@ public class BlockBreakHandler {
         }
 
         // % block breaking progress in this tick
-        float breakProgress = calculateBreakProgress(state, position, item);
+        CustomBlockBreakProgress suppliedProgress = resolveBreakProgress(state, position);
+        this.authoritativeBreakProgress = suppliedProgress != null;
+        this.continuousSwing = suppliedProgress != null && suppliedProgress.continuousSwing();
+        float breakProgress = suppliedProgress != null
+                ? suppliedProgress.progressPerTick()
+                : calculateBreakProgress(state, position, item);
 
         // insta-breaking should be treated differently; don't send STOP_BREAK for these
         if (session.isInstabuild() || breakProgress >= 1.0F) {
@@ -347,7 +369,7 @@ public class BlockBreakHandler {
             LevelEventPacket startBreak = new LevelEventPacket();
             startBreak.setType(LevelEvent.BLOCK_START_BREAK);
             startBreak.setPosition(position.toFloat());
-            startBreak.setData((int) (65535 / BlockUtils.reciprocal(breakProgress)));
+            startBreak.setData(bedrockBreakSpeed(breakProgress));
             session.sendUpstreamPacket(startBreak);
 
             BlockUtils.spawnBlockBreakParticles(session, blockFace, position, state);
@@ -358,7 +380,10 @@ public class BlockBreakHandler {
             this.currentItemStack = item;
             // The Java client calls MultiPlayerGameMode#startDestroyBlock which would set this to zero,
             // but also #continueDestroyBlock in the same tick to advance the break progress.
-            this.currentProgress = breakProgress;
+            // Server-authoritative providers start after START_DIGGING reaches the
+            // Java server, so they do not include the first local tick.
+            this.currentProgress = authoritativeBreakProgress ? 0.0F : breakProgress;
+            this.lastProgressSessionTick = session.getTicks();
 
             session.sendDownstreamGamePacket(new ServerboundPlayerActionPacket(PlayerAction.START_DIGGING, position,
                 blockFace.mcpl(), session.getWorldCache().nextPredictionSequence()));
@@ -373,9 +398,24 @@ public class BlockBreakHandler {
         if (currentBlockState != null && Objects.equals(position, currentBlockPos) && sameItemStack()) {
             this.currentBlockFace = blockFace;
 
-            final float newProgress = calculateBreakProgress(state, position, session.getPlayerInventory().getItemInHand());
-            this.currentProgress = this.currentProgress + newProgress;
-            double totalBreakTime = BlockUtils.reciprocal(newProgress);
+            CustomBlockBreakProgress suppliedProgress = resolveBreakProgress(state, position);
+            this.authoritativeBreakProgress = suppliedProgress != null;
+            this.continuousSwing = suppliedProgress != null && suppliedProgress.continuousSwing();
+            final float newProgress = suppliedProgress != null
+                    ? suppliedProgress.progressPerTick()
+                    : calculateBreakProgress(state, position, session.getPlayerInventory().getItemInHand());
+            int sessionTick = session.getTicks();
+            int elapsedTicks = lastProgressSessionTick < 0 ? 1 : sessionTick - lastProgressSessionTick;
+            if (elapsedTicks > 0) {
+                if (continuousSwing) {
+                    session.sendDownstreamGamePacket(ServerboundPunchPacket.INSTANCE);
+                }
+                // Progress providers and Geyser advance once per Java game tick.
+                // Capping protects against a stale handler after a long pause
+                // without creating a sudden instant break.
+                this.currentProgress += newProgress * Math.min(elapsedTicks, 5);
+                this.lastProgressSessionTick = sessionTick;
+            }
 
             if (sendParticles || (serverSideBlockBreaking && currentProgress % 4 == 0)) {
                 BlockUtils.spawnBlockBreakParticles(session, blockFace, position, state);
@@ -397,7 +437,7 @@ public class BlockBreakHandler {
             LevelEventPacket updateBreak = new LevelEventPacket();
             updateBreak.setType(LevelEvent.BLOCK_UPDATE_BREAK);
             updateBreak.setPosition(position.toFloat());
-            updateBreak.setData((int) (65535 / totalBreakTime));
+            updateBreak.setData(bedrockBreakSpeed(newProgress));
             session.sendUpstreamPacket(updateBreak);
         } else {
             // Don't store last mined position; we don't want to ignore any actions now that we switched!
@@ -599,6 +639,22 @@ public class BlockBreakHandler {
         return BlockUtils.getBlockMiningProgressPerTick(session, state.block(), stack);
     }
 
+    private @Nullable CustomBlockBreakProgress resolveBreakProgress(BlockState state, Vector3i position) {
+        if (BlockRegistries.CUSTOM_BLOCK_STATE_OVERRIDES.get(state.javaId()) == null
+                && !BlockRegistries.NON_VANILLA_BLOCK_IDS.get().get(state.javaId())) {
+            return null;
+        }
+        return CustomBlockRegistryPopulator.resolveBreakProgress(
+                session, position.getX(), position.getY(), position.getZ());
+    }
+
+    private static int bedrockBreakSpeed(float progressPerTick) {
+        if (!Float.isFinite(progressPerTick) || progressPerTick <= 0.0f) {
+            return 1;
+        }
+        return Math.clamp(Math.round(65535.0f * progressPerTick), 1, 65535);
+    }
+
     public boolean shouldSpoofOnGroundForFlyingBreak() {
         return currentBlockPos != null && shouldIgnoreAirborneMiningPenalty();
     }
@@ -667,6 +723,9 @@ public class BlockBreakHandler {
         this.currentBlockState = null;
         this.currentBlockFace = null;
         this.currentProgress = 0.0F;
+        this.lastProgressSessionTick = -1;
+        this.continuousSwing = false;
+        this.authoritativeBreakProgress = false;
         this.currentItemStack = null;
         this.updatedServerBlockStateId = null;
     }
@@ -681,6 +740,20 @@ public class BlockBreakHandler {
     }
 
     public record DestructionProgress(long tick, BlockBreakStage stage, double displayedProgress, int rate) {
+    }
+
+    /**
+     * Clears a remote Java destruction overlay when the block at its position changes.
+     *
+     * @return whether an overlay was cleared
+     */
+    public boolean clearDestructionAt(Vector3i position) {
+        if (destructionStageCache.getIfPresent(position) == null) {
+            return false;
+        }
+        destructionStageCache.invalidate(position);
+        BlockUtils.sendBedrockStopBlockBreak(session, position.toFloat());
+        return true;
     }
 
     private static class BlockPredicateCache {

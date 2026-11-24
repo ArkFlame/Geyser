@@ -50,11 +50,17 @@ public class GeyserSpigotNativeWorldManager extends GeyserSpigotWorldManager {
 
     @Override
     public int getBlockAt(GeyserSession session, int x, int y, int z) {
-        Player player = Bukkit.getPlayer(session.getPlayerEntity().getUsername());
+        Player player = resolvePlayer(session);
         if (player == null) {
             return Block.JAVA_AIR_ID;
         }
-        return adapter.getBlockAt(player.getWorld(), x, y, z);
+
+        Integer customState = resolveCustomBlockStateId(session, x, y, z);
+        return customState != null ? customState : adapter.getBlockAt(player.getWorld(), x, y, z);
+    }
+
+    protected final @Nullable Player resolvePlayer(GeyserSession session) {
+        return Bukkit.getPlayer(session.getPlayerEntity().getUsername());
     }
 
     @Nullable
