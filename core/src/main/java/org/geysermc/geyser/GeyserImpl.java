@@ -74,6 +74,7 @@ import org.geysermc.geyser.api.util.MinecraftVersion;
 import org.geysermc.geyser.api.util.PlatformType;
 import org.geysermc.geyser.command.CommandRegistry;
 import org.geysermc.geyser.configuration.GeyserConfig;
+import org.geysermc.geyser.configuration.GeyserConfigDirectory;
 import org.geysermc.geyser.configuration.GeyserPluginConfig;
 import org.geysermc.geyser.debug.GeyserDebugSessionMap;
 import org.geysermc.geyser.erosion.UnixSocketClientListener;
@@ -321,6 +322,9 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
 
         SkinProvider.registerCacheImageTask(this);
 
+        // Geyser packs are loaded here (and during Registries.populate()) on the startup/reload thread only,
+        // never while a Bedrock session is being handled.
+        Registries.GEYSER_ASSET_PACKS.load();
         Registries.RESOURCE_PACKS.load();
         Registries.WAYPOINT_STYLE_MAPPINGS.load();
 
@@ -730,10 +734,11 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
             legacyPingPassthrough.shutdown();
         }
 
+        // Clear Geyser packs first: the resource packs they provide are cleared below so they can be reloaded,
+        // while the custom mappings and locales they provided stay registered until a full restart.
+        Registries.GEYSER_ASSET_PACKS.clear();
         ResourcePackLoader.clear();
-        if (Registries.WAYPOINT_STYLE_MAPPINGS.loaded()) {
-            Registries.WAYPOINT_STYLE_MAPPINGS.get().clear();
-        }
+        Registries.WAYPOINT_STYLE_MAPPINGS.clear();
         CodeOfConductManager.trySave();
 
         this.setEnabled(false);
@@ -825,6 +830,10 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
     @NonNull
     public Path configDirectory() {
         return bootstrap.getConfigFolder();
+    }
+
+    public GeyserConfigDirectory configDir() {
+        return bootstrap.configDirectory();
     }
 
     @Override

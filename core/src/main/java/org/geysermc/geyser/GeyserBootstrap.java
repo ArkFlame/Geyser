@@ -31,6 +31,7 @@ import org.geysermc.geyser.api.util.PlatformType;
 import org.geysermc.geyser.command.CommandRegistry;
 import org.geysermc.geyser.configuration.ConfigLoader;
 import org.geysermc.geyser.configuration.GeyserConfig;
+import org.geysermc.geyser.configuration.GeyserConfigDirectory;
 import org.geysermc.geyser.dump.BootstrapDumpInfo;
 import org.geysermc.geyser.level.GeyserWorldManager;
 import org.geysermc.geyser.level.WorldManager;
@@ -122,6 +123,13 @@ public interface GeyserBootstrap extends GeyserResources {
      * @return Path location of data folder
      */
     Path getConfigFolder();
+
+    /**
+     * @return the config directory, wrapped in a {@link GeyserConfigDirectory} instance
+     */
+    default GeyserConfigDirectory configDirectory() {
+        return new GeyserConfigDirectory(getConfigFolder());
+    }
 
     /**
      * @return the folder where user tokens are saved. This should always point to the location of the config.
