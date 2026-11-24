@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T23:22:34Z_
+_Generated at: 2026-11-24T23:35:09Z_
 
 This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
 
@@ -38,14 +38,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 231 |
+| `UNFIXED` | 194 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 134 |
-| `UPSTREAM_FIXED` | 2971 |
-| `DUPLICATE` | 600 |
-| `BLOCKED` | 59 |
-| `UNSUPPORTED` | 654 |
-| `NOT_APPLICABLE` | 2167 |
+| `FIXED` | 135 |
+| `UPSTREAM_FIXED` | 2984 |
+| `DUPLICATE` | 603 |
+| `BLOCKED` | 60 |
+| `UNSUPPORTED` | 656 |
+| `NOT_APPLICABLE` | 2184 |
 | `PARTIAL` | 2 |
 
 ## Mass audit (two passes)
@@ -236,7 +236,7 @@ Wave-7 re-verified closed upstream records and one closed PR against the integra
 
 `status_counts` was recomputed from all 6817 records (UNFIXED 3286 → 3276, FIXED 60 → 61, UPSTREAM_FIXED 2347 → 2349, UNSUPPORTED 297 → 299, NOT_APPLICABLE 429 → 434; DUPLICATE 388, BLOCKED 10 and IN_PROGRESS 0 unchanged); every status is in the documented enum and all 6817 IDs remain unique. No priority-queue status cell references any of these closed records, so the open-issue and open-PR tables need no change.
 
-## Waves 8-23 — open PR adoption and open issue fixes
+## Waves 8-24 — open PR adoption and open issue fixes
 
 This pass worked the *open* upstream queue: the 57 open pull requests and the open `UNFIXED` issue list, rather than the closed backlog. Work ran as isolated Git worktrees with one worker per non-overlapping file set, then merged into `master`. Every claim below is backed either by a commit on `master` or by a `file:line` reference in the current tree.
 
@@ -459,6 +459,14 @@ Three workers ran with ~1459 GitHub API requests remaining; `git fetch upstream`
 
 **Backlog audit AD/AE.** Two read-only auditors produced **78 evidence-backed dispositions** from 199 records: 54 NOT_APPLICABLE, 12 UPSTREAM_FIXED, 6 UNSUPPORTED, 4 DUPLICATE and 2 BLOCKED; 121 stayed `UNFIXED`. Every UPSTREAM_FIXED claim was tied to a commit verified as an ancestor of HEAD with a fork `file:line`, including #1499 (PR #1502, `434a2e150`), #1725 (PR #2051, `f827b2885`), #4710 (can_break, `35be9072c`), #1723 (thorns, `eb5e4d79b`), #1374 (anvil costs, `d01665a76`) and #1210 (recipe shift-click, this campaign's own `0a974ad9f`). DUPLICATE was only recorded when the target record was already resolved; unresolved duplicates stayed UNFIXED.
 
+### Wave 24 — head skin fix and final backlog shards AF/AG
+
+Three workers ran with ~712 GitHub API requests available (roughly 330 used by the two auditors); `git fetch upstream` again showed 0 new upstream commits.
+
+**Source change.** #6115 (wearing a player head then replacing it with a non-head block left the head skin applied): `InventoryTranslator` now restores the original skin on the survival path and `PlayerInventoryTranslator` does the same on the creative path, with the correct cursor source selection. Commit `df317432b`, merged as `954ab2f09`. This was derived from fork code — no merged upstream fix exists. All 71 open issues remain open upstream with no fix commit, so no other source change was justified.
+
+**Backlog audit AF/AG.** Two read-only auditors produced **36 evidence-backed dispositions** from 135 records: 17 NOT_APPLICABLE, 13 UPSTREAM_FIXED, 3 DUPLICATE, 2 UNSUPPORTED and 1 BLOCKED; 99 stayed `UNFIXED`. Each UPSTREAM_FIXED claim was tied to a commit verified as an ancestor of HEAD with a fork `file:line` — #4744 (ominous/crafter, `a9ba1ad6`/`be83fe72`), #6654 (chest collision, `3b9e8bb9`/`13bf67f0`), #1208 (per-player thread, `7ae91a40`), #3727 (chunk radius, `e5022613`/`b8040a1d`), #4413, #5127, #4450, #2031, #2577 and #1287. DUPLICATE was recorded only against already-resolved targets (#1030 → UPSTREAM_FIXED #1008, #4791, #2657).
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -595,7 +603,7 @@ _(291 records)_
 | 3844057698 | Client crash/freeze when entering area with many mobs/animals/entities | https://github.com/GeyserMC/Geyser/issues/6129 | `UNFIXED` |
 | 3841214418 | [Bug Report] ArtMap used to work properly but no longer accurate. | https://github.com/GeyserMC/Geyser/issues/6128 | `UNFIXED` |
 | 3824109144 | Enchant table is not working | https://github.com/GeyserMC/Geyser/issues/6116 | `BLOCKED` |
-| 3823915450 | Player head texture occasionally not updated | https://github.com/GeyserMC/Geyser/issues/6115 | `UNFIXED` |
+| 3823915450 | Player head texture occasionally not updated | https://github.com/GeyserMC/Geyser/issues/6115 | `FIXED` |
 | 3823874351 | Items stuck in cursor after furnace interaction | https://github.com/GeyserMC/Geyser/issues/6113 | `FIXED` |
 | 3798882794 | Players can't connect if they have an oversize book in their inventory | https://github.com/GeyserMC/Geyser/issues/6098 | `FIXED` |
 | 3795623377 | Blocks don't break when Tools have CustomModel | https://github.com/GeyserMC/Geyser/issues/6097 | `UNFIXED` |
