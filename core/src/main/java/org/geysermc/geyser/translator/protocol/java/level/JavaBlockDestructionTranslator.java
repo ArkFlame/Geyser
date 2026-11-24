@@ -42,12 +42,26 @@ public class JavaBlockDestructionTranslator extends PacketTranslator<Clientbound
     public void translate(GeyserSession session, ClientboundBlockDestructionPacket packet) {
         if (packet.getStage() == BlockBreakStage.RESET) {
             // Invalidate the position now that it's not being broken anymore
-            session.getBlockBreakHandler().getDestructionStageCache().invalidate(packet.getPosition());
-            BlockUtils.sendBedrockStopBlockBreak(session, packet.getPosition().toFloat());
+            if (!session.getBlockBreakHandler().clearDestructionAt(packet.getPosition())) {
+                BlockUtils.sendBedrockStopBlockBreak(session, packet.getPosition().toFloat());
+            }
+            return;
+        }
+
+        // Local mining already drives its own per-tick speed from BlockBreakHandler.
+        // Translating the server echo as well would make two animations compete.
+        if (packet.getPosition().equals(session.getBlockBreakHandler().getCurrentBlockPos())) {
             return;
         }
 
         DestructionProgress lastUpdate = session.getBlockBreakHandler().getDestructionStageCache().getIfPresent(packet.getPosition());
+        if (lastUpdate != null && packet.getStage().compareTo(lastUpdate.stage()) < 0) {
+            // A new mining sequence can start at the same position before a
+            // RESET packet arrives. Stop the old overlay instead of treating
+            // every stage of the new sequence as out-of-order.
+            session.getBlockBreakHandler().clearDestructionAt(packet.getPosition());
+            lastUpdate = null;
+        }
         int stagesSince = lastUpdate == null ? 0 : packet.getStage().compareTo(lastUpdate.stage());
         if (lastUpdate != null && stagesSince == 0) {
             return;

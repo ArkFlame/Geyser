@@ -38,8 +38,12 @@ import org.cloudburstmc.nbt.NbtType;
 import org.cloudburstmc.protocol.bedrock.data.BlockPropertyData;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
+import org.geysermc.geyser.api.block.custom.CustomBlockBreakProgress;
+import org.geysermc.geyser.api.block.custom.CustomBlockBreakProgressProvider;
 import org.geysermc.geyser.api.block.custom.CustomBlockPermutation;
 import org.geysermc.geyser.api.block.custom.CustomBlockState;
+import org.geysermc.geyser.api.block.custom.CustomBlockStateProvider;
+import org.geysermc.geyser.api.connection.GeyserConnection;
 import org.geysermc.geyser.api.block.custom.component.BoxComponent;
 import org.geysermc.geyser.api.block.custom.component.CustomBlockComponents;
 import org.geysermc.geyser.api.block.custom.component.GeometryComponent;
@@ -68,6 +72,7 @@ import org.geysermc.geyser.registry.type.CustomSkull;
 import org.geysermc.geyser.translator.collision.OtherCollision;
 import org.geysermc.geyser.util.BlockUtils;
 import org.geysermc.geyser.util.MathUtils;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -123,6 +128,38 @@ public class CustomBlockRegistryPopulator {
     private static Map<CustomBlockItemOverride, CustomBlockData> CUSTOM_BLOCK_ITEM_OVERRIDES;
     private static Map<JavaBlockState, CustomBlockState> NON_VANILLA_BLOCK_STATE_OVERRIDES;
     private static Map<String, CustomBlockState> BLOCK_STATE_OVERRIDES_QUEUE;
+    private static List<CustomBlockStateProvider> CUSTOM_BLOCK_STATE_PROVIDERS = List.of();
+    private static List<CustomBlockBreakProgressProvider> CUSTOM_BLOCK_BREAK_PROGRESS_PROVIDERS = List.of();
+
+    /**
+     * Resolves a server-managed custom block to the vanilla Java state it is mapped to.
+     *
+     * @return the resolved Java block-state identifier, or {@code null} when no provider owns the block
+     */
+    public static @Nullable String resolveJavaBlockState(GeyserConnection connection, int x, int y, int z) {
+        for (CustomBlockStateProvider provider : CUSTOM_BLOCK_STATE_PROVIDERS) {
+            String state = provider.javaBlockState(connection, x, y, z);
+            if (state != null) {
+                return state;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Resolves the server-authoritative mining progress of a custom block.
+     *
+     * @return the supplied mining progress, or {@code null} when no provider owns the block
+     */
+    public static @Nullable CustomBlockBreakProgress resolveBreakProgress(GeyserConnection connection, int x, int y, int z) {
+        for (CustomBlockBreakProgressProvider provider : CUSTOM_BLOCK_BREAK_PROGRESS_PROVIDERS) {
+            CustomBlockBreakProgress progress = provider.progress(connection, x, y, z);
+            if (progress != null) {
+                return progress;
+            }
+        }
+        return null;
+    }
 
     /**
      * Initializes custom blocks defined by API
@@ -132,9 +169,21 @@ public class CustomBlockRegistryPopulator {
         CUSTOM_BLOCK_ITEM_OVERRIDES = new HashMap<>();
         NON_VANILLA_BLOCK_STATE_OVERRIDES = new HashMap<>();
         BLOCK_STATE_OVERRIDES_QUEUE = new HashMap<>();
+        List<CustomBlockStateProvider> stateProviders = new ArrayList<>();
+        List<CustomBlockBreakProgressProvider> breakProgressProviders = new ArrayList<>();
 
         Set<String> customBlockIdentifiers = new ObjectOpenHashSet<>();
         GeyserImpl.getInstance().getEventBus().fire(new GeyserDefineCustomBlocksEvent() {
+            @Override
+            public void registerStateProvider(@NonNull CustomBlockStateProvider provider) {
+                stateProviders.add(provider);
+            }
+
+            @Override
+            public void registerBreakProgressProvider(@NonNull CustomBlockBreakProgressProvider provider) {
+                breakProgressProviders.add(provider);
+            }
+
             @Override
             public void register(@NonNull CustomBlockData customBlockData) {
                 if (customBlockData.name().isEmpty()) {
@@ -184,6 +233,8 @@ public class CustomBlockRegistryPopulator {
                 NON_VANILLA_BLOCK_STATE_OVERRIDES.put(javaBlockState, customBlockState);
             }
         });
+        CUSTOM_BLOCK_STATE_PROVIDERS = List.copyOf(stateProviders);
+        CUSTOM_BLOCK_BREAK_PROGRESS_PROVIDERS = List.copyOf(breakProgressProviders);
     }
 
     /**
@@ -465,6 +516,12 @@ public class CustomBlockRegistryPopulator {
                 NbtMapBuilder boneVisibilityBuilder = NbtMap.builder();
                 boneVisibility.forEach(boneVisibilityBuilder::putString);
                 geometryBuilder.putCompound("bone_visibility", boneVisibilityBuilder.build());
+            }
+            if (geometryComponent.culling() != null) {
+                geometryBuilder.putString("culling", geometryComponent.culling());
+            }
+            if (geometryComponent.cullingLayer() != null) {
+                geometryBuilder.putString("culling_layer", geometryComponent.cullingLayer());
             }
             builder.putCompound("minecraft:geometry", geometryBuilder.build());
         }

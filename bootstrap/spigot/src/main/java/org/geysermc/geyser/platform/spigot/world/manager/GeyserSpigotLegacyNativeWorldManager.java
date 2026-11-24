@@ -32,6 +32,8 @@ import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
+import org.bukkit.entity.Player;
+import org.geysermc.geyser.level.block.type.Block;
 import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.platform.spigot.GeyserSpigotPlugin;
 import org.geysermc.geyser.session.GeyserSession;
@@ -69,7 +71,19 @@ public class GeyserSpigotLegacyNativeWorldManager extends GeyserSpigotNativeWorl
 
     @Override
     public int getBlockAt(GeyserSession session, int x, int y, int z) {
-        int nativeBlockId = super.getBlockAt(session, x, y, z);
+        Player player = resolvePlayer(session);
+        if (player == null) {
+            return Block.JAVA_AIR_ID;
+        }
+
+        // Provider results are already in current protocol space and must not
+        // be translated through the legacy native-id mapping table.
+        Integer customState = resolveCustomBlockStateId(session, x, y, z);
+        if (customState != null) {
+            return customState;
+        }
+
+        int nativeBlockId = adapter.getBlockAt(player.getWorld(), x, y, z);
         return oldToNewBlockId.getOrDefault(nativeBlockId, nativeBlockId);
     }
 
