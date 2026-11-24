@@ -306,7 +306,7 @@ Two code paths now carry gated diagnostics so the next report is actionable (`27
 
 ### Wave 13 — area sweep of the remaining open issues
 
-Six area workers audited the 170 open issues that were still unresolved after waves 8-12, partitioned by code area (network, inventory, entity, world, chat/command, misc) so their changes could not collide. Each worker worked in its own worktree and could not build; every change below was compiled for the first time by the central integration build reported above.
+Six area workers audited the 170 open issues that were still unresolved after waves 8-12, partitioned by code area (network, inventory, entity, world, chat/command, misc) so their changes could not collide. Each worker worked in its own worktree and could not build; every change below was compiled for the first time by a single central `./gradlew compileJava compileTestJava --no-daemon --no-parallel -Dorg.gradle.jvmargs='-Xmx4G -XX:MaxMetaspaceSize=1G'` -> **BUILD SUCCESSFUL in 1m 18s** (exit 0). At the user's request no tests, gametest or Spigot jar runtime verification was run for this wave: the verification is compile-only, and the wave-13 fixes are therefore **unverified at runtime**.
 
 **13 issues fixed:**
 
