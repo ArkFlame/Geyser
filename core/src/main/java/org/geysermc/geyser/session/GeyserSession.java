@@ -131,6 +131,7 @@ import org.geysermc.geyser.api.util.PlatformType;
 import org.geysermc.geyser.command.CommandRegistry;
 import org.geysermc.geyser.command.GeyserCommandSource;
 import org.geysermc.geyser.configuration.GeyserConfig;
+import org.geysermc.geyser.debug.SessionDebugOption;
 import org.geysermc.geyser.entity.EntitySpectateHelper;
 import org.geysermc.geyser.entity.GeyserEntityData;
 import org.geysermc.geyser.entity.VanillaEntities;
@@ -302,6 +303,9 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     @Accessors(fluent = true)
     @Setter
     private RemoteServer remoteServer;
+
+    @Setter
+    private EnumSet<SessionDebugOption> debugOptions = EnumSet.noneOf(SessionDebugOption.class);
 
     private final SessionPlayerEntity playerEntity;
 
