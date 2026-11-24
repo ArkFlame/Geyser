@@ -198,9 +198,13 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                         final Vector3i packetBlockPosition = packet.getBlockPosition();
                         Vector3i blockPos = BlockUtils.getBlockPosition(packetBlockPosition, Direction.getUntrusted(packet, InventoryTransactionPacket::getBlockFace));
 
-                        if (session.getGeyser().config().gameplay().disableBedrockScaffolding()) {
+                        if (session.getGeyser().config().gameplay().disableBedrockScaffolding() &&
+                                session.getPlayerInventory().getItemInHand().asItem() instanceof BlockItem) {
                             // Touch users place blocks based on where they tap, not where their camera faces.
                             // Use the touch interaction rotation so side placements are detected as bridging too.
+                            // Only block placements can be scaffolding-style bridging; Bedrock reports tool use
+                            // (tilling, stripping, pathing) as the same action and must not have its prediction
+                            // reverted. See GeyserMC/Geyser#6918 and GeyserMC/Geyser#6753.
                             float yaw = session.getInputCache().getInputMode() == InputMode.TOUCH
                                     ? session.getPlayerEntity().getBedrockInteractRotation().getY()
                                     : session.getPlayerEntity().getYaw();
