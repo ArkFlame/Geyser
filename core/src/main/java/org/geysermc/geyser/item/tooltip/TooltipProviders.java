@@ -31,7 +31,9 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.geysermc.geyser.item.tooltip.providers.AdventureModeTooltip;
 import org.geysermc.geyser.item.tooltip.providers.ArmorTrimTooltip;
 import org.geysermc.geyser.item.tooltip.providers.AttributeModifiersTooltip;
 import org.geysermc.geyser.item.tooltip.providers.BannerPatternLayersTooltip;
@@ -51,18 +53,21 @@ import org.geysermc.geyser.item.tooltip.providers.MapTooltip;
 import org.geysermc.geyser.item.tooltip.providers.OminousBottleTooltip;
 import org.geysermc.geyser.item.tooltip.providers.PotDecorationsTooltip;
 import org.geysermc.geyser.item.tooltip.providers.PotionContentsTooltip;
+import org.geysermc.geyser.item.tooltip.providers.SpawnerTooltip;
 import org.geysermc.geyser.item.tooltip.providers.SuspiciousStewTooltip;
 import org.geysermc.geyser.item.tooltip.providers.TropicalFishPatternTooltip;
 import org.geysermc.geyser.item.tooltip.providers.WrittenBookTooltip;
 import org.geysermc.geyser.item.type.BlockItem;
 import org.geysermc.geyser.item.type.SpawnEggItem;
 import org.geysermc.geyser.registry.Registries;
+import org.geysermc.geyser.translator.text.MessageTranslator;
 import org.geysermc.geyser.util.MinecraftKey;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentType;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponents;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.TypedEntityData;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -114,6 +119,9 @@ public class TooltipProviders {
         register(DataComponentTypes.SUSPICIOUS_STEW_EFFECTS, new SuspiciousStewTooltip());
         register(DataComponentTypes.BLOCK_STATE, new BlockStatePropertiesTooltip());
         register(DataComponentTypes.ATTRIBUTE_MODIFIERS, new AttributeModifiersTooltip());
+        register(DataComponentTypes.BLOCK_ENTITY_DATA, new SpawnerTooltip());
+        register(DataComponentTypes.CAN_BREAK, new AdventureModeTooltip("item.canBreak"));
+        register(DataComponentTypes.CAN_PLACE_ON, new AdventureModeTooltip("item.canPlace"));
     }
 
     private TooltipProviders() {
@@ -153,11 +161,38 @@ public class TooltipProviders {
         return (ComponentTooltipProvider<T>) PROVIDERS.get(component);
     }
 
+    /**
+     * Appends the output of every registered name provider (see {@link #registerName}) to a name line.
+     * No vanilla components are registered here: {@code custom_name}, potion names and the other item
+     * names are already produced by {@code Item#getName} and {@code ItemTranslator#getCustomName}.
+     */
     public static void addNameTooltips(TooltipContext context, DataComponents componentPatch, Consumer<String> adder) {
-        // Name providers are reserved for future use; no Java tooltip name components are emitted today.
+        if (!enabled) {
+            return;
+        }
+        for (Map.Entry<DataComponentType<?>, ComponentTooltipProvider<?>> entry : NAME_PROVIDERS.entrySet()) {
+            DataComponentType<Object> type = (DataComponentType<Object>) entry.getKey();
+            if (!context.options().showInTooltip(type)) {
+                continue;
+            }
+            Object value = componentPatch.get(type);
+            if (value == null) {
+                continue;
+            }
+            List<Component> lines = new ArrayList<>();
+            ((ComponentTooltipProvider<Object>) entry.getValue()).addTooltip(context, lines::add, value);
+            for (Component line : lines) {
+                adder.accept(context.session()
+                    .map(session -> MessageTranslator.convertMessageForItem(line, session.locale(), NamedTextColor.GRAY))
+                    .orElseGet(() -> PlainTextComponentSerializer.plainText().serialize(line)));
+            }
+        }
     }
 
     public static void addTooltips(TooltipContext context, Consumer<Component> adder) {
+        if (!enabled) {
+            return;
+        }
         tryAddTooltip(context, DataComponentTypes.TROPICAL_FISH_PATTERN, adder, TooltipProviders::getTooltipProvider);
         tryAddTooltip(context, DataComponentTypes.INSTRUMENT, adder, TooltipProviders::getTooltipProvider);
         tryAddTooltip(context, DataComponentTypes.MAP_ID, adder, TooltipProviders::getTooltipProvider);
@@ -185,7 +220,9 @@ public class TooltipProviders {
         tryAddTooltip(context, DataComponentTypes.OMINOUS_BOTTLE_AMPLIFIER, adder, TooltipProviders::getTooltipProvider);
         tryAddTooltip(context, DataComponentTypes.SUSPICIOUS_STEW_EFFECTS, adder, TooltipProviders::getTooltipProvider);
         tryAddTooltip(context, DataComponentTypes.BLOCK_STATE, adder, TooltipProviders::getTooltipProvider);
-        // TODO spawner, can break/can place
+        tryAddTooltip(context, DataComponentTypes.BLOCK_ENTITY_DATA, adder, TooltipProviders::getTooltipProvider);
+        tryAddTooltip(context, DataComponentTypes.CAN_BREAK, adder, TooltipProviders::getTooltipProvider);
+        tryAddTooltip(context, DataComponentTypes.CAN_PLACE_ON, adder, TooltipProviders::getTooltipProvider);
 
         if (context.advanced()) {
             addAdvancedTooltips(context, adder);
