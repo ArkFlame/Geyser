@@ -99,6 +99,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.Serv
 
 import java.util.List;
 import java.util.OptionalInt;
+import java.util.function.Supplier;
 
 /**
  * BedrockInventoryTransactionTranslator handles most interactions between the client and the world,
@@ -226,6 +227,7 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                         session.setLastInteractionBlockFace(packet.getBlockFace());
 
                         if (hasAlreadyClicked) {
+                            debugRejectedPlacement(session, packet, blockPos, () -> "repeat interaction within 110 ms");
                             session.getPlayerInventoryHolder().updateSlot(session.getPlayerInventory().getOffsetForHotbar(packet.getHotbarSlot()));
                             break;
                         } else {
@@ -234,6 +236,7 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                         }
 
                         if (isIncorrectHeldItem(session, packet)) {
+                            debugRejectedPlacement(session, packet, blockPos, () -> "held item does not match the Java inventory");
                             BlockUtils.restoreCorrectBlock(session, blockPos, packet.getHotbarSlot());
                             return;
                         }
@@ -286,6 +289,7 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
                         double clickDistanceY = clickPositionFullY - (packetBlockPosition.getY() + 0.5f);
                         double clickDistanceZ = clickPositionFullZ - (packetBlockPosition.getZ() + 0.5f);
                         if (!(Math.abs(clickDistanceX) < 1.0000001D && Math.abs(clickDistanceY) < 1.0000001D && Math.abs(clickDistanceZ) < 1.0000001D)) {
+                            debugRejectedPlacement(session, packet, blockPos, () -> "click position (" + clickDistanceX + ", " + clickDistanceY + ", " + clickDistanceZ + ") is outside of the clicked block");
                             BlockUtils.restoreCorrectBlock(session, blockPos, packet.getHotbarSlot());
                             return;
                         }
@@ -638,6 +642,29 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
         }
 
         return false;
+    }
+
+    /**
+     * Describes, for debug logs only, why a block placement was reverted on the client instead of being forwarded
+     * to the Java server. See <a href="https://github.com/GeyserMC/Geyser/issues/6918">GeyserMC/Geyser#6918</a>.
+     * <p>
+     * The message is only built when debug logging is enabled; the guard description is a supplier so that callers
+     * pay nothing for it otherwise.
+     */
+    private void debugRejectedPlacement(GeyserSession session, InventoryTransactionPacket packet, Vector3i blockPosition,
+                                        Supplier<String> guard) {
+        if (!session.getGeyser().getLogger().isDebug()) {
+            return;
+        }
+
+        BlockState target = session.getGeyser().getWorldManager().blockAt(session, packet.getBlockPosition());
+        session.getGeyser().getLogger().debug(session,
+                "Not forwarding block placement to the Java server (%s): action=%s, type=%s, trigger=%s, position=%s, "
+                        + "face=%d, hotbarSlot=%d, javaHeldItem=%s, targetBlock=%s",
+                guard.get(), packet.getActionType(), packet.getTransactionType(), packet.getTriggerType(),
+                blockPosition, packet.getBlockFace(), packet.getHotbarSlot(),
+                session.getPlayerInventory().getItemInHand().asItem().javaIdentifier(),
+                target.block().javaIdentifier());
     }
 
     private boolean useItem(GeyserSession session, InventoryTransactionPacket packet, int blockState, boolean useTouchRotation) {

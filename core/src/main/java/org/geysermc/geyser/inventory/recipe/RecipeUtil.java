@@ -256,10 +256,24 @@ public class RecipeUtil {
     }
 
     public static Pair<List<List<ItemDescriptorWithCount>>, ItemData> combinations(GeyserSession session, SlotDisplay result, List<SlotDisplay> ingredients) {
+        return combinations(session, result, ingredients, null);
+    }
+
+    /**
+     * @param recipeLabel identifies the recipe in debug logs. Only supplied when debug logging is enabled, so that no
+     *                    string is built in the common case; may be null.
+     */
+    static Pair<List<List<ItemDescriptorWithCount>>, ItemData> combinations(GeyserSession session, SlotDisplay result,
+                                                                           List<SlotDisplay> ingredients,
+                                                                           @Nullable String recipeLabel) {
         Pair<Item, ItemData> pair = translateToOutput(session, result);
         if (pair == null || !pair.right().isValid()) {
             // Likely modded item Bedrock will complain about
             // Implementation note: ItemData#isValid() may return true for air because count might be > 0 and the air definition may not be ItemDefinition.AIR
+            if (recipeLabel != null) {
+                session.getGeyser().getLogger().debug("Dropping recipe " + recipeLabel + ": its result (" + result
+                        + ") is empty or could not be converted to a valid Bedrock item.");
+            }
             return null;
         }
 
@@ -286,6 +300,11 @@ public class RecipeUtil {
         if (empty) {
             // Crashes Bedrock 1.19.70 otherwise
             // Fixes https://github.com/GeyserMC/Geyser/issues/3549
+            if (recipeLabel != null) {
+                session.getGeyser().getLogger().debug("Dropping recipe " + recipeLabel
+                        + ": no ingredient could be converted to a non-empty Bedrock item descriptor. Ingredients: "
+                        + ingredients);
+            }
             return null;
         }
 

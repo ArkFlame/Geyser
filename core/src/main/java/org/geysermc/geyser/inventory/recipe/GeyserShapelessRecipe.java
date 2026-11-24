@@ -64,7 +64,8 @@ public record GeyserShapelessRecipe(int id,
 
     @Override
     public List<ShapelessRecipeData> asRecipeData(GeyserSession session) {
-        var bedrockRecipes = RecipeUtil.combinations(session, result, ingredients);
+        var bedrockRecipes = RecipeUtil.combinations(session, result, ingredients,
+                session.getGeyser().getLogger().isDebug() ? "id=" + id + ", type=" + tag : null);
         if (bedrockRecipes == null) {
             return List.of();
         }
