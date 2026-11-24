@@ -334,7 +334,7 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
 
                         // Storing the block position allows inconsistencies in block place checking from post-1.19 - pre-1.20.5 to be resolved.
                         int sequence = session.getWorldCache().nextPredictionSequence();
-                        session.getWorldCache().markPositionInSequence(blockPos);
+                        markPlacementPrediction(session, blockPos);
                         ServerboundUseItemOnPacket blockPacket = new ServerboundUseItemOnPacket(
                                 packet.getBlockPosition(),
                                 Direction.getUntrusted(packet, InventoryTransactionPacket::getBlockFace).mcpl(),
@@ -628,6 +628,34 @@ public class BedrockInventoryTransactionTranslator extends PacketTranslator<Inve
         float diffY = Math.max(Math.max(minY - playerPosition.getY(), playerPosition.getY() - maxY), 0);
         float diffZ = Math.max(Math.max(minZ - playerPosition.getZ(), playerPosition.getZ() - maxZ), 0);
         return ((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ)) < (additionalRangeCheck * additionalRangeCheck);
+    }
+
+    /**
+     * Records the positions Bedrock predicts for a block placement, so that a placement the Java server does not
+     * confirm can be rolled back on the client.
+     * <p>
+     * Bedrock places both halves of a door in one go, while Java Edition confirms or reverts placements one position
+     * at a time. Tracking only the clicked position therefore left the predicted upper half behind as a ghost door
+     * whenever the placement was rejected, for example because the player was standing in the way.
+     * See <a href="https://github.com/GeyserMC/Geyser/issues/1902">GeyserMC/Geyser#1902</a>.
+     */
+    private static void markPlacementPrediction(GeyserSession session, Vector3i blockPos) {
+        session.getWorldCache().markPositionInSequence(blockPos);
+
+        if (!session.isEmulatePost1_18Logic()) {
+            // Without prediction tracking there is nothing to roll back at either position.
+            return;
+        }
+
+        Item heldItem = session.getPlayerInventory().getItemInHand().asItem();
+        if (!(heldItem instanceof BlockItem) || !heldItem.javaIdentifier().value().endsWith("_door")) {
+            return;
+        }
+
+        Vector3i upperHalf = blockPos.up();
+        if (session.getGeyser().getWorldManager().blockAt(session, upperHalf).isAir()) {
+            session.getWorldCache().markPositionInSequence(upperHalf);
+        }
     }
 
     private boolean isIncorrectHeldItem(GeyserSession session, InventoryTransactionPacket packet) {
