@@ -86,7 +86,9 @@ import org.geysermc.geyser.level.WorldManager;
 import org.geysermc.geyser.network.RaknetServer;
 import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.network.bedrock.nethernet.NetherNetServer;
+import org.geysermc.geyser.pack.SkullResourcePackManager;
 import org.geysermc.geyser.ping.GeyserLegacyPingPassthrough;
+import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.loader.ResourcePackLoader;
 import org.geysermc.geyser.registry.mappings.BuiltInMappings;
@@ -304,6 +306,8 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
         if (isReloading) {
             // If we're reloading, the default locale in the config might have changed.
             GeyserLocale.finalizeDefaultLocale(this);
+            // The registries were reset on reload, so read all mappings again.
+            Registries.load();
         } else {
             CodeOfConductManager.load();
         }
@@ -750,6 +754,12 @@ public class GeyserImpl implements GeyserApi, EventRegistrar {
         isReloading = true;
         this.eventBus.fire(new GeyserPreReloadEvent(this.extensionManager, this.eventBus));
         bootstrap.onGeyserDisable();
+
+        // Drop the loaded mappings so they are read again by startInstance()
+        BlockRegistries.reset();
+        Registries.reset();
+        SkullResourcePackManager.SKULL_SKINS.clear();
+
         bootstrap.onGeyserEnable();
 
         isReloading = false;
