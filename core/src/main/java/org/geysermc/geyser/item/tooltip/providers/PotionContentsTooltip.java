@@ -28,20 +28,30 @@ package org.geysermc.geyser.item.tooltip.providers;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.geysermc.geyser.inventory.item.Potion;
 import org.geysermc.geyser.item.tooltip.ComponentTooltipProvider;
 import org.geysermc.geyser.item.tooltip.TooltipContext;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.Effect;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes;
+import org.geysermc.mcprotocollib.protocol.data.game.item.component.MobEffectDetails;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.MobEffectInstance;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.PotionContents;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class PotionContentsTooltip implements ComponentTooltipProvider<PotionContents> {
     private static final Component NO_EFFECTS = Component.translatable("effect.none").color(NamedTextColor.GRAY);
     private static final Component INFINITE_DURATION = Component.translatable("effect.duration.infinite").color(NamedTextColor.GRAY);
+    /**
+     * Vanilla potion registry effects, keyed by the Java potion id that {@link PotionContents#getPotionId()} carries.
+     * Durations are in ticks, as Java stores them; amplifiers use Java's zero-based convention.
+     */
+    private static final Map<Potion, List<MobEffectInstance>> BUILT_IN_EFFECTS = builtInEffects();
 
     @Override
     public void addTooltip(TooltipContext context, Consumer<Component> adder, @NonNull PotionContents potion) {
@@ -56,7 +66,7 @@ public class PotionContentsTooltip implements ComponentTooltipProvider<PotionCon
 
         for (MobEffectInstance effect : effects) {
             Component description = potionDescription(effect.getEffect(), effect.getDetails().getAmplifier());
-            if (effect.getDetails().getDuration() == -1 || effect.getDetails().getDuration() <= 20) {
+            if (effect.getDetails().getDuration() == -1 || effect.getDetails().getDuration() > 20) {
                 description = Component.translatable("potion.withDuration", description,
                     potionDuration(effect.getDetails().getDuration(), durationScale));
             }
@@ -85,9 +95,76 @@ public class PotionContentsTooltip implements ComponentTooltipProvider<PotionCon
     }
 
     private static List<MobEffectInstance> collectEffects(PotionContents potion) {
-        if (potion.getPotionId() == -1) {
-            return potion.getCustomEffects();
+        List<MobEffectInstance> effects = new ArrayList<>();
+        Potion builtIn = Potion.getByJavaId(potion.getPotionId());
+        if (builtIn != null) {
+            effects.addAll(BUILT_IN_EFFECTS.getOrDefault(builtIn, List.of()));
         }
-        return List.of();
+        if (potion.getCustomEffects() != null) {
+            effects.addAll(potion.getCustomEffects());
+        }
+        return effects;
+    }
+
+    private static Map<Potion, List<MobEffectInstance>> builtInEffects() {
+        Map<Potion, List<MobEffectInstance>> effects = new EnumMap<>(Potion.class);
+        // Potions without effects (water, mundane, thick, awkward) are intentionally absent.
+        put(effects, Potion.NIGHT_VISION, Effect.NIGHT_VISION, 3600, 0);
+        put(effects, Potion.LONG_NIGHT_VISION, Effect.NIGHT_VISION, 9600, 0);
+        put(effects, Potion.INVISIBILITY, Effect.INVISIBILITY, 3600, 0);
+        put(effects, Potion.LONG_INVISIBILITY, Effect.INVISIBILITY, 9600, 0);
+        put(effects, Potion.LEAPING, Effect.JUMP_BOOST, 3600, 1);
+        put(effects, Potion.LONG_LEAPING, Effect.JUMP_BOOST, 9600, 1);
+        put(effects, Potion.STRONG_LEAPING, Effect.JUMP_BOOST, 1800, 3);
+        put(effects, Potion.FIRE_RESISTANCE, Effect.FIRE_RESISTANCE, 3600, 0);
+        put(effects, Potion.LONG_FIRE_RESISTANCE, Effect.FIRE_RESISTANCE, 9600, 0);
+        put(effects, Potion.SWIFTNESS, Effect.SPEED, 3600, 0);
+        put(effects, Potion.LONG_SWIFTNESS, Effect.SPEED, 9600, 0);
+        put(effects, Potion.STRONG_SWIFTNESS, Effect.SPEED, 1800, 1);
+        put(effects, Potion.SLOWNESS, Effect.SLOWNESS, 1800, 0);
+        put(effects, Potion.LONG_SLOWNESS, Effect.SLOWNESS, 9600, 0);
+        put(effects, Potion.STRONG_SLOWNESS, Effect.SLOWNESS, 1800, 3);
+        put(effects, Potion.TURTLE_MASTER, Effect.SLOWNESS, 400, 3, Effect.RESISTANCE, 400, 2);
+        put(effects, Potion.LONG_TURTLE_MASTER, Effect.SLOWNESS, 600, 3, Effect.RESISTANCE, 600, 2);
+        put(effects, Potion.STRONG_TURTLE_MASTER, Effect.SLOWNESS, 400, 5, Effect.RESISTANCE, 400, 3);
+        put(effects, Potion.WATER_BREATHING, Effect.WATER_BREATHING, 3600, 0);
+        put(effects, Potion.LONG_WATER_BREATHING, Effect.WATER_BREATHING, 9600, 0);
+        put(effects, Potion.HEALING, Effect.INSTANT_HEALTH, 1, 0);
+        put(effects, Potion.STRONG_HEALING, Effect.INSTANT_HEALTH, 1, 1);
+        put(effects, Potion.HARMING, Effect.INSTANT_DAMAGE, 1, 0);
+        put(effects, Potion.STRONG_HARMING, Effect.INSTANT_DAMAGE, 1, 1);
+        put(effects, Potion.POISON, Effect.POISON, 900, 0);
+        put(effects, Potion.LONG_POISON, Effect.POISON, 1800, 0);
+        put(effects, Potion.STRONG_POISON, Effect.POISON, 900, 1);
+        put(effects, Potion.REGENERATION, Effect.REGENERATION, 900, 0);
+        put(effects, Potion.LONG_REGENERATION, Effect.REGENERATION, 1800, 0);
+        put(effects, Potion.STRONG_REGENERATION, Effect.REGENERATION, 900, 1);
+        put(effects, Potion.STRENGTH, Effect.STRENGTH, 1800, 0);
+        put(effects, Potion.LONG_STRENGTH, Effect.STRENGTH, 9600, 0);
+        put(effects, Potion.STRONG_STRENGTH, Effect.STRENGTH, 1800, 1);
+        put(effects, Potion.WEAKNESS, Effect.WEAKNESS, 1800, 0);
+        put(effects, Potion.LONG_WEAKNESS, Effect.WEAKNESS, 9600, 0);
+        put(effects, Potion.LUCK, Effect.LUCK, 6000, 0);
+        put(effects, Potion.SLOW_FALLING, Effect.SLOW_FALLING, 1800, 0);
+        put(effects, Potion.LONG_SLOW_FALLING, Effect.SLOW_FALLING, 4800, 0);
+        put(effects, Potion.WIND_CHARGING, Effect.WIND_CHARGED, 1200, 0);
+        put(effects, Potion.WEAVING, Effect.WEAVING, 1200, 0);
+        put(effects, Potion.OOZING, Effect.OOZING, 1200, 0);
+        put(effects, Potion.INFESTATION, Effect.INFESTED, 1200, 0);
+        return effects;
+    }
+
+    private static void put(Map<Potion, List<MobEffectInstance>> effects, Potion potion, Effect effect, int duration, int amplifier) {
+        effects.put(potion, List.of(instance(effect, duration, amplifier)));
+    }
+
+    private static void put(Map<Potion, List<MobEffectInstance>> effects, Potion potion,
+                            Effect first, int firstDuration, int firstAmplifier,
+                            Effect second, int secondDuration, int secondAmplifier) {
+        effects.put(potion, List.of(instance(first, firstDuration, firstAmplifier), instance(second, secondDuration, secondAmplifier)));
+    }
+
+    private static MobEffectInstance instance(Effect effect, int duration, int amplifier) {
+        return new MobEffectInstance(effect, MobEffectDetails.builder().duration(duration).amplifier(amplifier).build());
     }
 }

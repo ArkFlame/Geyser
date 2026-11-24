@@ -26,6 +26,7 @@
 package org.geysermc.geyser.item.tooltip.providers;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.geysermc.geyser.item.tooltip.ComponentTooltipProvider;
 import org.geysermc.geyser.item.tooltip.TooltipContext;
@@ -36,6 +37,10 @@ public class MapTooltip implements ComponentTooltipProvider<Integer> {
 
     @Override
     public void addTooltip(TooltipContext context, Consumer<Component> adder, @NonNull Integer component) {
-        // Java's map tooltip is not available from the data sent to Bedrock.
+        // The scale/level/locked lines need MapItemSavedData, which the protocol does not send to Bedrock.
+        // The id line only needs MAP_ID and is what Java shows with advanced tooltips.
+        if (context.advanced()) {
+            adder.accept(Component.translatable("filled_map.id", component).color(NamedTextColor.GRAY));
+        }
     }
 }
