@@ -37,14 +37,14 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 3321 |
+| `UNFIXED` | 3316 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 55 |
+| `FIXED` | 56 |
 | `UPSTREAM_FIXED` | 2339 |
 | `DUPLICATE` | 385 |
 | `BLOCKED` | 7 |
-| `UNSUPPORTED` | 290 |
-| `NOT_APPLICABLE` | 420 |
+| `UNSUPPORTED` | 291 |
+| `NOT_APPLICABLE` | 423 |
 
 ## Mass audit (two passes)
 
@@ -114,6 +114,22 @@ Wave-2 audit workers are still running; final dispositions will be reconciled co
 ### Final reconciliation (wave 2 fixes)
 
 Seven fixes are recorded as `FIXED` with integrated commits verified as ancestors of `integration/final-release` HEAD `0e1fe19b3656a6564604e798079236bb58d10029`: #6805 (`ae0bbc2dbaa215ca4659d7c132323250feb3c3ce`), #6715 (`51fc0081e5ed90c46828274a9b7897e5e5e36b10`), #6626 (`fd26af6ca70290a3d0b42f4e42da5139060deda6`), #6830 (`6c7fb2a45f1e63bc80875ad753e6072adc733b01`) and #6683 (`0e1fe19b3656a6564604e798079236bb58d10029`) #6570 (`c943be7b846933f460842e5c41ceb128290564bf`) and #6741 (`3814c3712ecc5a687a773e9a9d94a90c93bf70ba`). CI evidence is compile-only: earlier green build at `0e79e51fa` **BUILD SUCCESSFUL in 1m 16s** (exit 0); the final verification build at `0e1fe19b3` was still running when this update was written. **No runtime or gameplay verification was performed.** The remaining audited records received disposition-only updates with source URLs in their JSON evidence. References: https://github.com/GeyserMC/Geyser/issues/6903, https://github.com/GeyserMC/Geyser/issues/6570, https://github.com/GeyserMC/Geyser/issues/6675, https://github.com/GeyserMC/Geyser/issues/6883, https://github.com/GeyserMC/Cumulus/pull/15.
+
+### Wave 3 audit — verified dispositions
+
+Wave-3 audit dispositions were reconciled against upstream issue/PR state and the integrated source on `integration/final-release` @ `96a2e130095d4337c78cfc4ff69b5479446c6ad1`. No new integration commit is claimed and no new SHA is recorded: #6248 is marked `FIXED` only because the implementation is already present in the integrated source at the file/line references below. No runtime or gameplay verification was performed; these are static dispositions. Reference: https://github.com/GeyserMC/Geyser/issues/6903.
+
+| ID | Disposition | Evidence / reference |
+| ---: | --- | --- |
+| #6213 | `UNSUPPORTED` | PS5 Bedrock client crash CE-108255-1; maintainers explicitly said the crash is client/device-specific — https://github.com/GeyserMC/Geyser/issues/6213 |
+| #6086 | `NOT_APPLICABLE` | Open skin/cape-as-`BufferedImage` feature request requiring a published-API design change — https://github.com/GeyserMC/Geyser/issues/6086 |
+| #6129 | `UNFIXED` | Candidate https://github.com/GeyserMC/Geyser/pull/6176 closed unmerged; unconfirmed on PS5 with recurrence reported — https://github.com/GeyserMC/Geyser/issues/6129 |
+| #6081 | `UNFIXED` | Open reloadable-mappings PR with a maintainer safety objection and no merge — https://github.com/GeyserMC/Geyser/pull/6081 |
+| #6544 | `NOT_APPLICABLE` | Documentation-only request for an external wiki page, not in this repository — https://github.com/GeyserMC/Geyser/issues/6544 |
+| #6248 | `FIXED` | Entity spectating implemented at base: `core/src/main/java/org/geysermc/geyser/entity/EntitySpectateHelper.java:46,59-84,112-120`, `core/src/main/java/org/geysermc/geyser/translator/protocol/java/entity/JavaSetCameraTranslator.java:39-45`, `core/src/main/java/org/geysermc/geyser/session/GeyserSession.java:1494`; upstream maintainer confirmed 26.2 builds; self-model-in-spectator intentionally declined — https://github.com/GeyserMC/Geyser/issues/6248 |
+| #6489 | `NOT_APPLICABLE` | Open draft WIP scoreboard-allocation performance PR; conflicting and unreviewed — https://github.com/GeyserMC/Geyser/pull/6489 |
+
+`status_counts` was recomputed from all 6817 records (UNFIXED 3321 → 3316, FIXED 55 → 56, UNSUPPORTED 290 → 291, NOT_APPLICABLE 420 → 423); every status is in the documented enum and all 6817 IDs remain unique. No build or test run was performed for this documentation pass.
 
 ## Priority queue — all OPEN issues and OPEN PRs
 
@@ -208,7 +224,7 @@ _(291 records)_
 | 4915592951 | Possible regression with "forward-player-ping" causing Bedrock timeouts after long teleports | https://github.com/GeyserMC/Geyser/issues/6557 | `UNFIXED` |
 | 4915065150 | Unable to wear armor after crafting | https://github.com/GeyserMC/Geyser/issues/6556 | `UNFIXED` |
 | 4902059744 | Movement of non-living entities (Display entities) isn't interpolated, causing visible drag for anything riding one | https://github.com/GeyserMC/Geyser/issues/6551 | `UNFIXED` |
-| 4889086403 | Update bedrock limiations to include attributes | https://github.com/GeyserMC/Geyser/issues/6544 | `UNFIXED` |
+| 4889086403 | Update bedrock limiations to include attributes | https://github.com/GeyserMC/Geyser/issues/6544 | `NOT_APPLICABLE` |
 | 4868140574 | Allow custom Bedrock item identifiers in horse armor GUI acceptedItems | https://github.com/GeyserMC/Geyser/issues/6535 | `UNFIXED` |
 | 4866786667 | Players kicked while right-click on block | https://github.com/GeyserMC/Geyser/issues/6532 | `UNFIXED` |
 | 4859485425 | enchant table cannot be used | https://github.com/GeyserMC/Geyser/issues/6527 | `UNFIXED` |
@@ -238,11 +254,11 @@ _(291 records)_
 | 4196235341 | Mapping api v2 predicate property fishing_rod_cast or crossbow charged Not compatible with Java players | https://github.com/GeyserMC/Geyser/issues/6281 | `UPSTREAM_FIXED` |
 | 4186822367 | Bedrock clients are crashing while somebody has a custom armor with armor trim equipped | https://github.com/GeyserMC/Geyser/issues/6278 | `UNFIXED` |
 | 4154311005 | Custom item attirbutes do not work proplerly on bedrock edition | https://github.com/GeyserMC/Geyser/issues/6266 | `UNFIXED` |
-| 4113646890 | Bedrock Spectator Mode not working as intended. | https://github.com/GeyserMC/Geyser/issues/6248 | `UNFIXED` |
+| 4113646890 | Bedrock Spectator Mode not working as intended. | https://github.com/GeyserMC/Geyser/issues/6248 | `FIXED` |
 | 4110465428 | Title: Bedrock recipe book auto-crafting does not work correctly through Geyser | https://github.com/GeyserMC/Geyser/issues/6246 | `UNFIXED` |
 | 4079217873 | Dolphin Tunnels not working for bedrock players | https://github.com/GeyserMC/Geyser/issues/6239 | `UNFIXED` |
 | 4041295810 | signing writable books if they have NBT does not work | https://github.com/GeyserMC/Geyser/issues/6224 | `UNFIXED` |
-| 4005465880 | PS5 Bedrock Edition Crashing consistently | https://github.com/GeyserMC/Geyser/issues/6213 | `UNFIXED` |
+| 4005465880 | PS5 Bedrock Edition Crashing consistently | https://github.com/GeyserMC/Geyser/issues/6213 | `UNSUPPORTED` |
 | 3997506286 | Players using Bedrock Edition on mobile devices are unable to enchant items or books. | https://github.com/GeyserMC/Geyser/issues/6210 | `UNFIXED` |
 | 3973938805 | Lore issue | https://github.com/GeyserMC/Geyser/issues/6202 | `UNFIXED` |
 | 3897906890 | [Towny] geyser bedrock players can attack by quickly breaking blocks and attacking in pvp disabled town | https://github.com/GeyserMC/Geyser/issues/6159 | `UNFIXED` |
@@ -256,7 +272,7 @@ _(291 records)_
 | 3798882794 | Players can't connect if they have an oversize book in their inventory | https://github.com/GeyserMC/Geyser/issues/6098 | `FIXED` |
 | 3795623377 | Blocks don't break when Tools have CustomModel | https://github.com/GeyserMC/Geyser/issues/6097 | `UNFIXED` |
 | 3790893570 | Custom blocks under state_overrides with different block identifiers | https://github.com/GeyserMC/Geyser/issues/6092 | `UNFIXED` |
-| 3781719547 | Skin and cape data API as BufferedImage | https://github.com/GeyserMC/Geyser/issues/6086 | `UNFIXED` |
+| 3781719547 | Skin and cape data API as BufferedImage | https://github.com/GeyserMC/Geyser/issues/6086 | `NOT_APPLICABLE` |
 | 3773728835 | Bedrock is very buggy | https://github.com/GeyserMC/Geyser/issues/6079 | `UNFIXED` |
 | 3771522889 | Nintendo Switch 1 OLED Game Crash on Join | https://github.com/GeyserMC/Geyser/issues/6078 | `UNFIXED` |
 | 3760739627 | Custom mapped (note)blocks don't render their texture/model if they're a falling block | https://github.com/GeyserMC/Geyser/issues/6072 | `UNFIXED` |
@@ -469,7 +485,7 @@ _(56 records)_
 | 4083854339 | Improve bamboo collision | https://github.com/GeyserMC/Geyser/pull/6560 | `FIXED` |
 | 4078328957 | Fix collision for copper bars and turtle eggs | https://github.com/GeyserMC/Geyser/pull/6555 | `FIXED` |
 | 4008215209 | Change logger to a static reference and add some debugging commands | https://github.com/GeyserMC/Geyser/pull/6513 | `UNFIXED` |
-| 3948152368 | Attempt to lower scoreboard allocs | https://github.com/GeyserMC/Geyser/pull/6489 | `UNFIXED` |
+| 3948152368 | Attempt to lower scoreboard allocs | https://github.com/GeyserMC/Geyser/pull/6489 | `NOT_APPLICABLE` |
 | 3707133775 | Fix block breaking | https://github.com/GeyserMC/Geyser/pull/6419 | `FIXED` |
 | 3662155537 | Add proper combat sounds | https://github.com/GeyserMC/Geyser/pull/6393 | `UNFIXED` |
 | 3142621945 | Feature: Reloadable Mappings | https://github.com/GeyserMC/Geyser/pull/6081 | `UNFIXED` |
