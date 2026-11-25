@@ -235,10 +235,11 @@ public class LoginEncryptionUtils {
      * </ol>
      *
      * <p>A synthesized XUID is <b>not</b> proof of identity and must not be treated as one. It is
-     * safe here only because it is derived from the primary player's already-validated XUID, so it
-     * cannot collide across consoles, and because it never leaves this server. On an online-mode or
-     * Floodgate setup, where the XUID is what links a Bedrock player to a real account, this is not
-     * good enough and the guest should be refused instead - see the note on the class.
+     * derived from the primary player's already-validated XUID (or the guest's identity UUID) and
+     * runs to 19 digits, outside the range Xbox Live issues from, so it cannot impersonate or
+     * collide with a real player. In online mode the Java account is authenticated separately, by
+     * the Microsoft login, so the XUID is not what proves who the guest is. With Floodgate the guest
+     * is a Floodgate player whose XUID is synthetic and can never match a linked account.
      */
     private static AuthData resolveSubClientAuthData(GeyserImpl geyser, GeyserSession session,
                                                      GeyserSession parent, @Nullable IdentityData extraData,
