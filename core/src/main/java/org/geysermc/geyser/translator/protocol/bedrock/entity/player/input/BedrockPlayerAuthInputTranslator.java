@@ -53,6 +53,7 @@ import org.geysermc.geyser.translator.protocol.Translator;
 import org.geysermc.geyser.util.CooldownUtils;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.Pose;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.PlayerState;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.ServerboundClientTickEndPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.level.ServerboundMoveVehiclePacket;
@@ -170,8 +171,8 @@ public final class BedrockPlayerAuthInputTranslator extends PacketTranslator<Pla
                         }
                     }
                 }
-                case START_SPIN_ATTACK -> entity.setFlag(EntityFlag.DAMAGE_NEARBY_MOBS, true);
-                case STOP_SPIN_ATTACK -> entity.setFlag(EntityFlag.DAMAGE_NEARBY_MOBS, false);
+                case START_SPIN_ATTACK -> handleSpinAttack(session, entity, true);
+                case STOP_SPIN_ATTACK -> handleSpinAttack(session, entity, false);
                 case STOP_GLIDING -> {
                     // Java doesn't allow elytra gliding to stop mid-air.
                     boolean shouldBeGliding = entity.isGliding() && entity.canStartGliding();
@@ -238,6 +239,16 @@ public final class BedrockPlayerAuthInputTranslator extends PacketTranslator<Pla
             // Hi random stranger. I am six days into updating for 1.21.3. How's it going?
             session.setSteeringLeft(up || inputData.contains(PlayerAuthInputData.PADDLE_RIGHT));
             session.setSteeringRight(up || inputData.contains(PlayerAuthInputData.PADDLE_LEFT));
+        }
+    }
+
+    static void handleSpinAttack(GeyserSession session, SessionPlayerEntity entity, boolean start) {
+        entity.setFlag(EntityFlag.DAMAGE_NEARBY_MOBS, start);
+        if (start) {
+            // Bedrock starts a riptide attack with a spin-attack input instead of an item-use
+            // transaction. Mirror the use to Java so the server arms its own spin attack and
+            // accepts the launch movement instead of pulling the player back.
+            session.useItem(Hand.MAIN_HAND);
         }
     }
 
