@@ -90,12 +90,6 @@ public abstract class GeyserServerInitializer extends BedrockServerInitializer {
                 }
             }
 
-                if (handler != null) {
-                    handler.setSession(session);
-                }
-                bedrockServerSession.setPacketHandler(new LoginPacketHandler(this.geyser, session));
-            }
-
         } catch (Throwable e) {
             // Error must be caught or it will be swallowed
             this.geyser.getLogger().error("Error occurred while initializing player!", e);
