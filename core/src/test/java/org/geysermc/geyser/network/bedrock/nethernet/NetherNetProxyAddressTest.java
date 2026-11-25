@@ -76,4 +76,42 @@ class NetherNetProxyAddressTest {
         assertNull(NetherNetAddresses.signalingProxyClient(channel));
         assertSame(reported, NetherNetAddresses.clientAddress(channel));
     }
+
+    @Test
+    void forwardedForClientFromTrustedSignalingProxyBeatsMediaRelay() {
+        InetSocketAddress client = new InetSocketAddress("198.51.100.7", 40000);
+        NetherNetChannel channel = mock(NetherNetChannel.class);
+        SourcedAddress signaled = new SourcedAddress(client, AddressSource.SIGNALING_FORWARDED_FOR,
+            new InetSocketAddress("172.18.0.1", 1234));
+        when(channel.signaledAddress()).thenReturn(signaled);
+        when(channel.reportedAddress()).thenReturn(
+            new SourcedAddress(new InetSocketAddress("172.18.0.1", 0), AddressSource.ICE, null));
+
+        assertEquals(client, NetherNetAddresses.signalingProxyClient(channel));
+        assertSame(signaled, NetherNetAddresses.clientAddress(channel));
+    }
+
+    @Test
+    void wildcardForwardedForAddressIsNotAttributedToThePlayer() {
+        NetherNetChannel channel = mock(NetherNetChannel.class);
+        when(channel.signaledAddress()).thenReturn(new SourcedAddress(
+            new InetSocketAddress("0.0.0.0", 0), AddressSource.SIGNALING_FORWARDED_FOR, null));
+        SourcedAddress reported = new SourcedAddress(new InetSocketAddress("172.18.0.1", 0), AddressSource.ICE, null);
+        when(channel.reportedAddress()).thenReturn(reported);
+
+        assertNull(NetherNetAddresses.signalingProxyClient(channel));
+        assertSame(reported, NetherNetAddresses.clientAddress(channel));
+    }
+
+    @Test
+    void untrustedLanSignalingSourceIsNeverPreferred() {
+        NetherNetChannel channel = mock(NetherNetChannel.class);
+        when(channel.signaledAddress()).thenReturn(new SourcedAddress(
+            new InetSocketAddress("198.51.100.7", 40000), AddressSource.SIGNALING_LAN, null));
+        SourcedAddress reported = new SourcedAddress(new InetSocketAddress("172.18.0.1", 0), AddressSource.ICE, null);
+        when(channel.reportedAddress()).thenReturn(reported);
+
+        assertNull(NetherNetAddresses.signalingProxyClient(channel));
+        assertSame(reported, NetherNetAddresses.clientAddress(channel));
+    }
 }

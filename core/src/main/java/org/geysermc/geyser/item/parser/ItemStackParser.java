@@ -63,6 +63,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Function;
 
 /**
@@ -182,7 +183,9 @@ public final class ItemStackParser {
         });
         register(DataComponentTypes.POTION_CONTENTS, NbtMap.class, (session, map) -> {
             Potion potion = Potion.getByJavaIdentifier(map.getString("potion"));
-            int customColour = map.getInt("custom_color", -1);
+            // A present negative value (e.g. opaque ARGB) is a real colour; only a missing key means absent
+            OptionalInt customColour = map.containsKey("custom_color")
+                ? OptionalInt.of(map.getInt("custom_color")) : OptionalInt.empty();
             // Not reading custom effects
             String customName = map.getString("custom_name", null);
             return new PotionContents(potion == null ? -1 : potion.ordinal(), customColour, List.of(), customName);

@@ -63,7 +63,10 @@ public final class NetherNetAddresses {
     }
 
     private static boolean isSignalingProxyClient(@Nullable SourcedAddress signaled) {
-        if (signaled == null || signaled.source() != AddressSource.SIGNALING_PROXY_PROTOCOL) {
+        // Both sources are only produced for peers in the configured trusted proxy lists
+        // (PROXY protocol header, or X-Forwarded-For from signaling-trusted-proxies).
+        if (signaled == null || (signaled.source() != AddressSource.SIGNALING_PROXY_PROTOCOL
+            && signaled.source() != AddressSource.SIGNALING_FORWARDED_FOR)) {
             return false;
         }
         InetSocketAddress address = signaled.address();
