@@ -39,11 +39,8 @@ import org.geysermc.geyser.api.event.bedrock.SessionDefineNetworkChannelsEvent;
 import org.geysermc.geyser.network.bedrock.GeyserBedrockPeer;
 import org.geysermc.geyser.network.bedrock.InvalidPacketHandler;
 import org.geysermc.geyser.network.bedrock.LoginPacketHandler;
-<<<<<<< HEAD
-import org.geysermc.geyser.network.bedrock.nethernet.NetherNetAddresses;
-=======
 import org.geysermc.geyser.network.bedrock.UpstreamPacketHandler;
->>>>>>> geo2/6941
+import org.geysermc.geyser.network.bedrock.nethernet.NetherNetAddresses;
 import org.geysermc.geyser.session.GeyserSession;
 
 import java.net.InetSocketAddress;
@@ -69,11 +66,7 @@ public abstract class GeyserServerInitializer extends BedrockServerInitializer {
             bedrockServerSession.setLogging(this.geyser.config().debugMode());
             GeyserSession session = new GeyserSession(this.geyser, bedrockServerSession, this.eventLoopGroup.next());
 
-<<<<<<< HEAD
             Channel channel = bedrockServerSession.getPeer().getChannel();
-            if (!bedrockServerSession.isSubClient()) {
-                InvalidPacketHandler handler = channel.pipeline().get(InvalidPacketHandler.class);
-=======
             session.getNetwork().defineNetworkChannels(SessionDefineNetworkChannelsEvent.State.CREATED);
 
             if (bedrockServerSession.isSubClient()) {
@@ -82,28 +75,27 @@ public abstract class GeyserServerInitializer extends BedrockServerInitializer {
                 // UpstreamPacketHandler handles that login and needs no prior stage.
                 bedrockServerSession.setPacketHandler(new UpstreamPacketHandler(this.geyser, session));
             } else {
-                InvalidPacketHandler handler = bedrockServerSession.getPeer().getChannel().pipeline().get(InvalidPacketHandler.class);
->>>>>>> geo2/6941
+                InvalidPacketHandler handler = channel.pipeline().get(InvalidPacketHandler.class);
+                if (handler != null) {
+                    handler.setSession(session);
+                }
+                bedrockServerSession.setPacketHandler(new LoginPacketHandler(this.geyser, session));
+
+                // A trusted PROXY header from signaling is the player; the WebRTC path behind a tunnel can be the tunnel.
+                if (channel instanceof NetherNetChannel netherNet) {
+                    InetSocketAddress proxyClient = NetherNetAddresses.signalingProxyClient(netherNet);
+                    if (proxyClient != null) {
+                        session.getUpstream().setInetAddress(proxyClient);
+                    }
+                }
+            }
+
                 if (handler != null) {
                     handler.setSession(session);
                 }
                 bedrockServerSession.setPacketHandler(new LoginPacketHandler(this.geyser, session));
             }
-<<<<<<< HEAD
 
-            // A trusted PROXY header from signaling is the player; the WebRTC path behind a tunnel can be the tunnel.
-            if (channel instanceof NetherNetChannel netherNet) {
-                InetSocketAddress proxyClient = NetherNetAddresses.signalingProxyClient(netherNet);
-                if (proxyClient != null) {
-                    session.getUpstream().setInetAddress(proxyClient);
-                }
-            }
-
-            session.getNetwork().defineNetworkChannels(SessionDefineNetworkChannelsEvent.State.CREATED);
-
-            bedrockServerSession.setPacketHandler(new LoginPacketHandler(this.geyser, session));
-=======
->>>>>>> geo2/6941
         } catch (Throwable e) {
             // Error must be caught or it will be swallowed
             this.geyser.getLogger().error("Error occurred while initializing player!", e);
