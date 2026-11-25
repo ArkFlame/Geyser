@@ -32,6 +32,7 @@ import org.cloudburstmc.protocol.bedrock.packet.LevelEventPacket;
 import org.cloudburstmc.protocol.bedrock.packet.MoveEntityDeltaPacket;
 import org.geysermc.geyser.entity.spawn.EntitySpawnContext;
 import org.geysermc.geyser.level.block.BlockStateValues;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.type.BuiltinEntityType;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 
 /**
@@ -124,7 +125,7 @@ public class ProjectileEntity extends Entity implements Tickable {
      */
     protected float getGravity() {
         if (getFlag(EntityFlag.HAS_GRAVITY)) {
-            switch (getEntityType()) {
+            switch ((BuiltinEntityType) getEntityType()) {
                 case LINGERING_POTION, SPLASH_POTION:
                     return 0.05f;
                 case EXPERIENCE_BOTTLE:
@@ -150,7 +151,7 @@ public class ProjectileEntity extends Entity implements Tickable {
         if (isInWater()) {
             return 0.8f;
         } else {
-            switch (getEntityType()) {
+            switch ((BuiltinEntityType) getEntityType()) {
                 case LINGERING_POTION, SPLASH_POTION:
                 case EXPERIENCE_BOTTLE:
                 case SNOWBALL:

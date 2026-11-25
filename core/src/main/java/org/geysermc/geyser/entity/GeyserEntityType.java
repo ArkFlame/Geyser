@@ -35,7 +35,7 @@ import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
 import org.geysermc.geyser.util.MinecraftKey;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +43,7 @@ import java.util.Optional;
 public record GeyserEntityType(Identifier identifier, EntityType mcpl) implements JavaEntityType {
     private static final Identifier UNREGISTERED = Identifier.of(Constants.GEYSER_CUSTOM_NAMESPACE, "unregistered_sadface");
 
-    private static final Map<EntityType, GeyserEntityType> VANILLA = new EnumMap<>(EntityType.class);
+    private static final Map<EntityType, GeyserEntityType> VANILLA = new HashMap<>();
 
     private GeyserEntityType(EntityType builtin) {
         this(Identifier.of(builtin.name().toLowerCase(Locale.ROOT)), builtin);
