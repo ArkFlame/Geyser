@@ -296,6 +296,8 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     @Setter
     private AuthData authData;
     private BedrockClientData clientData;
+    @Accessors(fluent = true)
+    private String locale = GeyserLocale.getDefaultLocale();
     /**
      * Used for Floodgate skin uploading
      */
@@ -1677,6 +1679,8 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
 
     public void setClientData(BedrockClientData data) {
         this.clientData = data;
+        String languageCode = data.getLanguageCode();
+        this.locale = languageCode != null ? languageCode : GeyserLocale.getDefaultLocale();
         this.inputCache.setInputMode(org.cloudburstmc.protocol.bedrock.data.InputMode.values()[data.getCurrentInputMode().ordinal()]);
     }
 
@@ -1880,15 +1884,6 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     @Override
     public GeyserSession connection() {
         return this;
-    }
-
-    @Override
-    public String locale() {
-        if (clientData == null) {
-            return GeyserLocale.getDefaultLocale();
-        }
-        String languageCode = clientData.getLanguageCode();
-        return languageCode != null ? languageCode : GeyserLocale.getDefaultLocale();
     }
 
     @Override
