@@ -138,8 +138,8 @@ public class NetherNetChannelInitialiser extends GeyserServerInitializer {
         public void channelActive(ChannelHandlerContext ctx) {
             ctx.pipeline().remove(this);
             if (ctx.channel() instanceof NetherNetChannel netherNet) {
-                SourcedAddress peer = netherNet.reportedAddress();
-                logSignaled(netherNet.signaledAddress(), peer);
+                SourcedAddress peer = NetherNetAddresses.clientAddress(netherNet);
+                logSignaled(netherNet.signaledAddress(), netherNet.reportedAddress());
                 if (!ConnectionRequests.accept(geyser, peer.address(), peer.via(), peer.source().name())) {
                     ctx.close();
                     return;

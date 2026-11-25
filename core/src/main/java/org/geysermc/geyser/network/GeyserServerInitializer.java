@@ -30,6 +30,7 @@ import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.Getter;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.cloudburstmc.netty.channel.nethernet.NetherNetChannel;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockServerInitializer;
@@ -38,7 +39,10 @@ import org.geysermc.geyser.api.event.bedrock.SessionDefineNetworkChannelsEvent;
 import org.geysermc.geyser.network.bedrock.GeyserBedrockPeer;
 import org.geysermc.geyser.network.bedrock.InvalidPacketHandler;
 import org.geysermc.geyser.network.bedrock.LoginPacketHandler;
+import org.geysermc.geyser.network.bedrock.nethernet.NetherNetAddresses;
 import org.geysermc.geyser.session.GeyserSession;
+
+import java.net.InetSocketAddress;
 
 /**
  * Shared by every Bedrock transport: turns each new Bedrock session into a {@link GeyserSession}.
@@ -61,10 +65,19 @@ public abstract class GeyserServerInitializer extends BedrockServerInitializer {
             bedrockServerSession.setLogging(this.geyser.config().debugMode());
             GeyserSession session = new GeyserSession(this.geyser, bedrockServerSession, this.eventLoopGroup.next());
 
+            Channel channel = bedrockServerSession.getPeer().getChannel();
             if (!bedrockServerSession.isSubClient()) {
-                InvalidPacketHandler handler = bedrockServerSession.getPeer().getChannel().pipeline().get(InvalidPacketHandler.class);
+                InvalidPacketHandler handler = channel.pipeline().get(InvalidPacketHandler.class);
                 if (handler != null) {
                     handler.setSession(session);
+                }
+            }
+
+            // A trusted PROXY header from signaling is the player; the WebRTC path behind a tunnel can be the tunnel.
+            if (channel instanceof NetherNetChannel netherNet) {
+                InetSocketAddress proxyClient = NetherNetAddresses.signalingProxyClient(netherNet);
+                if (proxyClient != null) {
+                    session.getUpstream().setInetAddress(proxyClient);
                 }
             }
 
