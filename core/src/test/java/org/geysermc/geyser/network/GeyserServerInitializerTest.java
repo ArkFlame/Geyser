@@ -24,6 +24,9 @@
  */
 package org.geysermc.geyser.network;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelPipeline;
+import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.network.bedrock.InvalidPacketHandler;
@@ -82,9 +85,14 @@ class GeyserServerInitializerTest {
 
     @Test
     void primaryStillStartsAtTheLoginHandler() {
-        BedrockServerSession upstream = mock(BedrockServerSession.class, RETURNS_DEEP_STUBS);
-        when(upstream.getPeer().getChannel().pipeline().get(InvalidPacketHandler.class))
-                .thenReturn(mock(InvalidPacketHandler.class));
+        BedrockServerSession upstream = mock(BedrockServerSession.class);
+        BedrockPeer peer = mock(BedrockPeer.class);
+        Channel channel = mock(Channel.class);
+        ChannelPipeline pipeline = mock(ChannelPipeline.class);
+        when(upstream.getPeer()).thenReturn(peer);
+        when(peer.getChannel()).thenReturn(channel);
+        when(channel.pipeline()).thenReturn(pipeline);
+        when(pipeline.get(InvalidPacketHandler.class)).thenReturn(mock(InvalidPacketHandler.class));
 
         TestInitializer initializer = new TestInitializer();
         try {

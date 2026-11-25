@@ -40,12 +40,12 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 | --- | ---: |
 | `UNFIXED` | 138 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 138 |
+| `FIXED` | 141 |
 | `UPSTREAM_FIXED` | 3010 |
 | `DUPLICATE` | 606 |
 | `BLOCKED` | 69 |
 | `UNSUPPORTED` | 656 |
-| `NOT_APPLICABLE` | 2199 |
+| `NOT_APPLICABLE` | 2200 |
 | `PARTIAL` | 2 |
 
 ## Mass audit (two passes)
@@ -498,13 +498,21 @@ The last external protocol-library blocker was removed by building an ArkFlame f
 
 `./gradlew build` on the fork: **BUILD SUCCESSFUL in 3m 3s**. The fork is pushed and tagged `af-26.3-codecfix-1`; JitPack serves the `protocol` artifact (verified HTTP 200 and `javap` showing `hasCustomColor`). Geyser merged latest upstream `51bf716b1` (#6943 locale caching, keeping all fork behaviour) and now depends on `com.github.ArkFlame.MCProtocolLib:protocol:af-26.3-codecfix-1`. Its hash fix uses `optionalTypePredicate` with `hasCustomColor`, and `PotionContentsHashTest` passes 2/2 tests; full `compileJava compileTestJava` is BUILD SUCCESSFUL in 1m 12s. This closes #6914. Runtime/gameplay verification was not performed.
 
+### ArkFlame MCProtocolLib v2 and current upstream
+
+Latest upstream c8ce5d422 (#6938) is merged while keeping the fork single hashing implementation.
+
+MCProtocolLib v2 (af-26.3-codecfix-2) adds PR #943, #933, #916 and regression tests for #723/#745/#823. Library build: BUILD SUCCESSFUL in 1m 9s. Geyser adapted to EntityType/EntityEventType interfaces; compileJava compileTestJava: BUILD SUCCESSFUL in 1m 13s; targeted tests for #6939/#6940/#6941 and potion hashing pass.
+
+#6939, #6940 and #6941 are FIXED; #6942 NOT_APPLICABLE. No live/gameplay tests.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
 
 ### Open issues
 
-_(291 records)_
+_(294 records)_
 
 | ID | Title | URL | Status |
 | ---: | --- | --- | --- |
@@ -799,10 +807,13 @@ _(291 records)_
 | 777380397 | Holding shift while planting crops causes the food to be eaten | https://github.com/GeyserMC/Geyser/issues/1782 | `UNFIXED` |
 | 775688478 | Support for 1.16 custom biomes | https://github.com/GeyserMC/Geyser/issues/1752 | `NOT_APPLICABLE` |
 | 633624088 | Splitscreen support | https://github.com/GeyserMC/Geyser/issues/750 | `FIXED` |
+| 0 | Trident does not launch player with riptide | https://github.com/GeyserMC/Geyser/issues/6939 | `FIXED` |
+| 0 | Geyser is not correctly interpreting IPs delivered via TCP+UDP tunnels using Proxy Protocol V2 | https://github.com/GeyserMC/Geyser/issues/6940 | `FIXED` |
+| 0 | Bedrock Chat Messages Are Not Visible to Java Players | https://github.com/GeyserMC/Geyser/issues/6942 | `NOT_APPLICABLE` |
 
 ### Open pull requests
 
-_(57 records)_
+_(58 records)_
 
 | ID | Title | URL | Status |
 | ---: | --- | --- | --- |
@@ -863,3 +874,4 @@ _(57 records)_
 | 2662538702 | Geyser Networking API | https://github.com/GeyserMC/Geyser/pull/5685 | `FIXED` |
 | 2593566343 | Anvil updater refactor and other small refactors | https://github.com/GeyserMC/Geyser/pull/5595 | `FIXED` |
 | 2047932455 | Support for max stack size | https://github.com/GeyserMC/Geyser/pull/5011 | `FIXED` |
+| 0 | Support Bedrock split-screen players (SubClientLoginPacket) | https://github.com/GeyserMC/Geyser/pull/6941 | `FIXED` |
