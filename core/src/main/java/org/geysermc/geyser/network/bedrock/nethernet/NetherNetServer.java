@@ -1009,7 +1009,10 @@ public final class NetherNetServer implements EventRegistrar, DumpMessageSource 
      * closed explicitly.
      */
     private void onSessionDisconnect(SessionDisconnectEventImpl event) {
-        if (event.connection() instanceof GeyserSession session) {
+        // Every local player on a console shares one channel; releasing it for a guest would eject the
+        // host and the other guests. The channel is released when the primary player disconnects.
+        if (event.connection() instanceof GeyserSession session
+            && !session.getUpstream().getSession().isSubClient()) {
             NetherNetChannelInitialiser.releaseChannel(session.getUpstream().getSession().getPeer().getChannel());
         }
         refreshProviderStatus();
