@@ -71,7 +71,11 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
             return;
 
         EntityEventType eventType = null;
-        switch (packet.getEvent()) {
+        if (!(packet.getEvent() instanceof org.geysermc.mcprotocollib.protocol.data.game.entity.EntityEventType builtinEvent)) {
+            // Unknown entity event - nothing to translate
+            return;
+        }
+        switch (builtinEvent) {
             case PLAYER_ENABLE_REDUCED_DEBUG:
                 session.setReducedDebugInfo(true);
                 return;
