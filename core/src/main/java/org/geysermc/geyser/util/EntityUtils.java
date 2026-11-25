@@ -73,6 +73,7 @@ import org.geysermc.geyser.text.MinecraftLocale;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.Effect;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.type.BuiltinEntityType;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.type.EntityType;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.Equippable;
 
@@ -113,7 +114,7 @@ public final class EntityUtils {
 
         float height = mount.getBoundingBoxHeight();
         float mountedHeightOffset = height * 0.75f;
-        switch (mount.getEntityType()) {
+        switch ((BuiltinEntityType) mount.getEntityType()) {
             case CAMEL -> {
                 boolean isBaby = mount.getFlag(EntityFlag.BABY);
                 mountedHeightOffset = height - (isBaby ? 0.35f : 0.6f);
@@ -141,7 +142,7 @@ public final class EntityUtils {
 
     private static float getHeightOffset(Entity passenger) {
         boolean isBaby;
-        switch (passenger.getEntityType()) {
+        switch ((BuiltinEntityType) passenger.getEntityType()) {
             case ALLAY, VEX:
                 return 0.4f;
             case SKELETON, STRAY, WITHER_SKELETON:
@@ -198,7 +199,7 @@ public final class EntityUtils {
                 // Update the primitive text to reseat the entity
                 textDisplay.updatePrimitiveText();
             }
-            switch (mount.getEntityType()) {
+            switch ((BuiltinEntityType) mount.getEntityType()) {
                 case CAMEL -> {
                     zOffset = 0.5f;
                     if (passengers > 1) {
@@ -273,11 +274,11 @@ public final class EntityUtils {
             if (passenger.getJavaDefinition() == VanillaEntities.PLAYER) {
                 yOffset += VanillaEntities.PLAYER.offset();
             }
-            switch (mount.getEntityType()) {
+            switch ((BuiltinEntityType) mount.getEntityType()) {
                 case MINECART, HOPPER_MINECART, TNT_MINECART, CHEST_MINECART, FURNACE_MINECART, SPAWNER_MINECART,
                         COMMAND_BLOCK_MINECART -> yOffset -= mount.getJavaDefinition().height() * 0.5f;
             }
-            switch (passenger.getEntityType()) {
+            switch ((BuiltinEntityType) passenger.getEntityType()) {
                 case MINECART, HOPPER_MINECART, TNT_MINECART, CHEST_MINECART, FURNACE_MINECART, SPAWNER_MINECART,
                      COMMAND_BLOCK_MINECART, SHULKER -> yOffset += passenger.getJavaDefinition().height() * 0.5f;
                 case FALLING_BLOCK -> yOffset += 0.995f;

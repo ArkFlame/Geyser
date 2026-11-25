@@ -38,6 +38,7 @@ import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
 import org.geysermc.geyser.util.EntityUtils;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.type.BuiltinEntityType;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundSetPassengersPacket;
 
 import java.util.ArrayList;
@@ -154,7 +155,7 @@ public class JavaSetPassengersTranslator extends PacketTranslator<ClientboundSet
         }
 
         entity.setPassengers(newPassengers);
-        switch (entity.getEntityType()) {
+        switch ((BuiltinEntityType) entity.getEntityType()) {
             case HORSE, SKELETON_HORSE, DONKEY, MULE, RAVAGER -> {
                 entity.getMetadata().put(EntityDataTypes.SEAT_ROTATION_OFFSET_DEGREES, 181.0f);
                 entity.updateBedrockMetadata();
