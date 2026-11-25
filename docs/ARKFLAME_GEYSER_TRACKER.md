@@ -40,10 +40,10 @@ Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and c
 | --- | ---: |
 | `UNFIXED` | 138 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 137 |
+| `FIXED` | 138 |
 | `UPSTREAM_FIXED` | 3010 |
 | `DUPLICATE` | 606 |
-| `BLOCKED` | 70 |
+| `BLOCKED` | 69 |
 | `UNSUPPORTED` | 656 |
 | `NOT_APPLICABLE` | 2199 |
 | `PARTIAL` | 2 |
@@ -487,6 +487,17 @@ Two final workers closed out the actionable surface. `git fetch upstream` still 
 
 This is the evidence-limited end of the campaign: the remaining UNFIXED records require live reproduction data, client hardware, or upstream dependency changes that are outside this repository.
 
+### ArkFlame MCProtocolLib fork and latest upstream
+
+The last external protocol-library blocker was removed by building an ArkFlame fork of MCProtocolLib. `https://github.com/ArkFlame/MCProtocolLib` was forked from `GeyserMC/MCProtocolLib` at `65efb9da` and now contains:
+
+- upstream PR #942 (42 files): 17 confirmed Minecraft 26.3 codec fixes, including `PotionContents.hasCustomColor()` and an `OptionalInt` constructor/builder, so an explicitly-set negative custom color is distinguishable from absence;
+- #851, #852, #723 - proxy DNS/SRV handling, IDN-normalized destination hosts and SOCKS4/SOCKS5 support;
+- #890 - all protocol hotbar buttons and drag-button IDs;
+- #745, #823 - bounded chunk palette reads and palette normalization in `MinecraftTypes`, with regression tests.
+
+`./gradlew build` on the fork: **BUILD SUCCESSFUL in 3m 3s**. The fork is pushed and tagged `af-26.3-codecfix-1`; JitPack serves the `protocol` artifact (verified HTTP 200 and `javap` showing `hasCustomColor`). Geyser merged latest upstream `51bf716b1` (#6943 locale caching, keeping all fork behaviour) and now depends on `com.github.ArkFlame.MCProtocolLib:protocol:af-26.3-codecfix-1`. Its hash fix uses `optionalTypePredicate` with `hasCustomColor`, and `PotionContentsHashTest` passes 2/2 tests; full `compileJava compileTestJava` is BUILD SUCCESSFUL in 1m 12s. This closes #6914. Runtime/gameplay verification was not performed.
+
 ## Priority queue — all OPEN issues and OPEN PRs
 
 These are the records that still need triage or an adoption decision. Closed/merged records are in the JSON file.
@@ -803,7 +814,7 @@ _(57 records)_
 | 5360752965 | Introduce `.geyserpack` loading | https://github.com/GeyserMC/Geyser/pull/6922 | `FIXED` |
 | 5330888326 | FIX synchronize item frames after teleportation | https://github.com/GeyserMC/Geyser/pull/6921 | `FIXED` |
 | 5295765293 | Register vanilla tools as custom items to fix block breaking times | https://github.com/GeyserMC/Geyser/pull/6916 | `FIXED` |
-| 5286632827 | build(deps): use the MCProtocolLib codec fixes build | https://github.com/GeyserMC/Geyser/pull/6914 | `BLOCKED` |
+| 5286632827 | build(deps): use the MCProtocolLib codec fixes build | https://github.com/GeyserMC/Geyser/pull/6914 | `FIXED` |
 | 5275355313 | Match Vanilla styles in custom names and lore to fully normalize the text component | https://github.com/GeyserMC/Geyser/pull/6909 | `DUPLICATE` |
 | 5233348431 | Add texture variation and alpha masked tint to material instance API | https://github.com/GeyserMC/Geyser/pull/6905 | `FIXED` |
 | 5216900616 | Add culling to custom block geometry component | https://github.com/GeyserMC/Geyser/pull/6902 | `FIXED` |
