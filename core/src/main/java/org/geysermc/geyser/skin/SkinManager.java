@@ -152,7 +152,7 @@ public class SkinManager {
             .premium(true)
             .capeId(cape.capeId())
             .fullSkinId(skinId)
-            .geometryDataEngineVersion(session.getClientData().getGameVersion())
+            .geometryDataEngineVersion(session.getClientData().getGameVersion() != null ? session.getClientData().getGameVersion() : "")
             .overridingPlayerAppearance(true)
             .color(SKIN_COLOR)
             .trusted(true)

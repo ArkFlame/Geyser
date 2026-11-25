@@ -29,6 +29,8 @@ import io.netty.channel.Channel;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.BedrockSession;
 import org.cloudburstmc.protocol.bedrock.BedrockSessionFactory;
+import org.cloudburstmc.protocol.bedrock.netty.BedrockPacketWrapper;
+import org.cloudburstmc.protocol.bedrock.packet.SubClientLoginPacket;
 
 import java.net.SocketAddress;
 
@@ -37,6 +39,30 @@ public class GeyserBedrockPeer extends BedrockPeer {
 
     public GeyserBedrockPeer(Channel channel, BedrockSessionFactory sessionFactory) {
         super(channel, sessionFactory);
+    }
+
+    /**
+     * Routes serverbound packets from a split-screen guest to that guest's own
+     * {@link BedrockSession}. Bedrock tags serverbound packets from a guest with its sub-client id
+     * as the <i>sender</i> and zero as the target; without this the peer files them under the
+     * primary player's session, where {@code SubClientLoginPacket} is rejected as an invalid
+     * login packet and takes the whole console down.
+     */
+    @Override
+    protected void onBedrockPacket(BedrockPacketWrapper wrapper) {
+        byte senderId = wrapper.getSenderSubClientId();
+        if (senderId > 0 && wrapper.getTargetSubClientId() == 0) {
+            wrapper.setTargetSubClientId(senderId);
+        }
+        super.onBedrockPacket(wrapper);
+    }
+
+    @Override
+    protected boolean opensSession(BedrockPacketWrapper wrapper) {
+        if (wrapper.getPacket() instanceof SubClientLoginPacket) {
+            return true;
+        }
+        return super.opensSession(wrapper);
     }
 
     /**

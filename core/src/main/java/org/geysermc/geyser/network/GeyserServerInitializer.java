@@ -38,6 +38,7 @@ import org.geysermc.geyser.api.event.bedrock.SessionDefineNetworkChannelsEvent;
 import org.geysermc.geyser.network.bedrock.GeyserBedrockPeer;
 import org.geysermc.geyser.network.bedrock.InvalidPacketHandler;
 import org.geysermc.geyser.network.bedrock.LoginPacketHandler;
+import org.geysermc.geyser.network.bedrock.UpstreamPacketHandler;
 import org.geysermc.geyser.session.GeyserSession;
 
 /**
@@ -61,16 +62,20 @@ public abstract class GeyserServerInitializer extends BedrockServerInitializer {
             bedrockServerSession.setLogging(this.geyser.config().debugMode());
             GeyserSession session = new GeyserSession(this.geyser, bedrockServerSession, this.eventLoopGroup.next());
 
-            if (!bedrockServerSession.isSubClient()) {
+            session.getNetwork().defineNetworkChannels(SessionDefineNetworkChannelsEvent.State.CREATED);
+
+            if (bedrockServerSession.isSubClient()) {
+                // A guest joins through a SubClientLoginPacket on the console's already encrypted
+                // connection - there is no network-settings or resource-pack handshake to run.
+                // UpstreamPacketHandler handles that login and needs no prior stage.
+                bedrockServerSession.setPacketHandler(new UpstreamPacketHandler(this.geyser, session));
+            } else {
                 InvalidPacketHandler handler = bedrockServerSession.getPeer().getChannel().pipeline().get(InvalidPacketHandler.class);
                 if (handler != null) {
                     handler.setSession(session);
                 }
+                bedrockServerSession.setPacketHandler(new LoginPacketHandler(this.geyser, session));
             }
-
-            session.getNetwork().defineNetworkChannels(SessionDefineNetworkChannelsEvent.State.CREATED);
-
-            bedrockServerSession.setPacketHandler(new LoginPacketHandler(this.geyser, session));
         } catch (Throwable e) {
             // Error must be caught or it will be swallowed
             this.geyser.getLogger().error("Error occurred while initializing player!", e);

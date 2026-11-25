@@ -89,7 +89,7 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
     private final Set<String> requestedPacks = new HashSet<>();
     private SessionLoadResourcePacksEventImpl resourcePackLoadEvent;
 
-    UpstreamPacketHandler(GeyserImpl geyser, GeyserSession session) {
+    public UpstreamPacketHandler(GeyserImpl geyser, GeyserSession session) {
         super(geyser, session);
     }
 
