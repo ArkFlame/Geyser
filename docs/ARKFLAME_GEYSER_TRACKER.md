@@ -29,9 +29,9 @@ Both fork repositories have issues disabled and contain 0 issues and 0 pull requ
 - `BLOCKED`: 68
 - `DUPLICATE`: 606
 - `FIXED`: 162
-- `NOT_APPLICABLE`: 2311
+- `NOT_APPLICABLE`: 2312
 - `PARTIAL`: 1
-- `UNFIXED`: 688
+- `UNFIXED`: 687
 - `UNSUPPORTED`: 656
 - `UPSTREAM_FIXED`: 3270
 
@@ -55,14 +55,14 @@ Both fork repositories have issues disabled and contain 0 issues and 0 pull requ
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 688 |
+| `UNFIXED` | 687 |
 | `IN_PROGRESS` | 0 |
 | `FIXED` | 162 |
 | `UPSTREAM_FIXED` | 3270 |
 | `DUPLICATE` | 606 |
 | `BLOCKED` | 68 |
 | `UNSUPPORTED` | 656 |
-| `NOT_APPLICABLE` | 2311 |
+| `NOT_APPLICABLE` | 2312 |
 | `PARTIAL` | 1 |
 
 ## Mass audit (two passes)
