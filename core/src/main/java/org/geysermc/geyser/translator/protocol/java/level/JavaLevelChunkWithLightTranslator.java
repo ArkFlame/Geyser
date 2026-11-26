@@ -58,6 +58,7 @@ import org.geysermc.geyser.translator.level.block.entity.BlockEntityTranslator;
 import org.geysermc.geyser.translator.level.block.entity.SkullBlockEntityTranslator;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
+import org.geysermc.geyser.util.BitStorageUnpacker;
 import org.geysermc.geyser.util.BlockEntityUtils;
 import org.geysermc.geyser.util.ChunkUtils;
 import org.geysermc.mcprotocollib.protocol.codec.MinecraftTypes;
@@ -94,6 +95,7 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
         int chunkSize = session.getChunkCache().getChunkHeightY();
 
         DataPalette[] javaChunks = new DataPalette[chunkSize];
+        int[] unpackedBlocks = new int[BlockStorage.SIZE];
         DataPalette[] javaBiomes = new DataPalette[chunkSize];
 
         final BlockEntityInfo[] blockEntities = packet.getBlockEntities();
@@ -145,8 +147,9 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                 if (javaPalette instanceof GlobalPalette) {
                     // As this is the global palette, simply iterate through the whole chunk section once
                     GeyserChunkSection section = new GeyserChunkSection(bedrockAirRuntimeId, subChunkIndex);
+                    BitStorageUnpacker.unpack(javaData, unpackedBlocks);
                     for (int yzx = 0; yzx < BlockStorage.SIZE; yzx++) {
-                        int javaId = javaData.get(yzx);
+                        int javaId = unpackedBlocks[yzx];
                         BlockState state = BlockState.of(javaId);
                         int bedrockId = blockMappings.getBedrockBlockId(javaId);
                         int xzy = INDEX_YZX_TO_XZY[yzx];
@@ -184,6 +187,7 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                     continue;
                 }
 
+                BitStorageUnpacker.unpack(javaData, unpackedBlocks);
                 IntList bedrockPalette = new IntArrayList(javaPalette.size());
                 int airPaletteId = -1;
                 waterloggedPaletteIds.clear();
@@ -222,7 +226,7 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                 if (waterloggedPaletteIds.isEmpty()) {
                     // No blocks are waterlogged, simply convert coordinate order
                     for (int yzx = 0; yzx < BlockStorage.SIZE; yzx++) {
-                        int paletteId = javaData.get(yzx);
+                        int paletteId = unpackedBlocks[yzx];
                         int xzy = INDEX_YZX_TO_XZY[yzx];
                         bedrockData.set(xzy, paletteId);
 
@@ -241,7 +245,7 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                     // layer 1 with palette ID 1 indicating water
                     int[] layer1Data = new int[BlockStorage.SIZE >> 5];
                     for (int yzx = 0; yzx < BlockStorage.SIZE; yzx++) {
-                        int paletteId = javaData.get(yzx);
+                        int paletteId = unpackedBlocks[yzx];
                         int xzy = INDEX_YZX_TO_XZY[yzx];
                         bedrockData.set(xzy, paletteId);
 
