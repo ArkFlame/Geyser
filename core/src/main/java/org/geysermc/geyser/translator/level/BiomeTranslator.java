@@ -170,6 +170,10 @@ public class BiomeTranslator {
     }
 
     private static void multiplyIdToStorage(final BitArray bitArray, final int idx, final int x, final int y, final int z) {
+        if (idx == 0) {
+            // The array is freshly allocated (or grown from one), so cells already hold palette index 0
+            return;
+        }
         for (int blockX = x << 2; blockX < (x << 2) + 4; blockX++) {
             for (int blockZ = z << 2; blockZ < (z << 2) + 4; blockZ++) {
                 for (int blockY = y << 2; blockY < (y << 2) + 4; blockY++) {
