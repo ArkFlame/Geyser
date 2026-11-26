@@ -3,7 +3,7 @@
 | # | File | Hot path | Change | Parity test | Measured |
 |---|------|----------|--------|-------------|----------|
 | 1 | JavaLevelChunkWithLightTranslator | chunk load | hoist per-section registry size lookups | none (pure hoist; full suite green) | no measurement, not claimed |
-| 2 | Entity.moveRelativeRaw | entity move | compute bedrockPosition() once | none (full suite green) | not claimed |
+| 2 | Entity.moveRelativeRaw | entity move | compute bedrockPosition() once | EntityMoveRelativeParityTest (400 random moves, offsets, signed-zero deltas; full MoveEntityDeltaPacket equality) PASS | not claimed |
 | 3 | JavaTeleportEntityTranslator | teleport | one pass over relatives instead of 9 contains() | TeleportRelativesParityTest (all 512 relative subsets, old contains-logic vs translator, teleport/moveRelative args and motion) PASS | not claimed |
 | 4-5 | JavaMoveEntityPos(Rot)Translator | entity move | doubles instead of Vector3d | MoveEntityStepAccumulationParityTest (500 random step lists each, signed zeros, bit-exact vs old Vector3d sum) PASS | not claimed |
 | 6 | JavaSectionBlocksUpdateTranslator | block updates | hoist lookups per entry | none (full suite green) | not claimed |
