@@ -1,24 +1,41 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-24T23:53:59Z_
+_Generated at: 2026-11-25T00:00:00Z_
 
-This tracker seeds the fork audit campaign by enumerating every issue and pull request in `GeyserMC/Geyser` (upstream) and `ArkFlame/Geyser` (fork). The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a human-readable summary.
+This tracker enumerates every issue and pull request of `GeyserMC/Geyser` and `GeyserMC/MCProtocolLib` (upstreams) and of the forks `ArkFlame/Geyser` and `ArkFlame/MCProtocolLib`. Identity is repo + number. The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a summary.
 
-## Dynamically discovered counts
+## Counts
 
-| Repo | Type | Open | Closed (unmerged) | Merged | Total |
-| --- | --- | ---: | ---: | ---: | ---: |
-| ArkFlame/Geyser | issue | 0 | 0 | 0 | 0 |
-| ArkFlame/Geyser | pr | 0 | 0 | 0 | 0 |
-| **ArkFlame/Geyser** | **all** | | | | **0** |
-| GeyserMC/Geyser | issue | 291 | 4268 | 0 | 4559 |
-| GeyserMC/Geyser | pr | 57 | 442 | 1760 | 2258 |
-| **GeyserMC/Geyser** | **all** | | | | **6817** |
-| **ALL REPOS** | **issue** | 291 | 4268 | 0 | 4559 |
-| **ALL REPOS** | **pr** | 57 | 442 | 1760 | 2258 |
-| **ALL REPOS** | **all** | | | | **6817** |
+| Repo | Type | Open | Closed (incl. merged) | Total |
+| --- | --- | ---: | ---: | ---: |
+| ArkFlame/Geyser | issue | 0 | 0 | 0 |
+| ArkFlame/Geyser | pr | 0 | 0 | 0 |
+| **ArkFlame/Geyser** | **all** | | | **0** |
+| ArkFlame/MCProtocolLib | issue | 0 | 0 | 0 |
+| ArkFlame/MCProtocolLib | pr | 0 | 0 | 0 |
+| **ArkFlame/MCProtocolLib** | **all** | | | **0** |
+| GeyserMC/Geyser | issue | 294 | 4269 | 4563 |
+| GeyserMC/Geyser | pr | 57 | 2206 | 2263 |
+| **GeyserMC/Geyser** | **all** | | | **6826** |
+| GeyserMC/MCProtocolLib | issue | 13 | 566 | 579 |
+| GeyserMC/MCProtocolLib | pr | 4 | 353 | 357 |
+| **GeyserMC/MCProtocolLib** | **all** | | | **936** |
+| **ALL REPOS** | **all** | | | **7762** |
 
-Unique records (deduplicated by numeric ID): **6817**. Note: closed issues and closed/merged PRs are intentionally not expanded here — see the JSON file for all of them.
+Both fork repositories have issues disabled and contain 0 issues and 0 pull requests (`gh api`, 2026-11-25). GitHub returned 404 for MCProtocolLib numbers 150, 292, 463, 497, 550, 703 and 860, which have no record.
+
+## Status counts
+
+- `BLOCKED`: 69
+- `DUPLICATE`: 606
+- `FIXED`: 146
+- `NOT_APPLICABLE`: 2311
+- `PARTIAL`: 1
+- `UNFIXED`: 703
+- `UNSUPPORTED`: 656
+- `UPSTREAM_FIXED`: 3270
+
+`UNFIXED` includes MCProtocolLib issues closed upstream without a closing commit (`CLOSED_NOT_VERIFIED`); closed does not mean fixed.
 
 ## Status legend
 
