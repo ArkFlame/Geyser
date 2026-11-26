@@ -121,11 +121,9 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
 
         try {
             ByteBuf in = Unpooled.wrappedBuffer(packet.getChunkData());
-            // Constant for the whole chunk, so read once instead of once per section
-            final int blockStateCount = BlockRegistries.BLOCK_STATES.get().size();
-            final int javaBiomeCount = session.javaRegistries().registry(JavaRegistries.BIOME).size();
             for (int sectionY = 0; sectionY < chunkSize; sectionY++) {
-                ChunkSection javaSection = MinecraftTypes.readChunkSection(in, blockStateCount, javaBiomeCount);
+                ChunkSection javaSection = MinecraftTypes.readChunkSection(in, BlockRegistries.BLOCK_STATES.get().size(),
+                    session.javaRegistries().registry(JavaRegistries.BIOME).size());
                 javaChunks[sectionY] = javaSection.getBlockData();
                 javaBiomes[sectionY] = javaSection.getBiomeData();
 

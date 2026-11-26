@@ -42,6 +42,7 @@ import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
 
 import java.util.BitSet;
+import java.util.Objects;
 
 @Translator(packet = ClientboundSectionBlocksUpdatePacket.class)
 public class JavaSectionBlocksUpdateTranslator extends PacketTranslator<ClientboundSectionBlocksUpdatePacket> {
@@ -66,33 +67,30 @@ public class JavaSectionBlocksUpdateTranslator extends PacketTranslator<Clientbo
             packet.getChunkX() << 4, packet.getChunkY() << 4, packet.getChunkZ() << 4
         ));
 
-        final var worldCache = session.getWorldCache();
-        final var blockMappings = session.getBlockMappings();
         for (BlockChangeEntry entry : packet.getEntries()) {
-            final Vector3i entryPos = entry.getPosition();
-            worldCache.removePrediction(entryPos);
+            session.getWorldCache().removePrediction(entry.getPosition());
 
             // Hack to avoid looking up blockstates for the currently broken position each tick
-            if (clientBreakPos != null && clientBreakPos.equals(entryPos)) {
+            if (clientBreakPos != null && Objects.equals(clientBreakPos, entry.getPosition())) {
                 session.getBlockBreakHandler().setUpdatedServerBlockStateId(entry.getBlock());
             }
 
             int oldBlock;
             if (palette != null) {
-                oldBlock = palette.get(entryPos.getX() & 0xF, entryPos.getY() & 0xF, entryPos.getZ() & 0xF);
+                oldBlock = palette.get(entry.getPosition().getX() & 0xF, entry.getPosition().getY() & 0xF, entry.getPosition().getZ() & 0xF);
                 if (entry.getBlock() == oldBlock) {
                     // Skip unchanged blocks which may occur with older versions of Minecraft
                     continue;
                 }
 
-                palette.set(entryPos.getX() & 0xF, entryPos.getY() & 0xF, entryPos.getZ() & 0xF, entry.getBlock());
+                palette.set(entry.getPosition().getX() & 0xF, entry.getPosition().getY() & 0xF, entry.getPosition().getZ() & 0xF, entry.getBlock());
             } else {
                 oldBlock = -1;
             }
 
             BlockState blockState = BlockState.of(entry.getBlock());
             if (blockState.is(Blocks.AIR)) {
-                ItemFrameEntity itemFrameEntity = ItemFrameEntity.getItemFrameEntity(session, entryPos);
+                ItemFrameEntity itemFrameEntity = ItemFrameEntity.getItemFrameEntity(session, entry.getPosition());
                 if (itemFrameEntity != null) { // Item frame is still present and no block overrides that; refresh it
                     itemFrameEntity.updateBlock(blockState, true);
                     continue;
@@ -100,17 +98,17 @@ public class JavaSectionBlocksUpdateTranslator extends PacketTranslator<Clientbo
             }
 
             // Some block may have special handling, keep it that way
-            if (!(blockState.block().getClass() == Block.class)) {
-                blockState.block().updateBlock(session, blockState, entryPos);
+            if (!(blockState.block().getClass().equals(Block.class))) {
+                blockState.block().updateBlock(session, blockState, entry.getPosition());
                 continue;
             }
 
             // Skull is gone
-            session.getSkullCache().removeSkull(entryPos);
+            session.getSkullCache().removeSkull(entry.getPosition());
 
             updateSubChunkBlocksPacket.getStandardBlocks().add(new org.cloudburstmc.protocol.bedrock.data.BlockChangeEntry(
-                entryPos,
-                blockMappings.getBedrockBlock(blockState),
+                entry.getPosition(),
+                session.getBlockMappings().getBedrockBlock(blockState),
                 FLAG_ALL,
                 -1,
                 MessageType.NONE
@@ -119,8 +117,8 @@ public class JavaSectionBlocksUpdateTranslator extends PacketTranslator<Clientbo
             boolean isWaterlogged = waterlogged.get(entry.getBlock());
             if (palette == null || waterlogged.get(oldBlock) != isWaterlogged) {
                 updateSubChunkBlocksPacket.getExtraBlocks().add(new org.cloudburstmc.protocol.bedrock.data.BlockChangeEntry(
-                    entryPos,
-                    isWaterlogged ? blockMappings.getBedrockWater() : blockMappings.getBedrockAir(),
+                    entry.getPosition(),
+                    isWaterlogged ? session.getBlockMappings().getBedrockWater() : session.getBlockMappings().getBedrockAir(),
                     0,
                     -1,
                     MessageType.NONE
