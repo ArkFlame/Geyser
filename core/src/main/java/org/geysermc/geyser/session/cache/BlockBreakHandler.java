@@ -338,6 +338,9 @@ public class BlockBreakHandler {
             ServerboundPlayerActionPacket startBreakingPacket = new ServerboundPlayerActionPacket(PlayerAction.START_DIGGING, fireBlockPos,
                 blockFace.mcpl(), session.getWorldCache().nextPredictionSequence());
             session.sendDownstreamGamePacket(startBreakingPacket);
+            // Bedrock aimed at the block behind the fire. Stop after extinguishing it, as the original
+            // fix did (3ef7e30230, #875/#906); continuing would also start mining the block behind.
+            return;
         }
 
         // % block breaking progress in this tick

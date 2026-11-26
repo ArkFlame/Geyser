@@ -144,7 +144,10 @@ public class PlayerEntity extends AvatarEntity implements GeyserPlayerEntity {
     }
 
     public void sendPlayer() {
-        if (session.getEntityCache().getPlayerEntity(uuid) == null) {
+        // The local player is held on the session rather than in the cache's player map (see
+        // EntityCache#getEntityByUuid), so a respawn spawn of ourselves must not need a player list entry.
+        if (session.getEntityCache().getPlayerEntity(uuid) == null
+            && !uuid.equals(session.getPlayerEntity().uuid())) {
             GeyserImpl.getInstance().getLogger().warning("Attempted to spawn player, but player could not be found in entity cache!");
             return;
         }

@@ -34,6 +34,7 @@ import org.geysermc.geyser.item.TooltipOptions;
 import org.geysermc.geyser.registry.java.JavaRegistryProvider;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.registry.java.JavaRegistries;
+import org.geysermc.geyser.registry.type.ItemMapping;
 import org.geysermc.geyser.translator.item.BedrockItemBuilder;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.ArmorTrim;
 import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes;
@@ -45,6 +46,16 @@ public class ArmorItem extends Item {
 
     public ArmorItem(String javaIdentifier, Builder builder) {
         super(javaIdentifier, builder);
+    }
+
+    @Override
+    public void translateNbtToJava(@NonNull GeyserSession session, @NonNull NbtMap bedrockTag, @NonNull DataComponents components, ItemMapping mapping) {
+        super.translateNbtToJava(session, bedrockTag, components, mapping);
+        // Reverse of translateDyedColor: a tinted piece taken from the creative inventory keeps its colour (#1922).
+        // Presence, not value, decides: black (0) is a real dye colour.
+        if (bedrockTag.containsKey("customColor")) {
+            components.put(DataComponentTypes.DYED_COLOR, bedrockTag.getInt("customColor"));
+        }
     }
 
     @Override
