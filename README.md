@@ -8,6 +8,16 @@ Geyser is a bridge between Minecraft: Bedrock Edition and Minecraft: Java Editio
 
 Geyser is an [Open Collaboration](https://opencollaboration.dev/) project.
 
+## Geyser Fast by ArkFlame Studios
+This repository is **Geyser Fast by ArkFlame Studios**, a fork of [GeyserMC/Geyser](https://github.com/GeyserMC/Geyser) that keeps Geyser's names, packages, APIs, plugin IDs, artifacts, configuration, licenses and credits unchanged, so it drops in where Geyser is used today. It is built against a companion fork of MCProtocolLib ([ArkFlame/MCProtocolLib](https://github.com/ArkFlame/MCProtocolLib)) (tag `af-26.3-codecfix-2`).
+
+What the fork adds on top of upstream:
+- Bug fixes taken from the upstream issue and pull-request backlog, each backed by an offline test that fails on the code before the fix and passes after it.
+- Memory and tick-cost work, described in [`docs/OPTIMIZATION_PLAN.md`](docs/OPTIMIZATION_PLAN.md) and [`docs/MEMORY_OPTIMIZATION.md`](docs/MEMORY_OPTIMIZATION.md).
+- Offline-mode UUID handling preserved from the fork's earlier work.
+
+Every upstream issue and pull request of Geyser and MCProtocolLib is tracked by repository and number, with its status and the evidence behind it, in [`docs/ARKFLAME_GEYSER_TRACKER.md`](docs/ARKFLAME_GEYSER_TRACKER.md) (machine-readable: [`docs/arkflame-geyser-tracker.json`](docs/arkflame-geyser-tracker.json)). Not every record is fixed: the tracker lists what is still open and which cases cannot be fixed from this side. Fixes are proven with offline tests only; behaviour that depends on a real Bedrock client is marked as such on its record.
+
 ## What is Geyser?
 Geyser is a proxy, bridging the gap between Minecraft: Bedrock Edition and Minecraft: Java Edition servers.
 The ultimate goal of this project is to allow Minecraft: Bedrock Edition users to join Minecraft: Java Edition servers as seamlessly as possible. However, due to the nature of Geyser translating packets over the network of two different games, *do not expect everything to work perfectly!*
