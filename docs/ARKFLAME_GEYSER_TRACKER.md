@@ -31,9 +31,9 @@ Both fork repositories have issues disabled and contain 0 issues and 0 pull requ
 - `FIXED`: 162
 - `NOT_APPLICABLE`: 2312
 - `PARTIAL`: 1
-- `UNFIXED`: 687
+- `UNFIXED`: 685
 - `UNSUPPORTED`: 656
-- `UPSTREAM_FIXED`: 3270
+- `UPSTREAM_FIXED`: 3272
 
 `UNFIXED` includes MCProtocolLib issues closed upstream without a closing commit (`CLOSED_NOT_VERIFIED`); closed does not mean fixed.
 
@@ -55,10 +55,10 @@ Both fork repositories have issues disabled and contain 0 issues and 0 pull requ
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 687 |
+| `UNFIXED` | 685 |
 | `IN_PROGRESS` | 0 |
 | `FIXED` | 162 |
-| `UPSTREAM_FIXED` | 3270 |
+| `UPSTREAM_FIXED` | 3272 |
 | `DUPLICATE` | 606 |
 | `BLOCKED` | 68 |
 | `UNSUPPORTED` | 656 |
