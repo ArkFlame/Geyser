@@ -28,10 +28,10 @@ Both fork repositories have issues disabled and contain 0 issues and 0 pull requ
 
 - `BLOCKED`: 68
 - `DUPLICATE`: 606
-- `FIXED`: 155
+- `FIXED`: 161
 - `NOT_APPLICABLE`: 2311
 - `PARTIAL`: 1
-- `UNFIXED`: 695
+- `UNFIXED`: 689
 - `UNSUPPORTED`: 656
 - `UPSTREAM_FIXED`: 3270
 
@@ -55,9 +55,9 @@ Both fork repositories have issues disabled and contain 0 issues and 0 pull requ
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 695 |
+| `UNFIXED` | 689 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 155 |
+| `FIXED` | 161 |
 | `UPSTREAM_FIXED` | 3270 |
 | `DUPLICATE` | 606 |
 | `BLOCKED` | 68 |
