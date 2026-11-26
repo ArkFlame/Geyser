@@ -1412,6 +1412,25 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         // Mark session as closed before cancelling erosion futures
         closed = true;
         erosionHandler.close();
+        releaseChunkCache();
+    }
+
+    /**
+     * Drops the cached Java chunk data of a closed session. The cache is the largest per-session structure, so if
+     * anything outside Geyser still references the closed session (see GeyserMC/Geyser#6920) it no longer pins a
+     * copy of the world with it. Runs on the session event loop because the cache is not thread safe.
+     */
+    private void releaseChunkCache() {
+        if (tickEventLoop == null) {
+            chunkCache.clear();
+            return;
+        }
+        try {
+            tickEventLoop.execute(chunkCache::clear);
+        } catch (RuntimeException ignored) {
+            // The event loop is already shut down, so nothing can be adding chunks any more
+            chunkCache.clear();
+        }
     }
 
     /**
