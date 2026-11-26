@@ -19,6 +19,7 @@ class ItemTranslatorOfflineHarnessTest {
     void itemTranslatorInitialisesAfterBootstrap() {
         mockContext(() -> {
             DataComponentRegistryPopulator.load(GeyserResources.DEFAULT);
+            ItemTestSupport.repairItems();
             BuiltInJavaRegistries.bootstrap();
             BuiltInJavaRegistries.freeze();
             try { Class.forName(ItemTranslator.class.getName()); } catch (ClassNotFoundException e) { throw new AssertionError(e); }
@@ -29,6 +30,7 @@ class ItemTranslatorOfflineHarnessTest {
     void translatesPlainItemOffline() {
         mockContext(() -> {
             DataComponentRegistryPopulator.load(GeyserResources.DEFAULT);
+            ItemTestSupport.repairItems();
             BuiltInJavaRegistries.bootstrap();
             BuiltInJavaRegistries.freeze();
             GeyserSession session = mock(GeyserSession.class, RETURNS_DEEP_STUBS);
@@ -42,6 +44,7 @@ class ItemTranslatorOfflineHarnessTest {
     void measuresAllocationPerTranslation() {
         mockContext(() -> {
             DataComponentRegistryPopulator.load(GeyserResources.DEFAULT);
+            ItemTestSupport.repairItems();
             BuiltInJavaRegistries.bootstrap();
             BuiltInJavaRegistries.freeze();
             GeyserSession session = mock(GeyserSession.class, org.mockito.Mockito.withSettings().stubOnly().defaultAnswer(RETURNS_DEEP_STUBS));
@@ -71,6 +74,7 @@ class ItemTranslatorOfflineHarnessTest {
     void attributesAllocationPerPiece() {
         mockContext(() -> {
             DataComponentRegistryPopulator.load(GeyserResources.DEFAULT);
+            ItemTestSupport.repairItems();
             BuiltInJavaRegistries.bootstrap();
             BuiltInJavaRegistries.freeze();
             GeyserSession session = mock(GeyserSession.class, org.mockito.Mockito.withSettings().stubOnly().defaultAnswer(RETURNS_DEEP_STUBS));

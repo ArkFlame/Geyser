@@ -40,6 +40,7 @@ class DefaultComponentsViewParityTest {
 
     private static void bootstrap() {
         DataComponentRegistryPopulator.load(GeyserResources.DEFAULT);
+        ItemTestSupport.repairItems();
         BuiltInJavaRegistries.bootstrap();
         BuiltInJavaRegistries.freeze();
     }

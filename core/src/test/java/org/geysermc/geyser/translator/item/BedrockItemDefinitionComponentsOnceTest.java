@@ -27,6 +27,7 @@ class BedrockItemDefinitionComponentsOnceTest {
     void mergesComponentsOnlyOnce() {
         mockContext(() -> {
             DataComponentRegistryPopulator.load(GeyserResources.DEFAULT);
+            ItemTestSupport.repairItems();
             BuiltInJavaRegistries.bootstrap();
             BuiltInJavaRegistries.freeze();
             GeyserSession session = mock(GeyserSession.class, RETURNS_DEEP_STUBS);
