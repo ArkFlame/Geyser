@@ -9,7 +9,7 @@ Geyser is a bridge between Minecraft: Bedrock Edition and Minecraft: Java Editio
 Geyser is an [Open Collaboration](https://opencollaboration.dev/) project.
 
 ## Geyser Fast by ArkFlame Studios
-This repository is **Geyser Fast by ArkFlame Studios**, a fork of [GeyserMC/Geyser](https://github.com/GeyserMC/Geyser) that keeps Geyser's names, packages, APIs, plugin IDs, artifacts, configuration, licenses and credits unchanged, so it drops in where Geyser is used today. It is built against a companion fork of MCProtocolLib ([ArkFlame/MCProtocolLib](https://github.com/ArkFlame/MCProtocolLib)) (tag `af-26.3-codecfix-2`).
+This repository is **Geyser Fast by ArkFlame Studios**, a fork of [GeyserMC/Geyser](https://github.com/GeyserMC/Geyser) that keeps Geyser's names, packages, APIs, plugin IDs, artifacts, configuration, licenses and credits unchanged, so it drops in where Geyser is used today. It is built against a companion fork of MCProtocolLib ([ArkFlame/MCProtocolLib](https://github.com/ArkFlame/MCProtocolLib)) (tag `af-26.3-codecfix-3`).
 
 What the fork adds on top of upstream:
 - Bug fixes taken from the upstream issue and pull-request backlog, each backed by an offline test that fails on the code before the fix and passes after it.

@@ -892,3 +892,6 @@ _(58 records)_
 | 2593566343 | Anvil updater refactor and other small refactors | https://github.com/GeyserMC/Geyser/pull/5595 | `FIXED` |
 | 2047932455 | Support for max stack size | https://github.com/GeyserMC/Geyser/pull/5011 | `FIXED` |
 | 0 | Support Bedrock split-screen players (SubClientLoginPacket) | https://github.com/GeyserMC/Geyser/pull/6941 | `FIXED` |
+
+
+MCProtocolLib tag `af-26.3-codecfix-3` (a71753a7, adds #925 interruptible connect) is published on JitPack (pom and jar HTTP 200, `awaitConnect` present via javap). Geyser is pinned to it; full `./gradlew test` is BUILD SUCCESSFUL, 356 tests, 0 failures (evidence/gate-geyser-full5.log).
