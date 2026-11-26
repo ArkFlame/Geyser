@@ -34,6 +34,7 @@ import org.cloudburstmc.protocol.bedrock.packet.LevelEventPacket;
 import org.cloudburstmc.protocol.bedrock.packet.LevelSoundEventPacket;
 import org.cloudburstmc.protocol.bedrock.packet.PlaySoundPacket;
 import org.geysermc.geyser.GeyserImpl;
+import org.geysermc.geyser.GeyserLogger;
 import org.geysermc.geyser.level.block.type.Block;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.Registries;
@@ -142,7 +143,10 @@ public final class SoundUtils {
 
         SoundMapping soundMapping = Registries.SOUNDS.get(soundIdentifier);
         if (soundMapping == null) {
-            session.getGeyser().getLogger().debug("[Builtin] Sound mapping for " + soundIdentifier + " not found; assuming custom.");
+            GeyserLogger logger = session.getGeyser().getLogger();
+            if (logger.isDebug()) {
+                logger.debug("[Builtin] Sound mapping for " + soundIdentifier + " not found; assuming custom.");
+            }
             playSound(session, soundIdentifier, position, volume, pitch);
             return;
         }
@@ -170,8 +174,11 @@ public final class SoundUtils {
             sound = SoundUtils.toSoundEvent(soundIdentifier);
         }
         if (sound == null) {
-            session.getGeyser().getLogger().debug("[Builtin] Sound for original '" + soundIdentifier + "' to mappings '" + soundMapping.bedrock()
-                + "' was not a playable level sound, or has yet to be mapped to an enum in SoundEvent.");
+            GeyserLogger logger = session.getGeyser().getLogger();
+            if (logger.isDebug()) {
+                logger.debug("[Builtin] Sound for original '" + soundIdentifier + "' to mappings '" + soundMapping.bedrock()
+                    + "' was not a playable level sound, or has yet to be mapped to an enum in SoundEvent.");
+            }
             return;
         }
 
