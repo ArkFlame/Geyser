@@ -124,12 +124,16 @@ public class GeyserMockContextScoreboard {
         var entitySpawnContext = EntitySpawnContext.DUMMY_CONTEXT.apply(context.session(), UUID.randomUUID(), VanillaEntities.TEXT_DISPLAY);
         entitySpawnContext.geyserId(geyserId);
         entitySpawnContext.javaId((int) geyserId);
+        // Spawning a text display places its primitive text, which needs the session's Bedrock dimension
+        when(context.session().getBedrockDimension()).thenReturn(org.geysermc.geyser.level.BedrockDimension.OVERWORLD);
         var textDisplay = spy(new TextDisplayEntity(entitySpawnContext));
 
         var entityCache = context.mockOrSpy(EntityCache.class);
         entityCache.spawnEntity(textDisplay);
 
         assertNextPacketType(context, AddEntityPacket.class);
+        // The primitive text shape is drawn right after the entity is added
+        assertNextPacketType(context, org.cloudburstmc.protocol.bedrock.packet.DebugDrawerPacket.class);
         return textDisplay;
     }
 

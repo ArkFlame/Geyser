@@ -416,6 +416,8 @@ public class NameVisibilityScoreboardTest {
 
             // Java keeps showing the name when only text displays ride the entity
             player.updateBedrockMetadata();
+            // Only the text display redraws; the player name metadata stays untouched
+            assertNextPacketType(context, org.cloudburstmc.protocol.bedrock.packet.DebugDrawerPacket.class);
             assertNoNextPacket(context);
         });
     }
