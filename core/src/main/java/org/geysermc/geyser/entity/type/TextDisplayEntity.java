@@ -431,7 +431,7 @@ public class TextDisplayEntity extends DisplayBaseEntity {
 
         // Apply translation
         // Move the bedrock anchor to where the top line sits within the java text, in the java text's local space
-        int lines = this.text.split("\n", -1).length;
+        int lines = countLines(this.text);
         Vector4f anchor = matrix.transform(0, JAVA_LINE_HEIGHT * lines - BEDROCK_ANCHOR_OFFSET, 0, 1);
         Vector3f translation = Vector3f.from(anchor.getX(), anchor.getY(), anchor.getZ());
 
@@ -465,5 +465,16 @@ public class TextDisplayEntity extends DisplayBaseEntity {
         secondEntity.getMetadata().put(EntityDataTypes.WIDTH, 0.0f);
         secondEntity.getMetadata().put(EntityDataTypes.HEIGHT, 0.0f);
         secondEntity.getMetadata().put(EntityDataTypes.HITBOX, NbtMap.EMPTY);
+    }
+
+    /**
+     * Number of lines in the text; identical to {@code text.split("\\n", -1).length} without allocating the array.
+     */
+    static int countLines(String text) {
+        int lines = 1;
+        for (int i = text.indexOf('\n'); i >= 0; i = text.indexOf('\n', i + 1)) {
+            lines++;
+        }
+        return lines;
     }
 }
