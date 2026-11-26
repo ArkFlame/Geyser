@@ -47,6 +47,7 @@ import org.geysermc.geyser.entity.type.player.SessionPlayerEntity;
 import org.geysermc.geyser.entity.vehicle.ClientVehicle;
 import org.geysermc.geyser.entity.vehicle.HorseVehicleComponent;
 import org.geysermc.geyser.level.physics.BoundingBox;
+import org.geysermc.geyser.inventory.InventoryHolder;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
@@ -101,7 +102,14 @@ public final class BedrockPlayerAuthInputTranslator extends PacketTranslator<Pla
             leftOverInputData.remove(input);
             switch (input) {
                 case PERFORM_ITEM_INTERACTION -> processItemUseTransaction(session, packet.getItemUseTransaction());
-                case PERFORM_ITEM_STACK_REQUEST -> session.getPlayerInventoryHolder().translateRequests(List.of(packet.getItemStackRequest()));
+                case PERFORM_ITEM_STACK_REQUEST -> {
+                    // Same target as a standalone ItemStackRequestPacket: the open inventory, else the player's (#3368)
+                    InventoryHolder<?> holder = session.getInventoryHolder();
+                    if (holder == null) {
+                        holder = session.getPlayerInventoryHolder();
+                    }
+                    holder.translateRequests(List.of(packet.getItemStackRequest()));
+                }
                 case START_SWIMMING -> entity.setFlag(EntityFlag.SWIMMING, true);
                 case STOP_SWIMMING -> entity.setFlag(EntityFlag.SWIMMING, false);
                 case START_CRAWLING -> entity.setFlag(EntityFlag.CRAWLING, true);
