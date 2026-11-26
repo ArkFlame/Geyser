@@ -601,7 +601,9 @@ public final class ItemTranslator {
             return ItemDefinition.AIR;
         }
 
-        ItemMapping mapping = itemStack.asItem().toBedrockDefinition(itemStack.getAllComponents(), session.getItemMappings());
+        // Merge the default and additional components once; both consumers below only read them
+        DataComponents allComponents = itemStack.getAllComponents();
+        ItemMapping mapping = itemStack.asItem().toBedrockDefinition(allComponents, session.getItemMappings());
 
         ItemDefinition itemDefinition = mapping.getBedrockDefinition();
         CustomBlockData modelBlockOverride = CustomBlockItemTranslator.resolveForItem(mapping.getJavaItem(), itemStack.getComponent(DataComponentTypes.ITEM_MODEL));
@@ -619,7 +621,7 @@ public final class ItemTranslator {
             }
         }
 
-        ItemDefinition definition = CustomItemTranslator.getCustomItem(session, itemStack.getAmount(), itemStack.getAllComponents(), mapping);
+        ItemDefinition definition = CustomItemTranslator.getCustomItem(session, itemStack.getAmount(), allComponents, mapping);
         if (definition == null) {
             // No custom item
             return itemDefinition;
