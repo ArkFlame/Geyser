@@ -1,6 +1,6 @@
 # ArkFlame/Geyser — Upstream Issue/PR Tracker
 
-_Generated at: 2026-11-25T00:00:00Z_
+_Generated at: 2026-11-26T00:00:00Z_
 
 This tracker enumerates every issue and pull request of `GeyserMC/Geyser` and `GeyserMC/MCProtocolLib` (upstreams) and of the forks `ArkFlame/Geyser` and `ArkFlame/MCProtocolLib`. Identity is repo + number. The machine-readable source of truth is [`arkflame-geyser-tracker.json`](arkflame-geyser-tracker.json); this document is a summary.
 
@@ -26,12 +26,12 @@ Both fork repositories have issues disabled and contain 0 issues and 0 pull requ
 
 ## Status counts
 
-- `BLOCKED`: 69
+- `BLOCKED`: 68
 - `DUPLICATE`: 606
-- `FIXED`: 146
+- `FIXED`: 151
 - `NOT_APPLICABLE`: 2311
 - `PARTIAL`: 1
-- `UNFIXED`: 703
+- `UNFIXED`: 699
 - `UNSUPPORTED`: 656
 - `UPSTREAM_FIXED`: 3270
 
@@ -55,15 +55,15 @@ Both fork repositories have issues disabled and contain 0 issues and 0 pull requ
 
 | Status | Count |
 | --- | ---: |
-| `UNFIXED` | 138 |
+| `UNFIXED` | 699 |
 | `IN_PROGRESS` | 0 |
-| `FIXED` | 141 |
-| `UPSTREAM_FIXED` | 3010 |
+| `FIXED` | 151 |
+| `UPSTREAM_FIXED` | 3270 |
 | `DUPLICATE` | 606 |
-| `BLOCKED` | 69 |
+| `BLOCKED` | 68 |
 | `UNSUPPORTED` | 656 |
-| `NOT_APPLICABLE` | 2200 |
-| `PARTIAL` | 2 |
+| `NOT_APPLICABLE` | 2311 |
+| `PARTIAL` | 1 |
 
 ## Mass audit (two passes)
 
