@@ -56,4 +56,36 @@ class ItemTranslatorOfflineHarnessTest {
             System.out.println("PERF translateToBedrock plain item stubOnly bytes/call=" + perCall);
         });
     }
+
+    private static long bytesPerCall(Runnable r) {
+        com.sun.management.ThreadMXBean mx = (com.sun.management.ThreadMXBean) java.lang.management.ManagementFactory.getThreadMXBean();
+        long id = Thread.currentThread().getId();
+        for (int i = 0; i < 2000; i++) r.run();
+        int n = 5000;
+        long t0 = mx.getThreadAllocatedBytes(id);
+        for (int i = 0; i < n; i++) r.run();
+        return (mx.getThreadAllocatedBytes(id) - t0) / n;
+    }
+
+    @Test
+    void attributesAllocationPerPiece() {
+        mockContext(() -> {
+            DataComponentRegistryPopulator.load(GeyserResources.DEFAULT);
+            BuiltInJavaRegistries.bootstrap();
+            BuiltInJavaRegistries.freeze();
+            GeyserSession session = mock(GeyserSession.class, org.mockito.Mockito.withSettings().stubOnly().defaultAnswer(RETURNS_DEEP_STUBS));
+            ItemMapping mapping = mock(ItemMapping.class, org.mockito.Mockito.withSettings().stubOnly().defaultAnswer(RETURNS_DEEP_STUBS));
+            var items = Items.DIAMOND;
+            var cache = session.getComponentCache();
+            var comps = items.gatherComponents(cache, null);
+            System.out.println("PERF piece empty-loop=" + bytesPerCall(() -> { }));
+            System.out.println("PERF piece session.getComponentCache=" + bytesPerCall(() -> session.getComponentCache()));
+            System.out.println("PERF piece gatherComponents=" + bytesPerCall(() -> items.gatherComponents(cache, null)));
+            System.out.println("PERF piece TooltipOptions.fromComponents=" + bytesPerCall(() -> org.geysermc.geyser.item.TooltipOptions.fromComponents(comps)));
+            System.out.println("PERF piece BedrockItemBuilder.new+build=" + bytesPerCall(() -> new org.geysermc.geyser.translator.item.BedrockItemBuilder().build()));
+            System.out.println("PERF piece item.translateToBedrock=" + bytesPerCall(() -> items.translateToBedrock(session, 3, comps, mapping, session.getItemMappings())));
+            System.out.println("PERF piece getCustomName=" + bytesPerCall(() -> ItemTranslator.getCustomName(session, null, mapping, 'f', false, false)));
+            System.out.println("PERF piece whole=" + bytesPerCall(() -> ItemTranslator.translateToBedrock(session, items, mapping, 3, null)));
+        });
+    }
 }

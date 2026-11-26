@@ -155,6 +155,10 @@ public class Item {
     @NonNull
     @UnmodifiableView
     public DataComponents gatherComponents(@NonNull ResolvableComponentGetter resolvableGetter, @Nullable DataComponents others) {
+        if (resolvableComponents.isEmpty() && (others == null || others.getDataComponents().isEmpty())) {
+            // Nothing to merge: the result is an unmodifiable view anyway, so skip cloning the whole default map
+            return new DataComponents(Collections.unmodifiableMap(baseComponents.getDataComponents()));
+        }
         // Start with the base components that always exist
         DataComponents base = baseComponents.clone();
         // Add resolvable base components when possible
