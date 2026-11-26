@@ -26,6 +26,7 @@
 package org.geysermc.geyser.translator.protocol.java.level;
 
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
+import org.geysermc.geyser.GeyserLogger;
 import org.geysermc.geyser.level.particle.ParticleRandomization;
 import org.geysermc.mcprotocollib.protocol.data.game.level.particle.Particle;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.level.ClientboundLevelParticlesPacket;
@@ -62,7 +63,11 @@ public class JavaLevelParticlesTranslator extends PacketTranslator<ClientboundLe
             }
         } else {
             // Null is only returned when no particle of this type is found
-            session.getGeyser().getLogger().debug("Unhandled particle packet: " + packet);
+            // Building the message calls the packet's toString, so only do it when it will be logged
+            GeyserLogger logger = session.getGeyser().getLogger();
+            if (logger.isDebug()) {
+                logger.debug("Unhandled particle packet: " + packet);
+            }
         }
     }
 }
