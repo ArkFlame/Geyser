@@ -13,3 +13,12 @@
 | 10 | BedrockPlayerAuthInputTranslator | per-tick input | EnumSet instead of HashSet copy | PerfParityTest.inputDataLeftoverSetParity | not claimed |
 
 Only #7 has a measured gain. #1 and #6 were reverted (untestable offline); every remaining edit has a parity test.
+
+## Batch 2 (in progress; guard eager debug-message building on hot unhandled paths)
+Pattern: `logger.debug("..." + packet)` builds the string (including a full packet toString) even when debug is off. Guard with `isDebug()`.
+| # | File | Change | Parity test | Measured |
+|---|------|--------|-------------|----------|
+| 11 | JavaEntityEventTranslator (unhandled entity event) | `isDebug()` guard | UnhandledPacketDebugGuardTest: debug off = packet toString called 0 times (old: 1), debug on = identical message logged | toString calls per unhandled event 1 -> 0 (deterministic count, not a CPU claim) |
+| 12 | SoundUtils.readSoundEvent (unexpected type) | `isDebug()` guard | DebugConcatGuardTest: same shape, 0 vs 1 toString, identical message when on | same |
+Attempted and REVERTED (cannot be tested offline: `Registries.PARTICLES`/`SOUNDS` throw "Registry has not been loaded yet!", ItemTranslator static init fails): Particles, StopSound, LivingEntity particle, ItemTranslator air-mapping, and the Registries-dependent SoundUtils.playSound/translatePlaySound guards. Animate and LevelEvent guards dropped as no gain (enum concat only).
+Evidence: work/evidence/perf-batch2*.log, full :core:test green.

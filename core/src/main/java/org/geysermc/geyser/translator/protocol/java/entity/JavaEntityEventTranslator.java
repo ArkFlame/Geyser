@@ -318,7 +318,9 @@ public class JavaEntityEventTranslator extends PacketTranslator<ClientboundEntit
                 // unused, but spams a bit
                 break;
             default:
-                GeyserImpl.getInstance().getLogger().debug("unhandled entity event: " + packet);
+                if (GeyserImpl.getInstance().getLogger().isDebug()) {
+                    GeyserImpl.getInstance().getLogger().debug("unhandled entity event: " + packet);
+                }
         }
 
         if (eventType != null) {

@@ -209,7 +209,9 @@ public final class SoundUtils {
             soundEvent = string;
         } else {
             soundEvent = "";
-            GeyserImpl.getInstance().getLogger().debug("Sound event for " + context + " was of an unexpected type! Expected string or NBT map, got " + soundEventObject);
+            if (GeyserImpl.getInstance().getLogger().isDebug()) {
+                GeyserImpl.getInstance().getLogger().debug("Sound event for " + context + " was of an unexpected type! Expected string or NBT map, got " + soundEventObject);
+            }
         }
         return soundEvent;
     }
