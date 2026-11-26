@@ -192,6 +192,29 @@ public class Item {
     }
 
     /**
+     * Whether {@link #gatherComponents} with the same arguments would contain {@code type}, answered
+     * without building the merged map. The merge only ever {@code putAll}s, so a key is present exactly
+     * when the additional components, the resolved components or the base components contain it
+     * (a null value in the additional components still counts as present).
+     */
+    public boolean hasComponent(@NonNull ResolvableComponentGetter resolvableGetter, @Nullable DataComponents others, @NonNull DataComponentType<?> type) {
+        if (others != null && others.contains(type)) {
+            return true;
+        }
+        if (!resolvableComponents.isEmpty()) {
+            DataComponents resolvedComponents = resolvableGetter.getResolvedComponents(this);
+            if (resolvedComponents != null) {
+                if (resolvedComponents.contains(type)) {
+                    return true;
+                }
+            } else {
+                GeyserImpl.getInstance().getLogger().debug("Unable to resolve components for item because resolvableGetter didn't have any for it");
+            }
+        }
+        return baseComponents.contains(type);
+    }
+
+    /**
      * Returns this items value (or null) for a specific {@link DataComponentType}.
      * Prefer using {@link GeyserItemStack#getComponent(DataComponentType)}
      * to also query additional components that would override the default ones.

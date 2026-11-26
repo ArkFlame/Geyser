@@ -210,7 +210,7 @@ public class GeyserItemStack {
      * @return whether this GeyserItemStack has the given {@code component}.
      */
     public boolean has(DataComponentType<?> component) {
-        return !isEmpty() && asItem().gatherComponents(resolvableComponentGetter, components).contains(component);
+        return !isEmpty() && asItem().hasComponent(resolvableComponentGetter, components, component);
     }
 
     /**
