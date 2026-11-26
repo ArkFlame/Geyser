@@ -33,7 +33,6 @@ import org.cloudburstmc.protocol.common.util.VarInts;
 import org.geysermc.geyser.level.chunk.bitarray.BitArray;
 import org.geysermc.geyser.level.chunk.bitarray.BitArrayVersion;
 
-import java.util.function.IntConsumer;
 
 @Getter
 public class BlockStorage {
@@ -72,6 +71,8 @@ public class BlockStorage {
     }
 
     public void writeToNetwork(ByteBuf buffer) {
+        // Grow the buffer once up front instead of repeatedly while the words and palette are appended
+        buffer.ensureWritable(estimateNetworkSize(), false);
         buffer.writeByte(getPaletteHeader(bitArray.getVersion(), true));
 
         for (int word : bitArray.getWords()) {
@@ -79,7 +80,9 @@ public class BlockStorage {
         }
 
         bitArray.writeSizeToNetwork(buffer, palette.size());
-        palette.forEach((IntConsumer) id -> VarInts.writeInt(buffer, id));
+        for (int i = 0, size = palette.size(); i < size; i++) {
+            VarInts.writeInt(buffer, palette.getInt(i));
+        }
     }
 
     public int estimateNetworkSize() {

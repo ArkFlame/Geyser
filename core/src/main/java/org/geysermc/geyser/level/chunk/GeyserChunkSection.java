@@ -59,6 +59,7 @@ public class GeyserChunkSection {
     }
 
     public void writeToNetwork(ByteBuf buffer) {
+        buffer.ensureWritable(estimateNetworkSize(), false);
         buffer.writeByte(CHUNK_SECTION_VERSION);
         buffer.writeByte(this.storage.length);
         // Required for chunk version 9+
