@@ -50,20 +50,18 @@ public interface BlockSoundInteractionTranslator extends SoundInteractionTransla
     static void handleBlockInteraction(GeyserSession session, Vector3f position, BlockState state) {
         // If we need to get the hand identifier, only get it once and save it to a variable
         String handIdentifier = null;
+        // BlockState#toString builds a new String each call, so build it at most once per interaction
+        String stateString = null;
 
         for (Map.Entry<SoundTranslator, SoundInteractionTranslator<?>> interactionEntry : Registries.SOUND_TRANSLATORS.get().entrySet()) {
             if (!(interactionEntry.getValue() instanceof BlockSoundInteractionTranslator)) {
                 continue;
             }
             if (interactionEntry.getKey().blocks().length != 0) {
-                boolean contains = false;
-                for (String blockIdentifier : interactionEntry.getKey().blocks()) {
-                    if (state.toString().contains(blockIdentifier)) {
-                        contains = true;
-                        break;
-                    }
+                if (stateString == null) {
+                    stateString = state.toString();
                 }
-                if (!contains) continue;
+                if (!anyContained(stateString, interactionEntry.getKey().blocks())) continue;
             }
             GeyserItemStack itemInHand = session.getPlayerInventory().getItemInHand();
             if (interactionEntry.getKey().items().length != 0) {
@@ -89,6 +87,18 @@ public interface BlockSoundInteractionTranslator extends SoundInteractionTransla
             }
             ((BlockSoundInteractionTranslator) interactionEntry.getValue()).translate(session, position, state);
         }
+    }
+
+    /**
+     * Whether the (already built) state string contains any of the identifiers.
+     */
+    static boolean anyContained(String stateString, String[] identifiers) {
+        for (String identifier : identifiers) {
+            if (stateString.contains(identifier)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
