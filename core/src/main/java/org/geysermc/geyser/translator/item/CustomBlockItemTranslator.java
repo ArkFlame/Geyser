@@ -25,6 +25,7 @@ package org.geysermc.geyser.translator.item;
 import net.kyori.adventure.key.Key;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.geysermc.geyser.api.block.custom.CustomBlockData;
+import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.type.CustomBlockItemOverride;
 
 import java.util.Map;
@@ -39,6 +40,18 @@ public final class CustomBlockItemTranslator {
      * Interned base keys, so the item translation hot path does not allocate a key per lookup.
      */
     private static final Map<String, CustomBlockItemOverride> BASE_KEYS = new ConcurrentHashMap<>();
+
+    /**
+     * Same as {@link #resolve(Map, String, Key)} for an item, but without building the item's identifier string
+     * (a new String per call) when there are no custom block overrides, which is the common case.
+     */
+    public static @Nullable CustomBlockData resolveForItem(org.geysermc.geyser.item.type.Item javaItem, @Nullable Key itemModel) {
+        Map<CustomBlockItemOverride, CustomBlockData> overrides = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.get();
+        if (overrides.isEmpty()) {
+            return null;
+        }
+        return resolve(overrides, javaItem.javaKey().asString(), itemModel);
+    }
 
     @Nullable
     public static CustomBlockData resolve(Map<CustomBlockItemOverride, CustomBlockData> overrides,

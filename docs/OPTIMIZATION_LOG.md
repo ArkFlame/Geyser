@@ -9,7 +9,7 @@
 | 6 | JavaSectionBlocksUpdateTranslator | block updates | hoist lookups per entry | none (full suite green) | not claimed |
 | 7 | SoundUtils.toSoundEvent | sounds | single pass + map lookup, no exception on miss | PerfParityTest.soundEventParity (20k random + all names) | miss path alloc 54,880,000 -> 2,880,000 B per 20k calls (~19x less) |
 | 8 | MessageTranslator | no-colour convert | constant replace target | NoColorMessageParityTest (constant == old concatenation; no-colour output) PASS | not claimed |
-| 9 | ItemTranslator | item translate | skip identifier String when no custom block overrides | none (full suite green) | not claimed |
+| 9 | ItemTranslator | item translate | skip identifier String when no custom block overrides (helper moved to CustomBlockItemTranslator.resolveForItem so it is testable offline) | CustomBlockOverrideGuardParityTest (empty and populated registry vs direct resolve) PASS | not claimed |
 | 10 | BedrockPlayerAuthInputTranslator | per-tick input | EnumSet instead of HashSet copy | PerfParityTest.inputDataLeftoverSetParity | not claimed |
 
 Only #7 has a measured gain. The others lack dedicated parity tests; follow-up batch should add them.
