@@ -29,7 +29,6 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.Clie
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket;
 import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.ItemEntity;
-import org.geysermc.geyser.entity.type.living.animal.horse.AbstractHorseEntity;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
@@ -44,9 +43,10 @@ public class JavaSetEntityMotionTranslator extends PacketTranslator<ClientboundS
 
         entity.setMotion(packet.getMovement().toFloat());
 
-        if (entity == session.getPlayerEntity().getVehicle() && entity instanceof AbstractHorseEntity) {
-            // Horses for some reason teleport back when a SetEntityMotionPacket is sent while
-            // a player is riding on them. Java clients seem to ignore it anyways.
+        if (entity == session.getPlayerEntity().getVehicle()) {
+            // Bedrock applies motion to the rider's vehicle client-side while Geyser also streams its authoritative
+            // position: horses teleport back, and for other mounts the rider's view stops following (#5911).
+            // Java clients ignore it for a ridden vehicle anyway.
             return;
         }
 
