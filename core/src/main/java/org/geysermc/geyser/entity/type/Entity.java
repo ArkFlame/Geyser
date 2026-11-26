@@ -374,16 +374,18 @@ public class Entity implements GeyserEntity {
         if (isValid()) {
             MoveEntityDeltaPacket moveEntityPacket = new MoveEntityDeltaPacket();
             moveEntityPacket.setRuntimeEntityId(geyserId);
+            // bedrockPosition() allocates a vector when the entity has an offset; compute it once, and only if moved
+            Vector3f bedrockPosition = (relX != 0.0 || relY != 0.0 || relZ != 0.0) ? bedrockPosition() : null;
             if (relX != 0.0) {
-                moveEntityPacket.setX(bedrockPosition().getX());
+                moveEntityPacket.setX(bedrockPosition.getX());
                 moveEntityPacket.getFlags().add(MoveEntityDeltaPacket.Flag.HAS_X);
             }
             if (relY != 0.0) {
-                moveEntityPacket.setY(bedrockPosition().getY());
+                moveEntityPacket.setY(bedrockPosition.getY());
                 moveEntityPacket.getFlags().add(MoveEntityDeltaPacket.Flag.HAS_Y);
             }
             if (relZ != 0.0) {
-                moveEntityPacket.setZ(bedrockPosition().getZ());
+                moveEntityPacket.setZ(bedrockPosition.getZ());
                 moveEntityPacket.getFlags().add(MoveEntityDeltaPacket.Flag.HAS_Z);
             }
             if (dirtyPitch) {

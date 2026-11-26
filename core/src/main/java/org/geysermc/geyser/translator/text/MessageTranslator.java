@@ -86,6 +86,8 @@ public class MessageTranslator {
     private static final ThreadLocal<long[]> TRANSLATION_AMPLIFICATION = new ThreadLocal<>();
 
     private static final String ERROR_MESSAGE = "§cReport to Geyser";
+    // Constant, so do not rebuild it with a string concatenation on every no-colour conversion
+    private static final String SECTION_WHITE = "" + LegacyComponentSerializer.SECTION_CHAR + CharacterAndFormat.WHITE.character();
 
     static {
         // Customize the formatting characters of our legacy serializer for bedrock edition
@@ -313,7 +315,7 @@ public class MessageTranslator {
         message = RENDERER.render(message, locale);
 
         // Wait what, color? Yes! LegacyComponentSerializer NoSuchElementExceptions with no colors present, so we add white and remove!
-        return NO_COLOR_SERIALIZER.serialize(message).replace("" + LegacyComponentSerializer.SECTION_CHAR + CharacterAndFormat.WHITE.character(), "");
+        return NO_COLOR_SERIALIZER.serialize(message).replace(SECTION_WHITE, "");
     }
 
     private static void acceptTranslationArgument(Component argument, int occurrences, Consumer<Component> consumer) {

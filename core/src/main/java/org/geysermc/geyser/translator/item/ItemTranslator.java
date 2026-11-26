@@ -211,14 +211,24 @@ public final class ItemTranslator {
                 .build();
     }
 
+    /**
+     * Same as {@link CustomBlockItemTranslator#resolve}, but without building the item's identifier string
+     * (a new String per call) when there are no custom block overrides, which is the common case.
+     */
+    private static @Nullable CustomBlockData resolveCustomBlockOverride(Item javaItem, @Nullable Key itemModel) {
+        Map<CustomBlockItemOverride, CustomBlockData> overrides = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.get();
+        if (overrides.isEmpty()) {
+            return null;
+        }
+        return CustomBlockItemTranslator.resolve(overrides, javaItem.javaKey().asString(), itemModel);
+    }
+
     public static ItemData.@NonNull Builder translateToBedrock(GeyserSession session, Item javaItem, ItemMapping bedrockItem, int count, @Nullable DataComponents customComponents) {
         BedrockItemBuilder nbtBuilder = new BedrockItemBuilder();
 
         // Populates default components that aren't sent over the network
         DataComponents components = javaItem.gatherComponents(session.getComponentCache(), customComponents);
-        CustomBlockData modelBlockOverride = CustomBlockItemTranslator.resolve(
-                BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.get(), javaItem.javaKey().asString(),
-                components.get(DataComponentTypes.ITEM_MODEL));
+        CustomBlockData modelBlockOverride = resolveCustomBlockOverride(javaItem, components.get(DataComponentTypes.ITEM_MODEL));
         TooltipOptions tooltip = TooltipOptions.fromComponents(components);
 
         // Translate item-specific components
@@ -296,7 +306,7 @@ public final class ItemTranslator {
         // Finalize the Bedrock NBT
         builder.tag(nbtBuilder.build());
         if (bedrockItem.isBlock() && modelBlockOverride == null) {
-            CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.getOrDefault(
+            CustomBlockData customBlockData = BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.get().isEmpty() ? null : BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.getOrDefault(
                     CustomBlockItemOverride.base(bedrockItem.getJavaItem().javaKey().asString()), null);
             if (customBlockData != null) {
                 translateCustomBlock(customBlockData, session, builder);
@@ -606,9 +616,7 @@ public final class ItemTranslator {
         ItemMapping mapping = itemStack.asItem().toBedrockDefinition(itemStack.getAllComponents(), session.getItemMappings());
 
         ItemDefinition itemDefinition = mapping.getBedrockDefinition();
-        CustomBlockData modelBlockOverride = CustomBlockItemTranslator.resolve(
-                BlockRegistries.CUSTOM_BLOCK_ITEM_OVERRIDES.get(), mapping.getJavaItem().javaKey().asString(),
-                itemStack.getComponent(DataComponentTypes.ITEM_MODEL));
+        CustomBlockData modelBlockOverride = resolveCustomBlockOverride(mapping.getJavaItem(), itemStack.getComponent(DataComponentTypes.ITEM_MODEL));
         if (modelBlockOverride != null) {
             ItemDefinition def = session.getItemMappings().getCustomBlockItemDefinitions().get(modelBlockOverride);
             if (def != null) {

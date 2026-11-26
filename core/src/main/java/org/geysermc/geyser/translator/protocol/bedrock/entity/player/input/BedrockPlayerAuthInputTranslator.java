@@ -63,7 +63,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.Serv
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundPunchPacket;
 import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundSpectatorActionPacket;
 
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -97,7 +97,9 @@ public final class BedrockPlayerAuthInputTranslator extends PacketTranslator<Pla
         Set<PlayerAuthInputData> inputData = packet.getInputData();
         // These inputs are sent in order, so if e.g. START_GLIDING and STOP_GLIDING are both present,
         // it's important to make sure we send the last known status instead of both to the Java server.
-        Set<PlayerAuthInputData> leftOverInputData = new HashSet<>(packet.getInputData());
+        // A bitmask instead of a copied hash table: this runs for every input packet (every tick, every player)
+        Set<PlayerAuthInputData> leftOverInputData = EnumSet.noneOf(PlayerAuthInputData.class);
+        leftOverInputData.addAll(inputData);
         for (PlayerAuthInputData input : inputData) {
             leftOverInputData.remove(input);
             switch (input) {

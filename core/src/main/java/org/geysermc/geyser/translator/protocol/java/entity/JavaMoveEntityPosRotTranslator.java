@@ -25,7 +25,6 @@
 
 package org.geysermc.geyser.translator.protocol.java.entity;
 
-import org.cloudburstmc.math.vector.Vector3d;
 import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
@@ -41,17 +40,24 @@ public class JavaMoveEntityPosRotTranslator extends PacketTranslator<Clientbound
         if (entity == null) return;
 
         // TODO lerp through the steps
-        Vector3d move;
+        // Plain doubles: a Vector3d per move packet is pure garbage
+        double moveX, moveY, moveZ;
         if (packet.getSteps() == null) {
-            move = Vector3d.from(packet.getMoveX(), packet.getMoveY(), packet.getMoveZ());
+            moveX = packet.getMoveX();
+            moveY = packet.getMoveY();
+            moveZ = packet.getMoveZ();
         } else {
             // Each step is relative to the one before it
-            move = Vector3d.ZERO;
+            moveX = 0;
+            moveY = 0;
+            moveZ = 0;
             for (ClientboundMoveEntityPosRotPacket.DeltaStep step : packet.getSteps()) {
-                move = move.add(step.moveX(), step.moveY(), step.moveZ());
+                moveX += step.moveX();
+                moveY += step.moveY();
+                moveZ += step.moveZ();
             }
         }
 
-        entity.updatePositionAndRotation(move.getX(), move.getY(), move.getZ(), packet.getYaw(), packet.getPitch(), packet.isOnGround());
+        entity.updatePositionAndRotation(moveX, moveY, moveZ, packet.getYaw(), packet.getPitch(), packet.isOnGround());
     }
 }

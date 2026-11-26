@@ -56,18 +56,35 @@ public class JavaTeleportEntityTranslator extends PacketTranslator<ClientboundTe
             return;
         }
 
+        // One pass over the relatives instead of a linear List#contains scan per flag
+        boolean relX = false, relY = false, relZ = false, relXRot = false, relYRot = false;
+        boolean relDeltaX = false, relDeltaY = false, relDeltaZ = false, rotateDelta = false;
+        for (PositionElement element : packet.getRelatives()) {
+            switch (element) {
+                case X -> relX = true;
+                case Y -> relY = true;
+                case Z -> relZ = true;
+                case X_ROT -> relXRot = true;
+                case Y_ROT -> relYRot = true;
+                case DELTA_X -> relDeltaX = true;
+                case DELTA_Y -> relDeltaY = true;
+                case DELTA_Z -> relDeltaZ = true;
+                case ROTATE_DELTA -> rotateDelta = true;
+            }
+        }
+
         Vector3d position = packet.getPosition();
         position = position.add(
-            packet.getRelatives().contains(PositionElement.X) ? entity.position().getX() : 0,
-            packet.getRelatives().contains(PositionElement.Y) ? entity.position().getY() : 0,
-            packet.getRelatives().contains(PositionElement.Z) ? entity.position().getZ() : 0
+            relX ? entity.position().getX() : 0,
+            relY ? entity.position().getY() : 0,
+            relZ ? entity.position().getZ() : 0
         );
 
-        boolean hasRelative = packet.getRelatives().contains(PositionElement.X) || packet.getRelatives().contains(PositionElement.Y) || packet.getRelatives().contains(PositionElement.Z);
+        boolean hasRelative = relX || relY || relZ;
         boolean interpolate = (entity.interpolatesTeleports() || hasRelative) && entity.position().distance(position.toFloat()) < 4096.0;
 
-        float newPitch = MathUtils.clamp(packet.getXRot() + (packet.getRelatives().contains(PositionElement.X_ROT) ? entity.getPitch() : 0), -90, 90);
-        float newYaw = packet.getYRot() + (packet.getRelatives().contains(PositionElement.Y_ROT) ? entity.getYaw() : 0);
+        float newPitch = MathUtils.clamp(packet.getXRot() + (relXRot ? entity.getPitch() : 0), -90, 90);
+        float newYaw = packet.getYRot() + (relYRot ? entity.getYaw() : 0);
 
         float lastPitch = entity.getPitch(), lastYaw = entity.getYaw();
         if (!interpolate) {
@@ -78,11 +95,11 @@ public class JavaTeleportEntityTranslator extends PacketTranslator<ClientboundTe
         }
 
         Vector3f deltaMovement = packet.getDeltaMovement().toFloat().add(
-            packet.getRelatives().contains(PositionElement.DELTA_X) ? entity.getMotion().getX() : 0,
-            packet.getRelatives().contains(PositionElement.DELTA_Y) ? entity.getMotion().getY() : 0,
-            packet.getRelatives().contains(PositionElement.DELTA_Z) ? entity.getMotion().getZ() : 0
+            relDeltaX ? entity.getMotion().getX() : 0,
+            relDeltaY ? entity.getMotion().getY() : 0,
+            relDeltaZ ? entity.getMotion().getZ() : 0
         );
-        if (packet.getRelatives().contains(PositionElement.ROTATE_DELTA)) {
+        if (rotateDelta) {
             deltaMovement = MathUtils.xYRot(deltaMovement, (float) Math.toRadians(lastPitch - newPitch), (float) Math.toRadians(lastYaw - newYaw));
         }
 

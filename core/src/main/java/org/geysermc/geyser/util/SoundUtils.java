@@ -41,9 +41,22 @@ import org.geysermc.geyser.registry.type.SoundMapping;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.mcprotocollib.protocol.data.game.level.sound.Sound;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public final class SoundUtils {
+
+    private static final Map<String, SoundEvent> SOUND_EVENTS_BY_NAME = createSoundEventsByName();
+
+    private static Map<String, SoundEvent> createSoundEventsByName() {
+        SoundEvent[] values = SoundEvent.values();
+        Map<String, SoundEvent> map = new HashMap<>(values.length * 2);
+        for (SoundEvent event : values) {
+            map.put(event.name(), event);
+        }
+        return map;
+    }
 
     /**
      * Maps a sound name to a sound event, null if one
@@ -53,6 +66,28 @@ public final class SoundUtils {
      * @return a sound event from the given sound
      */
     public static @Nullable SoundEvent toSoundEvent(String sound) {
+        if (sound == null) {
+            return null;
+        }
+        // Fast path for ASCII names: one pass, one String, and a map miss instead of a thrown exception
+        int length = sound.length();
+        char[] normalized = new char[length];
+        for (int i = 0; i < length; i++) {
+            char c = sound.charAt(i);
+            if (c > 0x7F) {
+                return toSoundEventSlow(sound);
+            }
+            if (c == '.') {
+                c = '_';
+            } else if (c >= 'a' && c <= 'z') {
+                c -= 'a' - 'A';
+            }
+            normalized[i] = c;
+        }
+        return SOUND_EVENTS_BY_NAME.get(new String(normalized));
+    }
+
+    private static @Nullable SoundEvent toSoundEventSlow(String sound) {
         try {
             return SoundEvent.valueOf(sound.toUpperCase(Locale.ROOT).replace('.', '_'));
         } catch (Exception ex) {
