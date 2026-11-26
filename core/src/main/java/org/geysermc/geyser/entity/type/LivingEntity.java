@@ -484,12 +484,17 @@ public class LivingEntity extends Entity implements Tickable {
         }
     }
 
+    /** Above this many tickable entities in a session, movement is no longer lerped. */
+    public static final int MAX_LERPED_TICKABLE_ENTITIES = 100;
+
     public boolean shouldLerp() {
         // We shouldn't lerp the vehicle if the client is controlling is, or we're controlling it.
         if (this instanceof ClientVehicle clientVehicle) {
             return !clientVehicle.shouldSimulateMovement() && !session.isInClientPredictedVehicle();
         }
-        return true;
+        // Every lerping entity turns one Java move into up to three Bedrock move packets over the next ticks. Past
+        // this many ticking entities that burst stalls console clients, so the single direct move is sent instead (#6129).
+        return session.getEntityCache().getTickableEntities().size() <= MAX_LERPED_TICKABLE_ENTITIES;
     }
 
     @Override
