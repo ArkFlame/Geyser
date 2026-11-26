@@ -44,6 +44,7 @@ import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.ItemSt
 import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.ItemStackRequestSlotData;
 import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.action.AutoCraftRecipeAction;
 import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.action.ConsumeAction;
+import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.action.CraftRecipeAction;
 import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.action.CraftResultsDeprecatedAction;
 import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.action.DropAction;
 import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.action.ItemStackRequestAction;
@@ -722,6 +723,10 @@ public abstract class InventoryTranslator<Type extends Inventory> {
         CraftState craftState = CraftState.START;
 
         int leftover = 0;
+        // More than one craft requested at once (shift-click). Bedrock predicts how the stacks split across the
+        // inventory, which Java decides itself, so the request becomes one shift-click on the output (#5290).
+        boolean shiftCraft = false;
+        boolean shiftCrafted = false;
         // Bedrock reports more than one result when copying a written book (the source and the copy).
         // Java's crafting grid has a single output, so only the first reported output is crafted.
         boolean duplicateResults = false;
@@ -735,6 +740,7 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                         return rejectRequest(request);
                     }
                     craftState = CraftState.RECIPE_ID;
+                    shiftCraft = ((CraftRecipeAction) action).getNumberOfRequestedCrafts() > 1;
                     break;
                 }
                 case CRAFT_RESULTS_DEPRECATED: {
@@ -800,7 +806,16 @@ public abstract class InventoryTranslator<Type extends Inventory> {
                     int sourceSlot = bedrockSlotToJava(transferAction.getSource());
                     int destSlot = bedrockSlotToJava(transferAction.getDestination());
 
-                    if (isCursor(transferAction.getDestination())) {
+                    if (shiftCraft) {
+                        if (!shiftCrafted) {
+                            plan.add(Click.LEFT_SHIFT, sourceSlot);
+                            shiftCrafted = true;
+                        }
+                        affectedSlots.add(destSlot);
+                    } else if (isCursor(transferAction.getDestination())
+                        || transferAction.getDestination().getContainerName().getContainer() == ContainerSlotType.CRAFTING_INPUT) {
+                        // The Pocket UI predicts the result into the grid cell it just consumed. Java would overwrite
+                        // the ingredient there, so the result stays on the cursor instead (#5611).
                         plan.add(Click.LEFT, sourceSlot);
                         craftState = CraftState.DONE;
                     } else {
