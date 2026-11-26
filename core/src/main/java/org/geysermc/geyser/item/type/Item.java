@@ -78,6 +78,11 @@ public class Item {
     private int javaId = -1;
     private final int attackDamage;
     private DataComponents baseComponents; // unmodifiable
+    /**
+     * Cached unmodifiable view over {@link #baseComponents}, handed out when nothing needs merging.
+     * Identity-compared in {@link #translateComponentsToBedrock} to skip a full map equality check.
+     */
+    private volatile DataComponents defaultComponentsView;
     @Getter
     @Accessors(fluent = true)
     private List<ResolvableComponent<?>> resolvableComponents; // unmodifiable
@@ -157,7 +162,12 @@ public class Item {
     public DataComponents gatherComponents(@NonNull ResolvableComponentGetter resolvableGetter, @Nullable DataComponents others) {
         if (resolvableComponents.isEmpty() && (others == null || others.getDataComponents().isEmpty())) {
             // Nothing to merge: the result is an unmodifiable view anyway, so skip cloning the whole default map
-            return new DataComponents(Collections.unmodifiableMap(baseComponents.getDataComponents()));
+            DataComponents view = this.defaultComponentsView;
+            if (view == null) {
+                view = new DataComponents(Collections.unmodifiableMap(baseComponents.getDataComponents()));
+                this.defaultComponentsView = view;
+            }
+            return view;
         }
         // Start with the base components that always exist
         DataComponents base = baseComponents.clone();
@@ -297,7 +307,7 @@ public class Item {
         // However, we should only set a hash when the components differ from the default ones,
         // otherwise Bedrock can't stack these when crafting items since it's predicted recipe output
         // does not contain the GeyserHash. See https://github.com/GeyserMC/Geyser/issues/5220 for more details
-        if (!baseComponents.equals(components)) {
+        if (components != this.defaultComponentsView && !baseComponents.equals(components)) {
             builder.putInt("GeyserHash", components.hashCode()); // TODO: don't rely on this
         }
     }
@@ -387,6 +397,7 @@ public class Item {
         }
         this.javaId = javaId;
         if (this.baseComponents == null) {
+            this.defaultComponentsView = null;
             this.baseComponents = Registries.DEFAULT_DATA_COMPONENTS.get(javaId);
             // During unit tests, DEFAULT_DATA_COMPONENTS isn't loaded
             if (this.baseComponents == null && !EnvironmentUtils.IS_UNIT_TESTING) {
