@@ -190,6 +190,7 @@ import org.geysermc.geyser.session.cache.EntityEffectCache;
 import org.geysermc.geyser.session.cache.FormCache;
 import org.geysermc.geyser.session.cache.InputCache;
 import org.geysermc.geyser.session.cache.LodestoneCache;
+import org.geysermc.geyser.session.cache.MapCache;
 import org.geysermc.geyser.session.cache.PistonCache;
 import org.geysermc.geyser.session.cache.PreferencesCache;
 import org.geysermc.geyser.session.cache.ServerSuggestionCache;
@@ -329,6 +330,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     private final GameRuleHandler gameRuleHandler;
     private final InputCache inputCache;
     private final LodestoneCache lodestoneCache;
+    private final MapCache mapCache;
     private final PistonCache pistonCache;
     private final PreferencesCache preferencesCache;
     @Accessors(fluent = true)
@@ -968,6 +970,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         this.formCache = new FormCache(this);
         this.inputCache = new InputCache(this);
         this.lodestoneCache = new LodestoneCache();
+        this.mapCache = new MapCache();
         this.pistonCache = new PistonCache(this);
         this.preferencesCache = new PreferencesCache(this);
         this.sharedRegistryHandle = geyser.sharedCaches().registries().newHandle();

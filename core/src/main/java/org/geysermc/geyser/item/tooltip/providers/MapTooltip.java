@@ -30,17 +30,42 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.geysermc.geyser.item.tooltip.ComponentTooltipProvider;
 import org.geysermc.geyser.item.tooltip.TooltipContext;
+import org.geysermc.geyser.session.cache.MapCache;
+import org.geysermc.mcprotocollib.protocol.data.game.item.component.DataComponentTypes;
 
 import java.util.function.Consumer;
 
+/**
+ * The map lines Java adds, as in vanilla {@code MapId#addToTooltip}. The zoom level and locked flag come from
+ * the last map packet the server sent, remembered in {@link MapCache}.
+ */
 public class MapTooltip implements ComponentTooltipProvider<Integer> {
+    private static final int MAX_SCALE = 4;
+    private static final int POST_PROCESSING_LOCK = 0;
+    private static final int POST_PROCESSING_SCALE = 1;
 
     @Override
     public void addTooltip(TooltipContext context, Consumer<Component> adder, @NonNull Integer component) {
-        // The scale/level/locked lines need MapItemSavedData, which the protocol does not send to Bedrock.
-        // The id line only needs MAP_ID and is what Java shows with advanced tooltips.
+        MapCache.MapInfo info = context.session().map(session -> session.getMapCache().get(component)).orElse(null);
+        if (info == null) {
+            // Java says this while it has not been told about the map
+            adder.accept(Component.translatable("filled_map.unknown").color(NamedTextColor.GRAY));
+            return;
+        }
+
+        Integer postProcessing = context.components().get(DataComponentTypes.MAP_POST_PROCESSING);
+        if (context.components().get(DataComponentTypes.CUSTOM_NAME) == null && postProcessing == null) {
+            adder.accept(Component.translatable("filled_map.id", Component.text(component)).color(NamedTextColor.GRAY));
+        }
+        if (info.locked() || (postProcessing != null && postProcessing == POST_PROCESSING_LOCK)) {
+            adder.accept(Component.translatable("filled_map.locked").color(NamedTextColor.GRAY));
+        }
         if (context.advanced()) {
-            adder.accept(Component.translatable("filled_map.id", component.toString()).color(NamedTextColor.GRAY));
+            int scaleToAdd = postProcessing != null && postProcessing == POST_PROCESSING_SCALE ? 1 : 0;
+            int scale = Math.min(info.scale() + scaleToAdd, MAX_SCALE);
+            adder.accept(Component.translatable("filled_map.scale", Component.text(1 << scale)).color(NamedTextColor.GRAY));
+            adder.accept(Component.translatable("filled_map.level", Component.text(scale), Component.text(MAX_SCALE))
+                .color(NamedTextColor.GRAY));
         }
     }
 }

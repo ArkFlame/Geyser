@@ -49,6 +49,9 @@ public class JavaMapItemDataTranslator extends PacketTranslator<ClientboundMapIt
     public void translate(GeyserSession session, ClientboundMapItemDataPacket packet) {
         org.cloudburstmc.protocol.bedrock.packet.ClientboundMapItemDataPacket mapItemDataPacket = new org.cloudburstmc.protocol.bedrock.packet.ClientboundMapItemDataPacket();
 
+        // Java's map tooltip is built from the map's zoom level and locked flag, which only this packet carries.
+        session.getMapCache().update(packet.getMapId(), packet.getScale(), packet.isLocked());
+
         mapItemDataPacket.setUniqueMapId(packet.getMapId());
         mapItemDataPacket.setDimensionId(DimensionUtils.javaToBedrock(session));
         mapItemDataPacket.setLocked(packet.isLocked());
